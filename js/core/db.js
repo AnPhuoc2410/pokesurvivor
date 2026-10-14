@@ -33,7 +33,7 @@ G.DB = (() => {
   const NAME_DOMAIN = 'jugadores.pokesurvivor.net';   // sólo para el email interno
 
   let mode = 'local';       // 'cloud' | 'local'
-  let localReason = '';     // por qué no hay nube: 'file' | 'config' | 'error'
+  let localReason = '';     // por qué no hay nube: 'file' | 'config' | 'host' | 'error'
   let user = null;          // nombre visible
   let key = null;           // clave local (minúsculas) o uid de Firebase
   let guest = false;
@@ -341,9 +341,20 @@ G.DB = (() => {
     });
   }
 
+  /*
+   * La nube (Firebase, el TURN del cooperativo) sólo desde la web oficial: el
+   * código está en GitHub, y una copia publicada en otra web sin cambiar
+   * firebase-config.js guardaría sus cuentas y partidas en NUESTRO proyecto
+   * (y lo pagaríamos nosotros). Ahí el juego va en modo local. Lo que lo
+   * cierra de verdad es la clave de la API restringida a estos dominios en
+   * Google Cloud; esto frena las copias que ni lo miran (14-10-2026).
+   */
+  const HOSTS = ['pokesurvivor.com', 'www.pokesurvivor.com', 'jpter78.github.io', 'localhost', '127.0.0.1'];
+
   async function initCloud() {
     const cfg = G.FIREBASE_CONFIG;
     if (!/^https?:$/.test(location.protocol)) { localReason = 'file'; return false; }
+    if (cfg && !cfg.emulator && !HOSTS.includes(location.hostname)) { localReason = 'host'; return false; }
     if (!cfg || !cfg.apiKey || !cfg.projectId) { localReason = 'config'; return false; }
     await loadScript(SDK + 'firebase-app-compat.js');
     await loadScript(SDK + 'firebase-auth-compat.js');

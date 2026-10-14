@@ -167,6 +167,7 @@ G.I18n.add({
   '¡{x} te esperaba en la grieta!': '{x} was waiting in the rift!', '¡{x} shiny te esperaba en la grieta!': 'A shiny {x} was waiting in the rift!',
   '¡Has vencido a {x}! Recoge el premio…': 'You defeated {x}! Grab your reward…',
   'Criptomonedas': 'Cryptocurrencies', 'Web oficial': 'Official website',
+  'Esta no es la web oficial: la partida sólo se guarda en este navegador. El juego oficial y gratis está en pokesurvivor.com.': 'This is not the official website: your game is only saved in this browser. The official, free game is at pokesurvivor.com.',
   'Colocar los botones': 'Place the buttons', 'Colocar': 'Place',
   'Pon los ataques, la pausa y el joystick (fijo, si quieres) donde quieras de la pantalla.': 'Put the attacks, the pause button and the joystick (fixed, if you like) anywhere on the screen.',
   'Arrastra los botones a donde quieras': 'Drag the buttons wherever you want', 'Gira el móvil: se juega en horizontal.': 'Turn your phone: the game is played in landscape.',
