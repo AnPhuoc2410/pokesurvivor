@@ -81,6 +81,8 @@ G.DB = (() => {
       personality: null,      // { trait, scores }
       upgrades: {},           // (antiguo) mejoras de la cuenta; ahora van por Pokémon
       pupg: {},               // dex -> { id -> nivel }: mejoras de cada Pokémon
+      dfav: {},               // dex -> fecha: favorito de la colección (negativa = quitado entonces)
+      pused: {},              // dex -> partidas jugadas con él (orden "más usados")
       tickets: { t1: 0, t10: 0 },   // tickets del gacha (x1 y x10)
       pity: {},               // generación del banner -> tiradas sin ★5
       legends: {},            // dex -> fecha: legendarios vencidos en grietas
@@ -136,8 +138,12 @@ G.DB = (() => {
         }
       }
     } else delete s.led;
-    if (G.DEX_BY) for (const coll of ['owned', 'shiny']) {
+    if (G.DEX_BY) for (const coll of ['owned', 'shiny', 'dfav', 'pused']) {
       for (const d of Object.keys(s[coll] || {})) if (!G.DEX_BY[d]) delete s[coll][d];
+    }
+    for (const coll of ['dfav', 'pused']) {
+      if (!isObj(s[coll])) { s[coll] = {}; continue; }
+      for (const d of Object.keys(s[coll])) if (!Number.isFinite(+s[coll][d])) delete s[coll][d];
     }
     // Atajos: 4 huecos con un movimiento que exista (o null), sin repetir.
     if (s.pbind && typeof s.pbind === 'object') {
@@ -258,6 +264,12 @@ G.DB = (() => {
       for (const k in older.pupg[d]) mine[k] = Math.max(mine[k] || 0, older.pupg[d][k]);
     }
     r.pupgDone = r.pupgDone || older.pupgDone;
+    // Favoritos: gana lo último que se hizo con cada uno (poner o quitar), en
+    // cualquier aparato. Partidas con cada Pokémon: el mayor de los dos.
+    r.dfav = r.dfav || {};
+    for (const d in older.dfav || {}) if (Math.abs(+older.dfav[d] || 0) > Math.abs(+r.dfav[d] || 0)) r.dfav[d] = older.dfav[d];
+    r.pused = r.pused || {};
+    for (const d in older.pused || {}) r.pused[d] = Math.max(+r.pused[d] || 0, +older.pused[d] || 0);
     // Lo conseguido nunca se pierde: unión de legendarios, arenas, objetos, logros...
     for (const coll of ['legends', 'arenas', 'itemsFound', 'evoMoves', 'ach']) {
       r[coll] = r[coll] || {};
@@ -853,6 +865,15 @@ G.DB = (() => {
 
   function ownsShiny(dex) { return !!(save && save.shiny && save.shiny[dex]); }
 
+  /** Favoritos de la colección. */
+  function isFav(dex) { return !!(save && save.dfav && +save.dfav[dex] > 0); }
+  function setFav(dex, on) {
+    if (!save) return;
+    save.dfav = save.dfav || {};
+    save.dfav[dex] = on ? Date.now() : -Date.now();
+    commit();
+  }
+
   /** Mejoras compradas para un Pokémon: { id -> nivel }. */
   function upgradesOf(dex) {
     if (!save) return {};
@@ -870,7 +891,7 @@ G.DB = (() => {
 
   return {
     ready, register, login, loginWithGoogle, playAsGuest, logout, commit, deleteAccount, flush: pushNow, saveNow,
-    owns, grant, ownsShiny, grantShiny, merge, setName, upgradesOf,
+    owns, grant, ownsShiny, grantShiny, merge, setName, upgradesOf, isFav, setFav,
     onSync(fn) { listeners.add(fn); },
     onLeave(fn) { leaveHooks.push(fn); },
     /** Acceso de bajo nivel para los módulos de red (sólo en modo nube). */

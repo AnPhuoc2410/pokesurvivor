@@ -16,6 +16,9 @@
  *                   (all2 desde la Sentencia de Arceus: con el final en el
  *                    minuto 30, el histórico empezó de cero; las tablas viejas
  *                    s_all y s_all_pN se quedan en el servidor sin usarse)
+ *                   (all3 y todas las demás con una "r" desde el 18-10-2026:
+ *                    se acabó huir de Arceus corriendo y con veneno, y TODAS
+ *                    las tablas empezaron de cero)
  *   id = tu uid (solitario) o los uid del equipo ordenados y unidos con "_".
  *
  * Ahorros:
@@ -64,7 +67,7 @@ G.Ranking = (() => {
     return { year: t.getUTCFullYear(), week: Math.ceil(((t - y0) / 86400000 + 1) / 7) };
   }
 
-  const ALL = 'all2';                     // histórico (ver arriba)
+  const ALL = 'all3';                     // histórico (ver arriba)
   function periodIds(date = new Date()) {
     const { y, m, d } = madridDate(date);
     const w = isoWeek(y, m, d);
@@ -73,14 +76,15 @@ G.Ranking = (() => {
   }
 
   /*
-   * Nombres de las tablas: los de periodIds() salvo semana y mes, que llevan
-   * una "j" (desde la Sentencia de Arceus, 14-10-2026: empezaron de cero como el
-   * histórico, que tenían marcas de antes del final del minuto 30). periodIds()
-   * se queda igual porque también lo usan las misiones (progress.js).
+   * Nombres de las tablas: los de periodIds() con una "r" detrás (18-10-2026:
+   * todas desde cero tras el arreglo de la Sentencia; antes semana y mes
+   * llevaban una "j", del 14-10). periodIds() se queda igual porque también
+   * lo usan las misiones (progress.js). El histórico ya cambia de nombre (ALL).
    */
+  const GEN = 'r';
   function boardIds(date) {
     const p = periodIds(date);
-    return Object.assign({}, p, { w: p.w + 'j', m: p.m + 'j' });
+    return Object.assign({}, p, { d: p.d + GEN, w: p.w + GEN, m: p.m + GEN, y: p.y + GEN });
   }
 
   /** El filtro por Pokémon sólo existe en el histórico. */
@@ -157,7 +161,13 @@ G.Ranking = (() => {
 
   // ---------------- guardar ----------------
 
-  const rowOf = (id, v) => ({ id, t: v.t, uids: v.uids || [], names: v.names || [], dex: v.dex || [], shiny: v.shiny || [], lv: v.lv, kills: v.kills });
+  // Fila de otro jugador: todo limpio (ver G.U.int / str), sea lo que sea que haya en la base de datos.
+  const rowOf = (id, v) => {
+    const U = G.U; v = v || {};
+    return { id: U.str(String(id), 200), t: U.int(v.t, 86400), uids: U.list(v.uids, 4).map(x => U.str(x, 128)),
+             names: U.list(v.names, 4).map(x => U.str(x, 24)), dex: U.list(v.dex, 4).map(x => U.int(x, 2000)),
+             shiny: U.list(v.shiny, 4).map(x => x === true), lv: U.int(v.lv, 999) || 1, kills: U.int(v.kills, 1e9) };
+  };
   const sorted = top => Object.entries(top || {}).map(([id, v]) => rowOf(id, v)).sort((a, b) => b.t - a.t);
   const now = () => firebase.firestore.FieldValue.serverTimestamp();
 
@@ -454,7 +464,8 @@ G.Ranking = (() => {
     const by = new Map();
     for (const d of s.docs) {
       const v = d.data(), k = v.board + '__' + v.e;
-      if (!by.has(k)) by.set(k, { board: v.board, e: v.e, names: v.names || [], t: v.t, n: 0, ids: [], at: v.at && v.at.toMillis ? v.at.toMillis() : 0 });
+      if (!by.has(k)) by.set(k, { board: G.U.str(v.board, 40), e: G.U.str(v.e, 160), names: G.U.list(v.names, 4).map(x => G.U.str(x, 24)),
+                                  t: G.U.int(v.t, 86400), n: 0, ids: [], at: v.at && v.at.toMillis ? v.at.toMillis() : 0 });
       const g = by.get(k); g.n++; g.ids.push(d.id);
     }
     return [...by.values()].sort((a, b) => b.n - a.n || b.at - a.at);
