@@ -399,11 +399,11 @@ G.DB = (() => {
   // como mucho cada 30 min:
   // con 2 h, quien abría el juego en otro aparato (o en el navegador de otra
   // app) veía la copia vieja de la nube y creía que lo había perdido.
-  // Desde el 16-10-2026, lo urgente como mucho cada 10 min (era 15 s, y con el
+  // Desde el 18-10-2026, lo urgente como mucho cada 30 min (era 15 s, y con el
   // mínimo de 65 s entre subidas quien hacía tiradas o mejoras guardaba casi
-  // cada minuto). Al cerrar la pestaña se intenta subir lo pendiente,
-  // sujeto a MIN_GAP y a que la petición termine antes de salir.
-  const PUSH_GAP = 2 * 3600 * 1000, PUSH_GAP_URGENT = 10 * 60 * 1000, PUSH_GAP_RUN = 30 * 60 * 1000, HIDE_GAP = 30 * 60 * 1000;
+  // cada minuto). Al cerrar la pestaña se intenta subir lo pendiente, y para
+  // no depender de eso está el botón Guardar de la barra de arriba (saveNow).
+  const PUSH_GAP = 2 * 3600 * 1000, PUSH_GAP_URGENT = 30 * 60 * 1000, PUSH_GAP_RUN = 30 * 60 * 1000, HIDE_GAP = 30 * 60 * 1000;
   let syncState = 'local';           // 'ok' | 'syncing' | 'pending' | 'offline' | 'local'
   const listeners = new Set();
 
@@ -607,6 +607,26 @@ G.DB = (() => {
     return pushing;
   }
 
+  /**
+   * Botón Guardar: sube ya lo pendiente. Si no hay nada pendiente no gasta
+   * nada, y si se acaba de subir hace menos de 65 s (MIN_GAP) se sube en
+   * cuanto se pueda. → { ok, why?: 'local'|'guest'|'done'|'wait'|'offline'|'fail', secs? }
+   */
+  async function saveNow() {
+    if (guest || !save) return { ok: false, why: 'guest' };
+    if (mode !== 'cloud') return { ok: true, why: 'local' };
+    if (!pending && !pushing && syncState === 'ok') return { ok: true, why: 'done' };
+    if (navigator.onLine === false) { pushNow(); return { ok: false, why: 'offline' }; }
+    const wait = MIN_GAP - sinceOk();
+    if (!pushing && wait > 0) { pending = true; setSync('pending'); schedulePush(wait + 500); return { ok: true, why: 'wait', secs: Math.ceil(wait / 1000) + 1 }; }
+    await pushNow();
+    if (pushing) await pushing;          // (si había otra subida en marcha, también la que va detrás)
+    if (syncState === 'ok') return { ok: true };
+    // Lo cambiado mientras subía va en la siguiente, que espera los 65 s.
+    if (syncState === 'pending' && pushT) return { ok: true, why: 'wait', secs: Math.max(1, Math.ceil((pushDue - Date.now()) / 1000)) };
+    return { ok: false, why: syncState === 'offline' ? 'offline' : 'fail' };
+  }
+
   // Si ya había una subida programada antes, se respeta (una compra no espera a la siguiente partida).
   let pushDue = 0;
   function schedulePush(ms) {
@@ -725,7 +745,7 @@ G.DB = (() => {
   /**
    * Guarda la partida actual (no hace nada en modo invitado). En el navegador,
    * al momento; en la nube:
-   * @param urgent  true: lo que vale algo (tiradas, compras, Pokémon, premios): cada 10 min
+   * @param urgent  true: lo que vale algo (tiradas, compras, Pokémon, premios): cada 30 min
    *                'run': al acabar una partida (como mucho cada 30 min) · false: cada 2 h
    */
   function commit(urgent = false) {
@@ -849,7 +869,7 @@ G.DB = (() => {
   }
 
   return {
-    ready, register, login, loginWithGoogle, playAsGuest, logout, commit, deleteAccount, flush: pushNow,
+    ready, register, login, loginWithGoogle, playAsGuest, logout, commit, deleteAccount, flush: pushNow, saveNow,
     owns, grant, ownsShiny, grantShiny, merge, setName, upgradesOf,
     onSync(fn) { listeners.add(fn); },
     onLeave(fn) { leaveHooks.push(fn); },

@@ -63,6 +63,27 @@ G.LoginUI = (() => {
     $('scr-recover').classList.remove('hidden');
   }
 
+  /**
+   * Aviso del botón Guardar (18-10-2026): la primera vez que se entra al menú
+   * tras la actualización, con cuenta en la nube. → true si se ha enseñado.
+   */
+  const K_SAVENOTE = 'ps.savenote.1';
+  function saveNotice() {
+    if (G.DB.mode !== 'cloud' || G.DB.guest) return false;
+    try { if (localStorage.getItem(K_SAVENOTE)) return false; localStorage.setItem(K_SAVENOTE, '1'); } catch (e) { return false; }
+    const en = G.I18n.lang === 'en';
+    $('savenote-title').textContent = en ? 'Important: save your game' : 'Importante: guarda tu partida';
+    $('savenote-body').innerHTML = en
+      ? '<p>Because of problems with saving, from now on your game is saved to the cloud automatically <b>every 10 minutes</b>.</p>' +
+        '<p>We have added a <b class="gold">Save</b> button at the top right. Use it before closing the game or switching devices: <b>it is very important so you don’t lose your progress</b>.</p>'
+      : '<p>Debido a problemas con el guardado, a partir de ahora la partida se guarda en la nube automáticamente <b>cada 10 minutos</b>.</p>' +
+        '<p>Hemos incorporado un botón <b class="gold">Guardar</b> arriba a la derecha. Úsalo antes de cerrar el juego o de cambiar de aparato: <b>es muy importante para no perder tu partida</b>.</p>';
+    $('savenote-ok').textContent = en ? 'Got it' : 'Entendido';
+    $('savenote-ok').onclick = () => $('scr-savenote').classList.add('hidden');
+    $('scr-savenote').classList.remove('hidden');
+    return true;
+  }
+
   /** Explica dónde se guarda la partida según el modo de la base de datos. */
   function modeNote() {
     if (G.DB.mode === 'cloud') return 'Tu partida se guarda en la nube: entra desde cualquier ordenador. Como invitado no se guarda.';
@@ -93,5 +114,5 @@ G.LoginUI = (() => {
     setTimeout(() => $('f-user').focus(), 50);
   }
 
-  return { init, open, offerRecovery };
+  return { init, open, offerRecovery, saveNotice };
 })();

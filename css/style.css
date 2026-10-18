@@ -810,6 +810,13 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
 .news-day ul { margin: 0; padding-left: 20px; }
 .news-day li { margin: 4px 0; line-height: 1.35; font-size: 15px; }
 @media (max-width: 760px) { .news-btn span { display: none; } }
+/* Botón Guardar: con algo sin subir a la nube lleva un punto y late un poco. */
+.save-btn { position: relative; display: inline-flex; align-items: center; gap: 5px; font-weight: 700; }
+.save-btn .dot { display: none; position: absolute; top: -3px; right: -3px; width: 9px; height: 9px; background: #ff5f6d; box-shadow: 0 0 0 2px var(--shadow); }
+.save-btn.unsaved .dot { display: block; }
+.save-btn.unsaved { animation: save-pulse 1.6s ease-in-out infinite; }
+@keyframes save-pulse { 50% { filter: brightness(1.25); } }
+#savenote-body p { line-height: 1.4; }
 .sup-tab { width: 100%; border-collapse: collapse; margin: 6px 0 10px; font-size: 15px; }
 .sup-tab td { padding: 5px 4px; border-bottom: 1px solid rgba(255,255,255,.1); }
 .sup-tab td.num { text-align: right; white-space: nowrap; }
