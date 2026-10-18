@@ -6,6 +6,15 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-18', title: ['Botón Guardar', 'Save button'], new: [
+    ['Botón Guardar arriba a la derecha: sube tu partida a la nube al momento. Úsalo antes de cerrar el juego o de cambiar de aparato. Si tiene un punto rojo, hay progreso sin subir.',
+     'Save button at the top right: it uploads your game to the cloud right away. Use it before closing the game or switching devices. If it shows a red dot, there is progress not uploaded yet.']
+  ], chg: [
+    ['La partida se guarda en la nube automáticamente cada 10 minutos.',
+     'Your game is saved to the cloud automatically every 10 minutes.'],
+    ['Ranking histórico: si estás por debajo del puesto 1.000, sale «#1000+» en vez del número exacto.',
+     'All-time leaderboard: if you are below rank 1,000, it shows “#1000+” instead of the exact number.']
+  ] },
   { d: '2026-10-15', title: ['Actualizaciones obligatorias', 'Required updates'], chg: [
     ['Cuando una actualización sea obligatoria (por ejemplo, para arreglar un fallo importante), la partida en curso se termina tras un aviso de 10 s y el juego se recarga. No pierdes nada: las monedas, los tickets, los récords y el ranking de esa partida se guardan como al abandonarla.',
      'When an update is required (for example, to fix an important bug), your current run ends after a 10 s notice and the game reloads. You lose nothing: that run’s coins, tickets, records and leaderboard entry are saved as if you had quit.']
