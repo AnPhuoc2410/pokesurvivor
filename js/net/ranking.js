@@ -231,7 +231,7 @@ G.Ranking = (() => {
             const s = await tx.get(sumRef(b));
             const top = Object.assign({}, s.exists ? s.data().top : {});
             // (Sin "shiny" si no hay ninguno: el resumen pesa menos.)
-            const mine = { t: entry.t, uids: entry.uids, names: entry.names, dex: entry.dex, lv: entry.lv, kills: entry.kills };
+            const mine = { t: entry.t, uids: entry.uids, names: entry.names, dex: entry.dex, shiny: entry.shiny, lv: entry.lv, kills: entry.kills };
             if (entry.shiny.some(Boolean)) mine.shiny = entry.shiny;
             let ev = '';
             // Ya estabas con una marca mejor (otro ordenador): nada que escribir.

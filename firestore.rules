@@ -184,11 +184,13 @@ service cloud.firestore {
       // La fila del resumen es una COPIA exacta de la marca ya validada (validEntry):
       // también nivel, derrotados y shiny (18-10-2026: sin esto se podía meter
       // texto con código en el "nivel" y se ejecutaba en quien abría el ranking).
+      // shiny es opcional: las versiones del juego de antes del 18-10 no lo ponían.
       return me() in e.uids
         && changed.hasOnly([d.me, d.ev])
         && row.keys().hasOnly(['t', 'uids', 'names', 'dex', 'shiny', 'lv', 'kills'])
         && row.t == e.t && row.uids == e.uids && row.names == e.names && row.dex == e.dex
-        && row.lv == e.lv && row.kills == e.kills && row.shiny == e.shiny
+        && row.lv == e.lv && row.kills == e.kills
+        && (!('shiny' in row) || row.shiny == e.shiny)
         && (d.ev == '' || (!(d.ev in d.top) && d.ev in old && old[d.ev].t <= e.t));
     }
     function removeMine(d, old, changed) {
