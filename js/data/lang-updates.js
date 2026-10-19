@@ -359,7 +359,9 @@
      '<p>Abbiamo modificato il <b>Giudizio di Arceus</b>: scappare con la velocità al massimo e il veleno non bastano più per resistere all’infinito.</p><p>Per competere tutti alla pari, <b>tutte le classifiche ripartono da zero</b> (giorno, settimana, mese, anno e sempre). Punta al primo posto!</p>',
      '<p>Ajustamos o <b>Julgamento de Arceus</b>: fugir com a velocidade no máximo e o veneno não servem mais para aguentar para sempre.</p><p>Para que todos disputem em igualdade, <b>todos os rankings começam do zero</b> (dia, semana, mês, ano e histórico). Vá atrás do primeiro lugar!</p>',
      '<p>我们调整了<b>阿尔宙斯的审判</b>：满速逃跑和中毒已无法让你无限坚持。</p><p>为了公平竞争，<b>所有排行榜均从零开始</b>（日、周、月、年及历史榜）。冲击第一名吧！</p>',
-     '<p>我們調整了<b>阿爾宙斯的審判</b>：滿速逃跑和中毒已無法讓你無限堅持。</p><p>為了公平競爭，<b>所有排行榜均從零開始</b>（日、週、月、年及歷史榜）。衝擊第一名吧！</p>']
+     '<p>我們調整了<b>阿爾宙斯的審判</b>：滿速逃跑和中毒已無法讓你無限堅持。</p><p>為了公平競爭，<b>所有排行榜均從零開始</b>（日、週、月、年及歷史榜）。衝擊第一名吧！</p>'],
+    ["Folagor, Sekiam, PokeAlex: ¿un hueco?", "Folagor, Sekiam, PokeAlex : une petite place ?", "Folagor, Sekiam, PokeAlex: c’è un posticino?", "Folagor, Sekiam, PokeAlex: tem um lugarzinho?", "Folagor、Sekiam、PokeAlex：能给我留个位置吗？", "Folagor、Sekiam、PokeAlex：能給我留個位置嗎？"],
+    ["Una frase de broma en el título del menú principal, como las de Minecraft.", "Une phrase pour rire dans le titre du menu principal, comme dans Minecraft.", "Una frase scherzosa nel titolo del menu principale, come quelle di Minecraft.", "Uma frase de brincadeira no título do menu principal, como as do Minecraft.", "主菜单标题旁新增一句玩笑话，就像 Minecraft 那样。", "主選單標題旁新增一句玩笑話，就像 Minecraft 那樣。"],
   ];
   languages.forEach((lang, i) => G.I18n.add(Object.fromEntries(rows.map(r => [r[0], r[i + 1]])), lang));
   G.I18n.add({
