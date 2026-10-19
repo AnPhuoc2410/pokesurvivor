@@ -19,10 +19,20 @@ test('integer limits and decimals retain exact JS values, including high HP', ()
 });
 test('unsupported values safely fall back rather than silently changing data', () => {
   const cycle = []; cycle.push(cycle);
-  for (const v of [undefined, NaN, Infinity, -0, 1n, new Date(), { x: undefined }, cycle, '\ud800', '\udc00']) {
+  for (const v of [undefined, 1n, new Date(), cycle, '\ud800', '\udc00']) {
     assert.equal(C.encode(v), null);
   }
   assert.equal(C.encode('x'.repeat(C.MAX_BYTES)), null);
+});
+test('-0, NaN, Infinity and undefined arrive exactly as they would through JSON', () => {
+  const r2 = v => Math.round(v * 100) / 100;
+  for (const v of [-0, NaN, Infinity, [r2(-0.003), Math.round(-0.2)], { x: undefined, y: 1, f() {} },
+    [undefined, NaN, -Infinity, () => 1], { k: 'f', p: [-0, 1], ev: [['c', 'ember', 3, r2(-0.001), undefined]] }]) {
+    const b = C.encode(v); assert.ok(b);
+    const got = C.decode(b);
+    assert.deepEqual(got, JSON.parse(JSON.stringify(v)));
+    assert.equal(JSON.stringify(got), JSON.stringify(v));
+  }
 });
 test('object keys cannot mutate prototypes', () => {
   const value = JSON.parse('{"__proto__":{"polluted":true},"constructor":"safe"}');
@@ -80,7 +90,7 @@ test('negotiation is per peer; old clients and unknown versions keep JSON', () =
   assert.deepEqual(JSON.parse(b.sent.at(-1)), f);
   N.send('a', { k: 'start', seed: 12 }); assert.equal(typeof a.sent.at(-1), 'string');
   N.send('a', { k: 'f' }); assert.equal(typeof a.sent.at(-1), 'string'); // binary would be larger
-  N.send('a', { k: 'f', ev: [undefined] }); assert.equal(typeof a.sent.at(-1), 'string');
+  N.send('a', { k: 'f', ev: [undefined] }); assert.deepEqual(C.decode(a.sent.at(-1)), { k: 'f', ev: [null] });
 });
 test('mixed formats arrive unchanged; capabilities and corrupt packets never reach gameplay', () => {
   const { N, pcs, cap } = network(), dc = pcs[0].dc, got = [];

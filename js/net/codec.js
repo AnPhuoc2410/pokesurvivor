@@ -1,7 +1,10 @@
-/* Lossless, per-packet binary frames. No shared dictionary or delta baseline.
- * PS + version 1; tagged null/bool/uint/negative/float64/hundredths/string/array/object.
- * Tags 32..127 inline integers 0..95; 128..223 inline integers -1..-96.
- * Only used after per-peer negotiation; unsupported values fall back to JSON.
+/* Mensajes de la partida en binario, sin perder nada (PR #221 de aaronariasperez).
+ * Cada paquete va solo: sin diccionario compartido ni diferencias con el anterior.
+ * 'PS' + versión 1; etiquetas null/bool/entero/negativo/float64/centésimas/texto/lista/objeto.
+ * Etiquetas 32..127 = enteros 0..95; 128..223 = enteros -1..-96.
+ * Sólo se usa si el otro lo ha aceptado; lo que no se pueda codificar va en JSON.
+ * Llega lo mismo que con JSON.parse(JSON.stringify(x)): -0 es 0, NaN/Infinity son null
+ * y lo undefined es null en una lista o no se manda en un objeto.
  */
 G.NetCodec = (() => {
   const MAX_BYTES = 1024 * 1024, MAX_NODES = 100000, MAX_DEPTH = 32;
@@ -24,7 +27,7 @@ G.NetCodec = (() => {
       }
       function string(s) {
         if (s.length > MAX_BYTES) throw Error('string size');
-        // UTF-8 replaces lone surrogates: use JSON instead of changing a name.
+        // UTF-8 cambiaría una mitad suelta de un carácter: mejor JSON que tocar un nombre.
         for (let i = 0; i < s.length; i++) {
           const c = s.charCodeAt(i);
           if (c >= 0xd800 && c <= 0xdbff) {
@@ -34,13 +37,14 @@ G.NetCodec = (() => {
         }
         const b = utf8.encode(s); uint(b.length); reserve(b.length); bytes.set(b, at); at += b.length;
       }
+      const skip = v => v === undefined || typeof v === 'function' || typeof v === 'symbol';
       function write(v, depth) {
         if (++nodes > MAX_NODES || depth > MAX_DEPTH) throw Error('complexity');
-        if (v === null) { byte(0); return; }
+        if (v === null || skip(v) || (typeof v === 'number' && !Number.isFinite(v))) { byte(0); return; }
         if (v === false) { byte(1); return; }
         if (v === true) { byte(2); return; }
         if (typeof v === 'number') {
-          if (!Number.isFinite(v) || Object.is(v, -0)) throw Error('number');
+          if (v === 0) { byte(32); return; }          // también -0, como en JSON
           if (Number.isSafeInteger(v)) {
             if (v >= 0 && v <= 95) { byte(32 + v); return; }
             if (v < 0 && v >= -96) { byte(127 - v); return; }
@@ -59,11 +63,12 @@ G.NetCodec = (() => {
         }
         if (v && typeof v === 'object' &&
             (Object.getPrototypeOf(v) === Object.prototype || Object.getPrototypeOf(v) === null)) {
-          const keys = Object.keys(v); byte(10); uint(keys.length);
+          const keys = Object.keys(v).filter(k => !skip(v[k])); byte(10); uint(keys.length);
           for (const key of keys) { string(key); write(v[key], depth + 1); } return;
         }
         throw Error('unsupported value');
       }
+      if (skip(value)) throw Error('unsupported value');
       byte(80); byte(83); byte(1); write(value, 0);
       return bytes.buffer.slice(0, at);
     } catch (e) { return null; }

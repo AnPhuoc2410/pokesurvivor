@@ -33,7 +33,7 @@ G.Net = (() => {
   const peers = new Map();         // uid -> { pc, dc, mode, timer }
   const handlers = new Set(), peerHandlers = new Set();
   const stats = { sent: 0, recv: 0, relaySent: 0,
-    // Application payload only, after successful dc.send (not ICE/SCTP/DTLS/TURN).
+    // Sólo los datos de la partida que se han mandado bien (sin ICE/SCTP/DTLS/TURN).
     sentBytes: 0, jsonBytes: 0, recvBytes: 0, binarySent: 0, binaryRecv: 0, invalidBinary: 0 };
 
   function emitPeer(u) {
@@ -110,8 +110,9 @@ G.Net = (() => {
     dc.binaryType = 'arraybuffer';
     dc.onopen = () => {
       clearTimeout(p.timer); p.mode = 'direct';
-      // Old clients ignore this unknown kind; keep JSON until the peer opts in.
-      try { dc.send(JSON.stringify({ k: 'net-cap', binary: G.NetCodec.version })); } catch (e) { /* JSON still works */ }
+      // Aviso de que entendemos binario (las versiones viejas lo ignoran); hasta que el otro
+      // mande el suyo, se le habla en JSON.
+      try { dc.send(JSON.stringify({ k: 'net-cap', binary: G.NetCodec.version })); } catch (e) { /* el JSON sigue valiendo */ }
       emitPeer(u);
     };
     dc.onclose = () => { if (p.mode === 'direct') { p.mode = 'connecting'; useRelay(u); } };

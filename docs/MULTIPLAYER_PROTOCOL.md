@@ -35,8 +35,12 @@ Integers and lengths use unsigned base-128 varints, bounded to JS safe integers.
 Strings have a byte length; arrays/objects have an element/property count.
 Object entries are UTF-8 keys followed by values. Hundredths are used only when
 reconstruction is exactly equal to the source JS number. Other finite numbers
-retain float64 precision, including very large enemy HP. Lone UTF-16 surrogates,
-non-finite values, unsupported types and cycles fall back to JSON on send.
+retain float64 precision, including very large enemy HP. The decoded value always
+equals `JSON.parse(JSON.stringify(value))`: -0 is sent as 0, NaN/Infinity as null,
+and undefined/functions become null inside arrays and are omitted from objects
+(as JSON does), so they no longer force the whole frame back to JSON. Lone UTF-16
+surrogates, other unsupported types (BigInt, Date, ...) and cycles still fall back
+to JSON on send.
 
 Decode limits: 1 MiB per binary packet, 100,000 values and depth 32. The decoder
 rejects truncated/trailing data, unknown versions/tags, bad UTF-8, overlong or
