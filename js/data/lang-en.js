@@ -749,4 +749,13 @@ G.I18n.add({
   'Reportar marca sospechosa': 'Report suspicious record', 'Ya la has reportado': 'You already reported it',
   'Ya has reportado esta marca': 'You already reported this record',
   '¿Reportar la marca de {x} como trampa?': "Report {x}'s record as cheating?", 'Gracias: la revisaremos': 'Thanks: we will review it'
+,
+
+  // ---------------- idiomas nuevos (19-10-2026) ----------------
+  'PokéSurvivor – Juego Pokémon gratis online estilo Survivor.io': 'PokéSurvivor – Free online Pokémon survival game (Survivor.io style)',
+  'Tipo': 'Type', 'Nuevo': 'New', 'Cambios': 'Changes', 'Arreglos': 'Fixes', 'Entendido': 'Got it',
+  // Frases del ranking en francés, italiano... (en inglés se montan enteras en ranking-ui.js)
+  'Tu mejor puesto: {x}': 'Your best rank: {x}',
+  'Aún no estás en el top 50. Tu puesto está en Histórico.': 'You are not in the top 50 yet. Your rank is in All-time.',
+  'Aún no tienes marca.': 'You do not have a record yet.'
 });
