@@ -35,16 +35,16 @@ automáticamente por `latest` ni forzar emulación x86.
 
 ## 2. Desplegar una revisión concreta
 
-Obtener la rama de la PR desde el fork y registrar el SHA que se va a probar:
+Obtener el repositorio oficial y registrar el SHA que se va a probar:
 
 ```sh
-git clone --branch codex/coturn-deployment --single-branch https://github.com/aaronariasperez/pokesurvivor.git
+git clone --depth 1 https://github.com/JPTER78/pokesurvivor.git
 cd pokesurvivor
 git rev-parse HEAD
 cd infra/coturn
 ```
 
-Después del merge, usar el repositorio oficial y el commit aprobado. No actualizar
+No actualizar
 automáticamente una rama en producción. Seguir «Preparar los archivos en Linux»
 y «Arranque del piloto» del README. Mantener `allowAllAuthenticated: false`, añadir
 UID de cuentas piloto y el origen HTTPS exacto del entorno de pruebas.

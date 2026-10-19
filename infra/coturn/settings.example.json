@@ -15,5 +15,5 @@
   "totalQuota": 200,
   "userQuota": 12,
   "maxBps": 1048576,
-  "bpsCapacity": 20971520
+  "bpsCapacity": 3145728
 }

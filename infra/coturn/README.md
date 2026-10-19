@@ -1,7 +1,7 @@
 # Coturn preparado para un VPS
 
-**Estado: paquete preparado; no desplegado ni conectado al juego.** Rama
-`codex/coturn-deployment`. No contrata recursos, no toca DNS y no modifica Firebase.
+**Estado: paquete preparado; no desplegado ni conectado al juego** (PR #227 de
+aaronariasperez, integrado en `main`). No contrata recursos, no toca DNS y no modifica Firebase.
 El operador puede desplegarlo y validarlo siguiendo la [guía de Oracle](ORACLE.md).
 La activación en el juego requiere la integración y validación descritas más abajo.
 
@@ -174,7 +174,8 @@ Esta integración requiere una revisión aparte y la aprobación del autor.
 ## Operación, límites y apagado
 
 Valores iniciales: 200 asignaciones globales, 12 por usuario TURN, 1 MiB/s por
-asignación y 20 MiB/s de capacidad global configurada. Coturn trata entrada/salida
+asignación y 3 MiB/s de capacidad global configurada (3 MiB/s × 31 días ≈ 8,4 TB:
+queda por debajo de los 10 TB/mes de salida gratis de Oracle Always Free). Coturn trata entrada/salida
 por separado. Una asignación no equivale necesariamente a un jugador; puede haber
 varias por conexión. Los nombres de usuario temporales cambian por intervalo:
 no interpretar su cuota como un límite permanente por cuenta Firebase.
