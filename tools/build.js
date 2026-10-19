@@ -52,7 +52,8 @@ if (!EXPOSE) {
     '--unicode-escape-sequence', 'false', '--target', 'browser'], { stdio: 'inherit', shell });
 }
 const min = fs.readFileSync(outJs);
-const hash = crypto.createHash('sha1').update(min).digest('hex').slice(0, 10);
+// La huella cuenta también el CSS: un cambio sólo de estilos es versión nueva (version.json).
+const hash = crypto.createHash('sha1').update(min).update(fs.readFileSync(path.join(ROOT, 'css', 'style.css'))).digest('hex').slice(0, 10);
 
 // Diccionarios de francés, italiano, portugués y chino (js/lang/), uno por idioma: los pide
 // locales.js con su misma huella ?v=, para que al cambiar no se queden en caché.
@@ -65,6 +66,12 @@ if (!dev.includes(LOC)) throw new Error('dev.html no carga ' + LOC + ' como se e
 
 let html = dev.slice(0, i) + `<script defer src="js/app.min.js?v=${hash}"></script>` + dev.slice(j + END.length);
 html = html.replace(LOC, `<script src="js/core/locales.js?v=${locHash.digest('hex').slice(0, 10)}"></script>`);
+// La hoja de estilos también con huella: si no, el navegador puede juntar la página nueva
+// con el style.css viejo que tiene guardado.
+const CSS = '<link rel="stylesheet" href="css/style.css">';
+if (!dev.includes(CSS)) throw new Error('dev.html no carga ' + CSS + ' como se esperaba: revisa build.js');
+const cssHash = crypto.createHash('sha1').update(fs.readFileSync(path.join(ROOT, 'css', 'style.css'))).digest('hex').slice(0, 10);
+html = html.replace(CSS, `<link rel="stylesheet" href="css/style.css?v=${cssHash}">`);
 html = html.replace(/<meta name="robots" content="noindex">\s*/, '');
 // --sin-seo: sin canonical/redes/datos estructurados ni enlaces a las páginas
 // (para publicar antes de tener el dominio pokesurvivor.com).
