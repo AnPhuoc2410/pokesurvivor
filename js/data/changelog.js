@@ -6,6 +6,12 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-19', title: ['Nuevos idiomas', 'New languages'], new: [
+    ['Francés, italiano, portugués de Brasil, chino simplificado y chino tradicional disponibles en Ajustes > Gráficos > Idioma.',
+     'French, Italian, Brazilian Portuguese, Simplified Chinese and Traditional Chinese are available in Settings > Graphics > Language.']
+  ], fix: [
+    ['El aviso de guardado muestra el intervalo correcto de 30 minutos.', 'The save notice shows the correct 30-minute interval.']
+  ] },
   { d: '2026-10-18', title: ['Físico y especial, mando, botón Guardar y rankings desde cero', 'Physical and special, controller, Save button and fresh leaderboards'], new: [
     ['Ataques físicos y especiales, como en los juegos: cada Pokémon tiene su Ataque, Ataque Especial, Defensa y Defensa Especial. Los ataques físicos pegan con su Ataque y los especiales con su Ataque Especial: Machamp pega fuerte con Golpe Kárate y flojo con Bola Sombra. Con los de su lado bueno pega lo mismo que antes. Al subir de nivel, cada carta dice si el ataque es físico o especial y cuánto rinde con tu Pokémon, y en la colección se ven todas sus estadísticas.',
      'Physical and special moves, like in the games: every Pokémon has its Attack, Special Attack, Defense and Special Defense. Physical moves use its Attack and special moves its Special Attack: Machamp hits hard with Karate Chop and weakly with Shadow Ball. With moves on its strong side it hits as hard as before. When leveling up, each card says whether the move is physical or special and how well it works with your Pokémon, and the collection shows all its stats.'],
@@ -28,8 +34,8 @@ G.CHANGELOG = [
      'Level-up, bond and item cards can’t be picked for a moment after they appear (they look dimmed): pressing 1-4 or tapping to switch attacks mid-fight no longer picks a card by accident.'],
     ['Con mando ya se pueden elegir en la colección los Pokémon que aún no tienes, y en el móvil las pestañas de Ajustes caben en una fila que se desliza.',
      'With a controller you can now select the Pokémon you don’t have yet in the collection, and on mobile the Settings tabs fit in one row that scrolls sideways.'],
-    ['La partida se guarda en la nube automáticamente cada 10 minutos.',
-     'Your game is saved to the cloud automatically every 10 minutes.'],
+    ['Los cambios pendientes se suben automáticamente cada 30 minutos.',
+     'Pending changes are uploaded automatically every 30 minutes.'],
     ['Ranking histórico: si estás por debajo del puesto 1.000, sale «#1000+» en vez del número exacto.',
      'All-time leaderboard: if you are below rank 1,000, it shows “#1000+” instead of the exact number.'],
     ['Los Pokémon grandes (Onix, Gyarados, Wailord, Eternatus, los legendarios...) ya se pueden jugar bien: se ven algo más pequeños, aunque siguen siendo de los más grandes, y chocan como uno normal, así que caben por todos los pasillos y no reciben más golpes por su tamaño.',

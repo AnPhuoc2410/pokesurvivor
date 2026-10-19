@@ -72,29 +72,27 @@ G.LoginUI = (() => {
   const NOTES = [
     { key: 'ps.savenote.1', when: cloud,              // botón Guardar (18-10-2026)
       title: ['Importante: guarda tu partida', 'Important: save your game'],
-      body: ['<p>Debido a problemas con el guardado, a partir de ahora la partida se guarda en la nube automáticamente <b>cada 10 minutos</b>.</p>' +
-             '<p>Hemos incorporado un botón <b class="gold">Guardar</b> arriba a la derecha. Úsalo antes de cerrar el juego o de cambiar de aparato: <b>es muy importante para no perder tu partida</b>.</p>',
-             '<p>Because of problems with saving, from now on your game is saved to the cloud automatically <b>every 10 minutes</b>.</p>' +
-             '<p>We have added a <b class="gold">Save</b> button at the top right. Use it before closing the game or switching devices: <b>it is very important so you don’t lose your progress</b>.</p>'] },
+      body: ['Los cambios pendientes se suben automáticamente cada 30 minutos.',
+             'Usa el botón Guardar de arriba a la derecha antes de cerrar el juego o cambiar de aparato para no perder progreso.'] },
     { key: 'ps.ranknote.1', when: () => cloud() && ((G.DB.save.stats || {}).runs || 0) > 0,   // rankings desde cero (18-10-2026)
       title: ['Los rankings se han reiniciado', 'The leaderboards have been reset'],
-      body: ['<p>Hemos ajustado la <b>Sentencia de Arceus</b>: huir corriendo con toda la velocidad subida y el veneno ya no sirven para aguantar para siempre.</p>' +
-             '<p>Para que todos compitáis en igualdad, <b>todos los rankings empiezan de cero</b> (hoy, semana, mes, año e histórico). ¡A por el primer puesto!</p>',
-             '<p>We have adjusted the <b>Judgment of Arceus</b>: running away with maxed-out speed and poison no longer let you last forever.</p>' +
-             '<p>So everyone competes on equal terms, <b>all leaderboards start from scratch</b> (daily, weekly, monthly, yearly and all-time). Go for first place!</p>'] }
+      body: ['Hemos ajustado la Sentencia de Arceus: huir corriendo con toda la velocidad subida y el veneno ya no sirven para aguantar para siempre.',
+             'Para que todos compitáis en igualdad, todos los rankings empiezan de cero (hoy, semana, mes, año e histórico). ¡A por el primer puesto!'] }
   ];
   /** → true si se ha enseñado alguno. */
   function updateNotices() {
     const queue = NOTES.filter(n => { try { return n.when() && !localStorage.getItem(n.key); } catch (e) { return false; } });
     if (!queue.length) return false;
-    const en = G.I18n.lang === 'en' ? 1 : 0;
     const next = () => {
       const n = queue.shift();
       if (!n) { $('scr-savenote').classList.add('hidden'); return; }
       try { localStorage.setItem(n.key, '1'); } catch (e) { /* nada */ }
-      $('savenote-title').textContent = n.title[en];
-      $('savenote-body').innerHTML = n.body[en];
-      $('savenote-ok').textContent = en ? 'Got it' : 'Entendido';
+      $('savenote-title').textContent = G.T(n.title[0]);
+      const body = $('savenote-body'); body.replaceChildren();
+      for (const text of n.body) {
+        const p = document.createElement('p'); p.textContent = G.T(text); body.appendChild(p);
+      }
+      $('savenote-ok').textContent = G.T('Entendido');
     };
     $('savenote-ok').onclick = next;
     next();
