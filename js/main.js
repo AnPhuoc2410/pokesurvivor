@@ -39,6 +39,7 @@
   }
 
   function boot() {
+    if (window.PS_FRAMED) return;            // dentro de otra web: ver noframe.js
     if (maintenance()) return;
     if (broken()) return;
     G.I18n.startDom();
