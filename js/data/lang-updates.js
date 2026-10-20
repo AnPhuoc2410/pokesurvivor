@@ -414,6 +414,13 @@
      "Ranking por Pokémon: agora contam as partidas de 5 minutos ou mais (os outros rankings continuam a partir de 2 minutos).",
      "按宝可梦排行榜：现在只计入 5 分钟及以上的对局（其他排行榜仍从 2 分钟起计）。",
      "按寶可夢排行榜：現在只計入 5 分鐘以上的對局（其他排行榜仍從 2 分鐘起計）。"],
+    ["Amigos: ya no se ve quién está en línea, y puedes invitar a una sala a cualquier amigo (si no entra, la invitación caduca sola a los 3 minutos).",
+     "Amis : on ne voit plus qui est en ligne, et tu peux inviter n’importe quel ami dans un salon (s’il ne rejoint pas, l’invitation expire toute seule au bout de 3 minutes).",
+     "Amici: non si vede più chi è online, e puoi invitare qualsiasi amico in una stanza (se non entra, l’invito scade da solo dopo 3 minuti).",
+     "Amigos: não dá mais para ver quem está online, e você pode convidar qualquer amigo para uma sala (se ele não entrar, o convite expira sozinho em 3 minutos).",
+     "好友：不再显示谁在线，你可以邀请任何好友进入房间（如果对方没有加入，邀请会在 3 分钟后自动失效）。",
+     "好友：不再顯示誰在線上，你可以邀請任何好友進入房間（如果對方沒有加入，邀請會在 3 分鐘後自動失效）。"],
+    ["Aún no tienes amigos añadidos.", "Tu n’as pas encore ajouté d’amis.", "Non hai ancora aggiunto amici.", "Você ainda não adicionou amigos.", "你还没有添加好友。", "你還沒有新增好友。"],
   ];
   languages.forEach((lang, i) => G.I18n.add(Object.fromEntries(rows.map(r => [r[0], r[i + 1]])), lang));
   G.I18n.add({
