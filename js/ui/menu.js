@@ -335,12 +335,14 @@ G.MenuUI = (() => {
 
   // ---------------- mejoras ----------------
 
-  let upgDex = null;
+  let upgDex = null, upgPartner = null;
 
   function openUpgrades() {
     G.UI.show('scr-upgrades', true);
     const s = G.DB.save;
-    if (!upgDex || !s.owned[upgDex]) upgDex = s.partner;
+    // Se recuerda el último que miraste, salvo que hayas cambiado de compañero: entonces se abre en el nuevo.
+    if (!upgDex || !s.owned[upgDex] || s.partner !== upgPartner) upgDex = s.partner;
+    upgPartner = s.partner;
     // Selector con tus Pokémon: el compañero primero, luego los que ya tienen mejoras.
     const sel = $('upg-mon');
     const lv = d => Object.values(s.pupg[d] || {}).reduce((a, b) => a + b, 0);

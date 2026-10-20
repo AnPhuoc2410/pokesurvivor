@@ -132,7 +132,6 @@ G.Social = (() => {
     clearInterval(beatT);
     beatT = setInterval(() => { if (document.visibilityState === 'visible') writeStatus(); }, BEAT);
     document.addEventListener('visibilitychange', onVisible);
-    window.addEventListener('pagehide', onHide);
     listenFriends();
   }
 
@@ -151,16 +150,29 @@ G.Social = (() => {
   let playing = false, lastBeat = 0;
   /** ¿Hay alguien que pueda leer tu "en línea"? (sólo los amigos confirmados) */
   const hasFriends = () => [...friends.values()].some(f => f.status === 'ok');
-  function writeStatus(on = true) {
+  // Lo último escrito se recuerda en el navegador (también tras recargar): si no
+  // ha cambiado nada y el latido es reciente, no se vuelve a escribir. Antes cada
+  // recarga (el móvil que cierra la pestaña de fondo, cada actualización del juego)
+  // escribía "en línea" al entrar y "desconectado" al salir: 2 escrituras por
+  // recarga y jugador con amigos (20-10-2026, la colección que más escribía).
+  // Ya no se escribe "desconectado" al cerrar: dejas de salir en línea cuando tu
+  // último latido tiene más de ONLINE (como ya pasaba en el móvil, que no avisa).
+  const presKey = () => 'ps.pres.' + uid;
+  function writeStatus() {
     // Sin amigos nadie lo lee: no se gasta una escritura (cupo diario de Firebase).
     if (!fb || !me || !hasFriends()) return;
+    const st = (room ? room.id : '') + '|' + (playing ? 1 : 0);
+    let last = null;
+    try { last = JSON.parse(localStorage.getItem(presKey()) || 'null'); } catch (e) { /* nada */ }
+    if (last && last.st === st && Date.now() - last.at < BEAT - 60000) { lastBeat = last.at; return; }
     lastBeat = Date.now();
-    fb.fs.collection('pres').doc(uid).set({ on, at: fts(), room: room ? room.id : '', play: playing }).catch(() => {});
+    try { localStorage.setItem(presKey(), JSON.stringify({ st, at: lastBeat })); } catch (e) { /* nada */ }
+    fb.fs.collection('pres').doc(uid).set({ on: true, at: fts(), room: room ? room.id : '', play: playing })
+      .catch(() => { try { localStorage.removeItem(presKey()); } catch (e) { /* nada */ } });
   }
   function setPlaying(p) { if (playing !== !!p) { playing = !!p; writeStatus(); } }
-  // Al volver a la pestaña tras un rato, un latido; al cerrarla, "desconectado".
+  // Al volver a la pestaña tras un rato, un latido.
   function onVisible() { if (document.visibilityState === 'visible' && Date.now() - lastBeat > BEAT) writeStatus(); }
-  function onHide() { writeStatus(false); }
 
   async function stop(why) {
     if (!started) return;
@@ -169,7 +181,7 @@ G.Social = (() => {
     if (unInv) { unInv(); unInv = null; }
     clearInterval(beatT); beatT = 0;
     document.removeEventListener('visibilitychange', onVisible);
-    window.removeEventListener('pagehide', onHide);
+    try { localStorage.removeItem(presKey()); } catch (e) { /* nada */ }
     if (me) await fb.fs.collection('pres').doc(uid).delete().catch(() => {});
     if (why === 'delete') {
       try { localStorage.removeItem('ps.nick.' + uid); } catch (e) { /* nada */ }
