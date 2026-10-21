@@ -6,7 +6,10 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
-  { d: '2026-10-21', title: ['Cooperativo con cualquier conexión', 'Co-op on any connection'], new: [
+  { d: '2026-10-21', title: ['Cooperativo con cualquier conexión', 'Co-op on any connection'], fix: [
+    ['Guardado en la nube: si jugabas en un aparato y guardabas, otro aparato con el juego abierto desde antes podía subir su copia vieja encima (al guardar o al actualizarse el juego) y en el otro no aparecían tus tickets ni tus Pokémon nuevos. Ahora, si la nube tiene algo más nuevo, se junta con lo tuyo antes de guardar y no se pierde nada.',
+     'Cloud save: if you played and saved on one device, another device that still had the game open could upload its old copy over it (when saving or when the game updated), and your new tickets and Pokémon did not show up on the other one. Now, if the cloud has something newer, it is merged with yours before saving and nothing is lost.']
+  ], new: [
     ['Cooperativo: si vuestras redes no dejan conectaros directamente (pasa a veces con datos móviles y algunos routers), la partida ahora pasa por nuestro servidor y podéis jugar igual. Si conectáis directamente, todo sigue como antes. Hace falta haber iniciado sesión con una cuenta.',
      'Co-op: if your networks cannot connect to each other directly (it sometimes happens on mobile data and with some routers), the match now goes through our server and you can still play together. If you can connect directly, nothing changes. You need to be signed in with an account.']
   ]},

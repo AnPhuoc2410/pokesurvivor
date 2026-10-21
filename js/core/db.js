@@ -404,6 +404,16 @@ G.DB = (() => {
 
   let auth = null, fs = null, rtdb = null, uid = null, unlisten = null;
   let pushT = 0, retryT = 0, pending = false, pushing = null, lastPush = 0;
+  /*
+   * Versión de la partida en la nube (saves/{uid}.rev, 21-10-2026). Cada subida
+   * manda rev + 1 y firestore.rules sólo la deja pasar si la nube sigue en rev:
+   * así un aparato con una copia vieja (la pestaña del móvil abierta desde ayer)
+   * ya no pisa lo guardado en otro. Si la rechaza, se lee la nube, se junta y se
+   * vuelve a subir (sólo entonces hay una lectura de más).
+   */
+  const K_REV = 'ps.rev.';
+  let rev = 0, lastCheck = 0;
+  const setRev = r => { rev = Number.isInteger(r) && r > 0 ? r : 0; write(K_REV + uid, rev); };
   // Como mucho una subida cada 30 min (con miles de jugadores, cada 5 min
   // eran decenas de miles de escrituras por hora); lo que cuesta algo
   // (gacha, mejoras), a los 30 s. La copia local se guarda siempre al momento (y se fusiona con la
@@ -505,6 +515,7 @@ G.DB = (() => {
     docRef().get().then(snap => {
       if (!snap.exists || !save || uid !== u) return;
       applyInPlace(merge(plain(fold(save)), migrate(snap.data().save)));
+      setRev(snap.data().rev);
       write(K_CLOUD + uid, save);
       if (G.UI && G.UI.refreshCoins) G.UI.refreshCoins();
     }).catch(e => console.warn('[DB] no se pudo bajar la partida:', e.code || e.message));
@@ -532,9 +543,11 @@ G.DB = (() => {
     try {
       const snap = await docRef().get();
       remote = snap.exists ? snap.data().save : null;
+      setRev(snap.exists ? snap.data().rev : 0);
     } catch (e) {
       if (!cached) throw e;                // sin conexión y sin copia: no hay nada que abrir
       online = false;
+      setRev(+read(K_REV + uid) || 0);     // la de la última vez que se leyó o subió
     }
     let s = merge(cached && fold(migrate(cached)), remote && migrate(remote));
     if (!s) s = newSave(opts.name || displayNameOf(u));
@@ -589,12 +602,27 @@ G.DB = (() => {
     pending = false;
     lastPush = Date.now();
     setSync('syncing');
-    const doc = { save: plain(fold(save)), updatedAt: firebase.firestore.FieldValue.serverTimestamp(), v: VERSION };
-    const wr = docRef().set(doc, { mergeFields: ['save', 'updatedAt', 'v'] });
     // Si la red se cae a medias, Firestore puede quedarse esperando: tope de 12 s.
-    const timeout = new Promise((_, rej) => setTimeout(() => rej({ code: 'unavailable' }), 12000));
-    pushing = Promise.race([wr, timeout]).then(() => {
+    const u = uid, send = r => Promise.race([
+      docRef().set({ save: plain(fold(save)), updatedAt: firebase.firestore.FieldValue.serverTimestamp(), v: VERSION, rev: r },
+        { mergeFields: ['save', 'updatedAt', 'v', 'rev'] }).then(() => r),
+      new Promise((_, rej) => setTimeout(() => rej({ code: 'unavailable' }), 12000))
+    ]);
+    pushing = send(rev + 1).catch(async e => {
+      // Rechazada: si es porque otro aparato subió antes (rev distinto), se junta
+      // con lo suyo y se sube otra vez. Como mucho una lectura cada 5 min.
+      if (e.code !== 'permission-denied' || Date.now() - lastCheck < 5 * 60e3) throw e;
+      lastCheck = Date.now();
+      const snap = await docRef().get();
+      if (!snap.exists || uid !== u || !save || (+snap.data().rev || 0) === rev) throw e;
+      applyInPlace(merge(plain(fold(save)), migrate(snap.data().save)));
+      setRev(snap.data().rev);
+      write(K_CLOUD + uid, save);
+      if (G.UI && G.UI.refreshCoins) G.UI.refreshCoins();
+      return send(rev + 1);
+    }).then(r => {
       fails = 0;
+      if (uid === u) setRev(r);
       write(K_OK + uid, Date.now());
       // (Lo cambiado mientras se subía queda pendiente para el próximo Guardar.)
       setSync(pending ? 'pending' : 'ok');
