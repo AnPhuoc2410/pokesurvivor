@@ -223,3 +223,15 @@ test('own TURN: players without an account never ask and keep the old retry', as
     assert.equal(calls.length, 0); assert.equal(pcs.length, 1); assert.equal(timers.at(-1), 15000);
   }
 });
+test('own TURN: a pair that needed it starts with it next time, and after 2 such guests everyone does', async () => {
+  const { N, pcs } = turnNetwork(goodTurn);
+  N.open('room', true, 'host'); N.syncMembers(['host', 'a']); await settle();
+  pcs[0].fail(); await settle();
+  N.close(); N.open('room2', true, 'host'); N.syncMembers(['host', 'a', 'b']); await settle();
+  const [a2, b1] = pcs.slice(-2);
+  assert.equal(a2.cfg.iceServers.length, 2, 'a remembered for the whole session');
+  assert.equal(b1.cfg.iceServers.length, 1, 'b still tries direct first');
+  b1.fail(); await settle();
+  N.syncMembers(['host', 'a', 'b', 'c']); await settle();
+  assert.equal(pcs.at(-1).cfg.iceServers.length, 2, 'two failures: own network needs TURN');
+});

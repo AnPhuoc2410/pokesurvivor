@@ -38,7 +38,10 @@ G.Net = (() => {
   let rtdb = null, uid = null, roomId = null, isHost = false, hostUid = null;
   let qref = null;
   const peers = new Map();         // uid -> { pc, dc, mode, timer }
-  const needTurn = new Set();      // anfitrión: invitados con los que ya falló la vía directa
+  // Anfitrión: invitados con los que ya falló la vía directa. Se recuerda toda la
+  // sesión (no sólo la sala) para no perder otra vez la espera sin TURN; y si ha
+  // fallado con 2 o más, el problema será la red propia: TURN desde el principio.
+  const needTurn = new Set();
   const handlers = new Set(), peerHandlers = new Set();
   const stats = { sent: 0, recv: 0, relaySent: 0,
     // Sólo los datos de la partida que se han mandado bien (sin ICE/SCTP/DTLS/TURN).
@@ -143,8 +146,9 @@ G.Net = (() => {
     for (const u of [...peers.keys()]) drop(u);
     if (qref) { qref.off(); qref = null; }
     roomId = null; isHost = false; hostUid = null;
-    needTurn.clear();
   }
+
+  const turnFirst = u => needTurn.has(u) || needTurn.size >= 2;
 
   /** El anfitrión llama a esto cuando cambian los miembros de la sala. */
   function syncMembers(uids) {
@@ -229,7 +233,7 @@ G.Net = (() => {
   /** Anfitrión: abre conexión con un invitado. */
   async function connect(u) {
     if (!roomId || peers.has(u)) return;
-    let turnIce = needTurn.has(u) ? turnNow() : [];
+    let turnIce = turnFirst(u) ? turnNow() : [];
     if (!turnIce) {
       const room = roomId; turnIce = await turnServers();
       if (roomId !== room || peers.has(u)) return;
@@ -290,7 +294,7 @@ G.Net = (() => {
     try { if (p.dc) p.dc.close(); } catch (e) { /* nada */ }
     try { if (p.pc) p.pc.close(); } catch (e) { /* nada */ }
     peers.delete(u);
-    if (!silent) { needTurn.delete(u); emitPeer(u); }
+    if (!silent) emitPeer(u);
   }
 
   // ---------------- envío / recepción ----------------
