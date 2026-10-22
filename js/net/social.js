@@ -414,13 +414,16 @@ G.Social = (() => {
       } else {
         if (!host) throw Error('sin anfitrión');
         const mine = room.members.find(x => x.uid === uid);
-        await within(base.child('m/' + uid).set(Object.assign(memberInfo(), mine && mine.at ? { at: mine.at } : {})), 5000);
+        // Si no deja, los demás siguen jugando (la sala no admite a nadie hasta que acaben): a esperar.
+        await within(base.child('m/' + uid).set(Object.assign(memberInfo(), mine && mine.at ? { at: mine.at } : {})), 5000)
+          .catch(e => { throw Object.assign(e, { wait: e.message !== 'timeout' }); });
       }
     } catch (e) {
       if (!room || room.id !== id) return;
-      // En partida se sigue intentando sin prisa; fuera, tras unos intentos, la sala se da por cerrada.
-      if (!playing && ++room.tries >= REJOIN_TRIES) { closedRoom(); return; }
-      setTimeout(() => rejoin(id), playing ? 3 * REJOIN_MS : REJOIN_MS);
+      // En partida se sigue intentando sin prisa; fuera, tras unos intentos, la sala se da
+      // por cerrada (pero no mientras el anfitrión siga en ella con la partida en marcha).
+      if (!playing && !e.wait && ++room.tries >= REJOIN_TRIES) { closedRoom(); return; }
+      setTimeout(() => rejoin(id), playing || e.wait ? 2 * REJOIN_MS : REJOIN_MS);
       return;
     }
     if (!room || room.id !== id) return;
@@ -430,19 +433,25 @@ G.Social = (() => {
   }
 
   /**
-   * Anfitrión en partida: si la plaza de un invitado desaparece pero su canal
-   * directo sigue abierto, ha sido un corte suyo con la base de datos: se le
-   * vuelve a poner (así podrá volver a leer la sala y seguir en ella al acabar).
+   * Anfitrión en partida: si la plaza de un invitado desaparece pero sigue en
+   * la partida (aunque se esté reconectando, ver coop.js), ha sido un corte suyo
+   * con la base de datos: se le vuelve a poner. Sin plaza no podría ni leer la
+   * sala ni contestar al anfitrión para volver a conectar.
    */
   function keepMates(id, prev) {
     for (const x of prev) {
       if (x.uid === uid || room.members.some(m => m.uid === x.uid)) continue;
       setTimeout(() => {
         if (!room || room.id !== id || !playing || room.members.some(m => m.uid === x.uid)) return;
-        if (G.Net.mode(x.uid) !== 'direct') return;
+        if (!G.Coop.keeps(x.uid)) return;
         fb.rtdb.ref('rooms/' + id + '/m/' + x.uid).set({ name: x.name, dex: x.dex, shiny: !!x.shiny, at: x.at || 0 }).catch(() => {});
       }, 3000);
     }
+  }
+
+  /** Anfitrión: quita a alguien de la sala (se cortó en partida y no volvió). */
+  function dropMember(u) {
+    if (room && room.isHost && u !== uid) fb.rtdb.ref('rooms/' + room.id + '/m/' + u).remove().catch(() => {});
   }
 
   function closedRoom() {
@@ -605,7 +614,7 @@ G.Social = (() => {
 
   return {
     start, stop, claimNick, request, accept, remove, publishProfile, getProfile, profileData,
-    createRoom, joinRoom, leaveRoom, setOpen, refreshMember, setPlaying, refreshPresence, ensureFriends,
+    createRoom, joinRoom, leaveRoom, setOpen, refreshMember, dropMember, setPlaying, refreshPresence, ensureFriends,
     invite, acceptInvite, declineInvite,
     on(fn) { listeners.add(fn); }, off(fn) { listeners.delete(fn); },
     get me() { return me; },
