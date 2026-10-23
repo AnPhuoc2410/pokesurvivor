@@ -436,7 +436,7 @@
 
     { id: 'meteor-mash', name: 'Puño Meteoro', type: 'steel', kind: 'meteor',
       desc: 'Dos meteoros de acero que aplastan donde caen.',
-      cd: 1.4, dmg: 34, count: 2, radius: 54, knock: 80 },
+      cd: 1.4, dmg: 24, count: 2, radius: 48, knock: 70 },     // (23-10-2026: era 34 y radio 54; al máximo y evolucionado pegaba 1,8 veces lo que Avalancha)
 
     { id: 'will-o-wisp', name: 'Fuego Fatuo', type: 'fire', kind: 'turret',
       desc: 'Deja una llama flotante que dispara sola y quema.',

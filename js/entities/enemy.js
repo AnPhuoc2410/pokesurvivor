@@ -41,6 +41,10 @@
    */
   const PCT_REF = 60000;
   const pctHp = e => (e.maxHp <= PCT_REF ? e.maxHp : PCT_REF * Math.sqrt(e.maxHp / PCT_REF));
+  // En la Sentencia (23-10-2026), veneno y quemadura quitan poco y siempre lo
+  // mismo (ni % de la vida ni según tu nivel): envenenar y huir no sirve para
+  // tumbar a los legendarios; hay que pegarles. A Arceus no le afectan.
+  const JUDGE_DOT = 1.5;
 
   class Enemy {
     constructor(def, x, y, sc, boss = false) {
@@ -304,12 +308,12 @@
       if (this.slowT > 0) { this.slowT -= dt; if (this.slowT <= 0) this.slow = 0; }
       if (this.burn > 0) {
         this.burnT -= dt; this.burnTick -= dt;
-        if (this.burnTick <= 0) { this.burnTick = 0.5; this.hurt(1.6 * this.burn * (1 + pl.level * 0.06), '#ff9a4d'); }
+        if (this.burnTick <= 0) { this.burnTick = 0.5; this.hurt(this.judge ? JUDGE_DOT * this.burn : 1.6 * this.burn * (1 + pl.level * 0.06), '#ff9a4d'); }
         if (this.burnT <= 0) this.burn = 0;
       }
       if (this.poison > 0) {
         this.poisonT -= dt; this.poisonTick -= dt;
-        if (this.poisonTick <= 0) { this.poisonTick = 0.6; this.hurt(pctHp(this) * 0.012 * this.poison + 1, '#d47cf0'); }
+        if (this.poisonTick <= 0) { this.poisonTick = 0.6; this.hurt(this.judge ? JUDGE_DOT * this.poison : pctHp(this) * 0.012 * this.poison + 1, '#d47cf0'); }
         if (this.poisonT <= 0) this.poison = 0;
       }
       if (this.dead) return;
