@@ -1015,5 +1015,8 @@ G.I18n.add({
   "Todavía nadie le ha hecho daño a Arceus aquí. ¡Llega al minuto 30 y pégale!": "Nobody has damaged Arceus here yet. Reach minute 30 and hit it!",
   "Aún no estás en el top 50 de daño.": "You're not in the damage top 50 yet.",
   "Tu puesto: {x}": "Your rank: {x}",
-  "Ranking de daño a Arceus y Tablas": "Arceus damage ranking and Plates"
+  "Ranking de daño a Arceus y Tablas": "Arceus damage ranking and Plates",
+  "EN DIRECTO": "LIVE",
+  "Mi canal de YouTube": "My YouTube channel",
+  "¡Estoy en directo! Pulsa para verlo": "I'm live! Click to watch"
 });

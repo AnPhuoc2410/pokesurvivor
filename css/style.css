@@ -943,6 +943,12 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
 .news-day ul { margin: 0; padding-left: 20px; }
 .news-day li { margin: 4px 0; line-height: 1.35; font-size: 15px; }
 @media (max-width: 760px) { .news-btn span { display: none; } }
+/* YouTube (en directo: rojo y con un punto que late). */
+.yt-btn.live { background: #e0202a; border-color: #ff8a8a; color: #fff; }
+.yt-btn .rec { display: none; width: 8px; height: 8px; border-radius: 50%; background: #fff; margin-right: 2px; animation: yt-rec 1.2s ease-in-out infinite; }
+.yt-btn.live .rec { display: inline-block; }
+@keyframes yt-rec { 50% { opacity: .25; } }
+@media (max-width: 760px) { .yt-btn:not(.live) span { display: none; } }
 /* Botón Guardar (barra de arriba). */
 .save-btn { display: inline-flex; align-items: center; gap: 5px; font-weight: 700; }
 #savenote-body p { line-height: 1.4; }
