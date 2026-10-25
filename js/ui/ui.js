@@ -230,6 +230,7 @@ G.UI = (() => {
    *         scale=2   tamaño de píxel FIJO (×2 como en el juego): todos los
    *                   Pokémon de una vista salen con el mismo píxel, aunque
    *                   los gigantes no quepan enteros
+   *         skin      disfraz (core/skins.js)
    *         hero      vista de un solo Pokémon: puede reducir la escala para
    *                   que quepa, porque ahí no se compara con nada }
    */
@@ -238,6 +239,7 @@ G.UI = (() => {
     if (prev) live.delete(prev);
     const a = new G.Sprites.Animator(dex, 1, !!opts.shiny);
     a.dir = opts.dir || 0;
+    a.skin = opts.skin || null;
     a.loop(opts.anim || 'Idle');
     const s = { cv, ctx: cv.getContext('2d'), a, dex, opts, t: Math.random() * 3, spinT: 0, sparkT: 0 };
     live.add(s);

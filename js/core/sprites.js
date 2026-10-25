@@ -189,6 +189,7 @@ G.Sprites = (() => {
       this.hold = false;       // se queda en el último fotograma (Faint)
       this.done = false;
       this.dir = 0;
+      this.skin = null;        // disfraz (core/skins.js): sombrero y capa de bruja
       // Las hojas se cargan al dibujarse por primera vez; la run las precarga
       // todas con preload() para que no parpadeen al primer ataque.
     }
@@ -254,7 +255,8 @@ G.Sprites = (() => {
         const idle = sheet(this.dex, 'Idle', this.shiny);
         if (idle && idle.ready) { s = idle; m = animMeta(this.dex, 'Idle', this.shiny); }
       }
-      const frame = s === sheet(this.dex, this.cur, this.shiny) ? this.frame : 0;
+      const own = s === sheet(this.dex, this.cur, this.shiny);
+      const frame = own ? this.frame : 0;
       if (!m || !s || !s.ready) {
         // Respaldo: bolita, por si falta el fichero.
         ctx.fillStyle = opts.color || '#6b7a94';
@@ -268,6 +270,10 @@ G.Sprites = (() => {
       const dx = Math.round(x - m.ax * k), dy = Math.round(y - m.ay * k);
       const prev = ctx.globalAlpha;
       if (alpha < 1) ctx.globalAlpha = prev * alpha;
+      // Disfraz: la capa detrás (de espaldas, delante) y el sombrero encima.
+      const sk = this.skin && G.Skins ? G.Skins.get(this.skin, this.dex) : null;
+      const anim = own ? this.cur : 'Idle', fr = Math.min(frame, m.n - 1);
+      if (sk && !(opts.flash && !opts.softFlash)) G.Skins.draw(ctx, sk, this.dex, anim, row, fr, x, y, k, true, alpha);
       // Destello: blanco entero (enemigos) o medio blanco encima (tu Pokémon).
       if (!opts.flash || opts.softFlash) ctx.drawImage(s.img, sx, sy, m.w, m.h, dx, dy, m.w * k, m.h * k);
       if (opts.flash) {
@@ -275,6 +281,7 @@ G.Sprites = (() => {
         ctx.drawImage(white(s.img), sx, sy, m.w, m.h, dx, dy, m.w * k, m.h * k);
       }
       ctx.globalAlpha = prev;
+      if (sk && !(opts.flash && !opts.softFlash)) G.Skins.draw(ctx, sk, this.dex, anim, row, fr, x, y, k, false, alpha);
     }
   }
 

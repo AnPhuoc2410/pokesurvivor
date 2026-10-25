@@ -574,6 +574,11 @@ img.pix.off { filter: grayscale(1); opacity: .4; }
 .gen-tab:hover { border-color: var(--edge); }
 .gen-tab.on { border-color: var(--gold); background: rgba(255,210,63,.14); }
 .gen-tab.on b { color: var(--gold); }
+/* Halloween: la pestaña del banner Noche Espectral (gacha-ui.js). */
+.gen-tab.spooky { background: linear-gradient(135deg, rgba(61,34,102,.55), rgba(122,58,18,.45)); border-color: #7a4ab8; }
+.gen-tab.spooky small { color: #ffb05a; }
+.gen-tab.spooky.on { border-color: #ff8a2a; }
+.gen-tab.spooky.on b { color: #ff8a2a; }
 
 /* ============ normal / shiny ============ */
 .seg { display: flex; justify-content: center; gap: 0; margin: 2px auto 8px; width: max-content;

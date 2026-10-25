@@ -66,6 +66,13 @@ G.Audio = (() => {
   // En móvil, tocar la pantalla (pointerdown) no cuenta como gesto para el
   // sonido: sí levantar el dedo (pointerup / touchend). Se escuchan todos.
   for (const ev of ['pointerdown', 'pointerup', 'touchend', 'keydown']) addEventListener(ev, unlock, { capture: true });
+  // Juego minimizado o en otra pestaña: el sonido se para y vuelve al volver.
+  // (En el móvil seguía sonando, y distorsionado, con el juego en segundo plano.)
+  document.addEventListener('visibilitychange', () => {
+    if (!ctx) return;
+    if (document.hidden) { if (ctx.state === 'running') ctx.suspend().catch(() => {}); }
+    else if (ctx.state !== 'running') ctx.resume().catch(() => {});
+  });
 
   function applyVolumes() {
     if (!ctx) return;
@@ -333,6 +340,13 @@ G.Audio = (() => {
   setInterval(() => {
     if (!ctx || !current || ctx.state !== 'running') return;
     const c = current, sd = 60 / c.song.bpm / 4;
+    // Si se ha quedado atrás (el navegador frena los temporizadores en segundo
+    // plano o el móvil va justo), lo perdido se salta: antes se tocaba todo de
+    // golpe y la música sonaba distorsionada (25-10-2026).
+    if (c.next < ctx.currentTime - 0.1) {
+      const skip = Math.ceil((ctx.currentTime - c.next) / sd);
+      c.next += skip * sd; c.step += skip;
+    }
     while (c.next < ctx.currentTime + 0.15) {
       const i = c.step % c.song.steps;
       // Swing: retrasa las corcheas a contratiempo.

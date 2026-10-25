@@ -128,13 +128,14 @@ G.RunUI = (() => {
       <div><span>Nivel</span><b>${r.level}</b></div>
       <div><span>Derrotados</span><b>${r.kills}</b></div>
       <div><span>Jefes</span><b>${r.bosses}</b></div>
-      ${r.judge ? `<div style="grid-column:1/-1"><span>Ante Arceus</span><b class="gold">${G.U.mmss(r.judge.time)} · ${r.judge.bosses} ${r.judge.bosses === 1 ? 'legendario' : 'legendarios'}</b></div>
-        <div style="grid-column:1/-1"><span>Daño a Arceus</span><b class="gold">${(r.judge.dmg || 0).toLocaleString(G.I18n.locale)}</b></div>` : ''}
+      ${r.judge ? `<div style="grid-column:1/-1"><span>${r.judge.gengar ? 'Ante el gran Gengar' : 'Ante Arceus'}</span><b class="gold">${G.U.mmss(r.judge.time)} · ${r.judge.bosses} ${r.judge.bosses === 1 ? 'legendario' : 'legendarios'}</b></div>
+        <div style="grid-column:1/-1"><span>${r.judge.gengar ? 'Daño a Gengar' : 'Daño a Arceus'}</span><b class="gold">${(r.judge.dmg || 0).toLocaleString(G.I18n.locale)}</b></div>` : ''}
       <div style="grid-column:1/-1"><span>Pokémonedas ganadas</span>
         <b class="gold"><span class="coin"></span> +${r.coins}</b>
         <div style="font-size:12px;color:var(--muted)">${r.breakdown}</div></div>
       ${r.t1 || r.t10 ? `<div style="grid-column:1/-1"><span>Tickets del gacha</span><b>
         ${r.t1 ? G.Icons.html('ticket', 22) + ' +' + r.t1 + ' ' : ''}${r.t10 ? G.Icons.html('ticket10', 22) + ' +' + r.t10 + ' ×10' : ''}</b></div>` : ''}
+      ${r.candy ? `<div style="grid-column:1/-1"><span>Caramelos de Halloween</span><b>${G.Icons.html('candy', 22)} +${r.candy}</b></div>` : ''}
       <div style="grid-column:1/-1"><span>Movimientos</span><b style="font-size:15px">
         ${r.moves.map(m => `${G.Icons.html('move:' + m.id, 16)} ${G.T(m.name, 'move')} Nv.${m.lvl}`).join(' · ') || '—'}</b></div>
       ${r.team && r.team.length ? `<div style="grid-column:1/-1" class="over-sum"><span>Resumen de la partida</span>

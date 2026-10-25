@@ -6,6 +6,16 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-26', title: ["Halloween: la Noche de Gengar", "Halloween: Gengar’s Night"], new: [
+    ["Evento de Halloween del 30 de octubre al 1 de noviembre: el mapa se vuelve de noche (Huerto de Calabazas, Cementerio Embrujado y Bosque Tenebroso), con calabazas que se pueden romper y más Pokémon Fantasma.",
+     "Halloween event from October 30 to November 1: the map turns to night (Pumpkin Patch, Haunted Graveyard and Gloomy Forest), with pumpkins you can smash and more Ghost-type Pokémon."],
+    ["Caramelos de Halloween: los sueltan sobre todo los Pokémon Fantasma y las calabazas, y llegar al minuto 30 da un buen puñado. En la Tienda Kecleon (con Kecleon de bruja) se cambian por skins de sombrero y capa de bruja para Gengar, Pikachu y Umbreon, tuyas para siempre. Se ponen y se quitan en la ficha del Pokémon, y en el cooperativo tus compañeros también las ven.",
+     "Halloween Candy: dropped mostly by Ghost-type Pokémon and pumpkins, and reaching minute 30 gives a good handful. At the Kecleon Shop (with a witch Kecleon) you trade it for witch hat and cape skins for Gengar, Pikachu and Umbreon, yours forever. Put them on or take them off from the Pokémon’s page, and in co-op your teammates see them too."],
+    ["Gacha: banner Noche Espectral con los Pokémon de tipo Fantasma de todas las regiones y el doble de shiny (2 %).",
+     "Gacha: Spooky Night banner with the Ghost-type Pokémon from every region and double shiny odds (2%)."],
+    ["Minuto 30: esos días, en vez de Arceus llega el gran Gengar bruja. Cuenta para el ranking de daño, como Arceus.",
+     "Minute 30: on those days, instead of Arceus the great witch Gengar arrives. It counts for the damage ranking, like Arceus."]
+  ]},
   { d: '2026-10-25', title: ['Tickets y Pokémon iguales en todos tus aparatos', 'The same tickets and Pokémon on all your devices'], new: [
     ['Al acabar la partida, sola o en grupo, sale el resumen: cada ataque con el daño que ha hecho y su daño por segundo, el daño total y tu objeto. En grupo, también el de cada compañero, con una pestaña por jugador.',
      'When a run ends, solo or in a group, you get the summary: each move with the damage it dealt and its damage per second, your total damage and your item. In a group, also each teammate’s, with one tab per player.'],
@@ -31,6 +41,10 @@ G.CHANGELOG = [
      'Co-op: Pokémon with Drought, Drizzle, Sand Stream or Snow Warning now set their weather even if they are not the host (before, only the room creator’s worked).'],
     ['Cooperativo: la partida ya no se queda parada para todos si se pierde el aviso de que alguien ha terminado de elegir carta, objeto o vínculo (pasaba con un corte momentáneo de la conexión): ahora se comprueba en cada mensaje.',
      'Co-op: the run no longer freezes for everyone if the message that someone finished choosing a card, item or bond gets lost (it happened with a momentary connection drop): it is now checked in every message.'],
+    ['Guardado en la nube: si pulsabas Guardar poco después de otro Guardar, el juego decía «Se guarda en la nube en X s» y, si salías antes de ese tiempo, no se subía nunca (en el otro aparato no estaban los tickets). Ahora la espera es mucho más corta y, si sales del juego con un Guardar pendiente, se sube al salir.',
+     'Cloud save: if you pressed Save shortly after another Save, the game said "Saving to the cloud in X s" and, if you left before that, it was never uploaded (your tickets were missing on the other device). Now the wait is much shorter and, if you leave the game with a pending Save, it is uploaded as you leave.'],
+    ['Móvil: al minimizar el juego, la música seguía sonando, y distorsionada. Ahora se para y vuelve al volver al juego.',
+     'Mobile: when you minimized the game, the music kept playing, and distorted. Now it stops and comes back when you return to the game.'],
     ['Guardado en la nube: si conseguías tickets, monedas o Pokémon en un aparato y mientras tanto guardabas en otro, al volver al primero el juego creía que ya estaba todo guardado («Ya está todo guardado en la nube») y no lo subía: en el otro aparato no aparecían. Ahora se mira lo que falta de verdad y Guardar lo sube.',
      'Cloud save: if you got tickets, coins or Pokémon on one device and saved on another one in the meantime, back on the first one the game thought everything was already saved ("Everything is already saved in the cloud") and did not upload it, so it never showed up on the other device. Now it checks what is really missing and Save uploads it.'],
     ['Guardado en la nube: después de gastar en un aparato tickets o monedas que ya se habían gastado en otro, los tickets podían ir creciendo solos cada vez que guardabas, y luego bajar de golpe en el otro aparato. Ahora el saldo es el mismo en todos, y lo que ganes después no se descuenta.',

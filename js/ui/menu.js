@@ -46,7 +46,7 @@ G.MenuUI = (() => {
     G.UI.chrome(true);
     G.UI.show('scr-menu');
     bagLine();
-    G.UI.sprite($('menu-partner'), mon.dex, { lively: true, scale: 4, hero: true, shiny });
+    G.UI.sprite($('menu-partner'), mon.dex, { lively: true, scale: 4, hero: true, shiny, skin: G.Skins.worn(s, mon.dex) });
     $('menu-partner').style.setProperty('--stage-c', shiny ? '#9ae6ff' : G.U.TYPE_COLOR[mon.types[0]]);
     $('menu-partner').classList.toggle('shiny', shiny);
     $('menu-partner-name').innerHTML = mon.name + (shiny ? ' ' + G.Icons.html('shiny', 24) : '');
@@ -339,7 +339,8 @@ G.MenuUI = (() => {
     moveTips($('dex-moves'));
     $('dex-big').style.setProperty('--stage-c', !own ? '#5b83d6' : viewShiny ? '#9ae6ff' : G.U.TYPE_COLOR[p.types[0]]);
     $('dex-big').classList.toggle('shiny', own && viewShiny);
-    G.UI.sprite($('dex-big'), dex, { lively: own, spin: own, silhouette: !own, scale: 3, hero: true, shiny: own && viewShiny });
+    G.UI.sprite($('dex-big'), dex, { lively: own, spin: own, silhouette: !own, scale: 3, hero: true, shiny: own && viewShiny,
+                                     skin: own ? G.Skins.worn(s, dex) : '' });
     box.querySelectorAll('.seg button').forEach(b => {
       b.onclick = () => { viewShiny = b.dataset.v === '1'; showDetail(dex); };
     });
@@ -431,11 +432,30 @@ G.MenuUI = (() => {
         ? `<span class="move-icons">${taught.map(id => `<span title="${G.T(G.Moves.BY_ID[id].name, 'move')}">${G.Icons.html('move:' + id, 16)}</span>`).join('')}</span>`
         : `<small>${G.T('Aún no ha aprendido ninguna')}</small>`}
         ${btn('tm', 'tm', 'Enseñar MT', tmsHere.length)}</div>
+      ${skinRow(dex)}
       <div id="mx-picker"></div>
     </div>`;
   }
 
+  /** Skins (Halloween 2026): las compradas de este Pokémon, para ponerlas o quitarlas. */
+  function skinRow(dex) {
+    const s = G.DB.save, mine = G.Skins.LIST.filter(id => G.Skins.SKINS[id].dex === +dex && G.Skins.owns(s, id));
+    if (!mine.length) return '';
+    const on = G.Skins.worn(s, dex);
+    return `<div class="mx-row"><span>${G.T('Skin')}</span><b>${on ? G.T(G.Skins.SKINS[on].name) : G.T('Sin skin')}</b>
+      ${mine.map(id => `<button class="btn small${on === id ? '' : ' gold'}" data-skin="${on === id ? '' : id}">${G.Icons.html('witch', 14)}
+        <span>${G.T(on === id ? 'Quitársela' : 'Ponérsela')}</span></button>`).join('')}</div>`;
+  }
+
   function wireExtras(dex, box) {
+    box.querySelectorAll('[data-skin]').forEach(b => {
+      b.onclick = () => {
+        G.Skins.wear(G.DB.save, dex, b.dataset.skin);
+        G.DB.commit();
+        G.Audio.sfx(b.dataset.skin ? 'buy' : 'select');
+        showDetail(dex);
+      };
+    });
     box.querySelectorAll('[data-extra]').forEach(b => {
       b.onclick = () => { extraOpen = extraOpen === b.dataset.extra ? '' : b.dataset.extra; G.Audio.sfx('select'); showDetail(dex); };
     });

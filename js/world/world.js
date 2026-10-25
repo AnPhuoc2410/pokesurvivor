@@ -156,6 +156,8 @@ G.World = (() => {
       if (type) { /* ya elegido */ }
       else if (open && h < (grove ? 0.07 : 0.006)) type = 'tree';
       else if (open && h > 0.992) type = 'rock';
+      // Halloween: calabazas por todo el mapa (mismo sitio para todos: va con la semilla).
+      else if (open && h > 0.972 && h <= 0.985 && G.Halloween && G.Halloween.inRun) type = 'pumpkin';
       else if (open && h > 0.985 && h <= 0.992 && H(tx, ty, seed + 606) < 0.07) type = 'chest';
       else if (fbm(tx / 5, ty / 5, seed + 707) > 0.66 && H(tx, ty, seed + 808) < 0.75) type = 'grass';
       if (!type) continue;
@@ -170,6 +172,7 @@ G.World = (() => {
     tree:  { solid: true,  hp: Infinity, r: 13 },
     rock:  { solid: true,  hp: 34,       r: 12 },
     chest: { solid: true,  hp: 22,       r: 12 },
+    pumpkin: { solid: true, hp: 26,      r: 11 },
     grass: { solid: false, hp: 1,        r: 14 },
     altar:    { solid: true,  hp: Infinity, r: 9 },
     spring:   { solid: false, hp: Infinity, r: 22, flat: true },
@@ -386,6 +389,16 @@ G.World = (() => {
       if (r > 0.94) G.Pickups.drop('heal', p.x + 8, p.y);
       return;
     }
+    if (p.type === 'pumpkin') {
+      // Halloween: experiencia, monedas y, si toca (systems/halloween.js), un caramelo.
+      G.FX.burst(p.x, p.y - 10, '#ff8a2a', 18, 160);
+      G.FX.burst(p.x, p.y - 12, '#ffd23f', 8, 120);
+      G.FX.ring(p.x, p.y - 8, 4, 30, '#ff8a2a', 0.35, 3);
+      G.Pickups.dropXp(p.x, p.y, 8);
+      if (Math.random() < 0.5) G.Pickups.drop('coin', p.x + 6, p.y, 2);
+      if (G.Halloween.takeCandy(G.Game.st.time)) G.Pickups.drop('candy', p.x - 6, p.y - 4, 1);
+      return;
+    }
     if (p.type === 'chest') {
       G.FX.burst(p.x, p.y - 10, '#f2c443', 22, 180);
       G.FX.ring(p.x, p.y - 8, 6, 46, '#f2c443', 0.45, 4);
@@ -495,7 +508,7 @@ G.World = (() => {
   function drawProp(ctx, p, t) {
     const P = G.Sprites.PX;
     const variant = p.type === 'grass' ? (Math.sin(t * 2.4 + p.wiggle) > 0.55 ? 1 : 0)
-                  : p.type === 'rock' ? (p.hp < p.maxHp * 0.5 ? 1 : 0)
+                  : p.type === 'rock' || p.type === 'pumpkin' ? (p.hp < p.maxHp * 0.5 ? 1 : 0)
                   : p.type === 'altar' ? p.kind * 2 + (p.used ? 1 : 0)
                   : p.type === 'spring' ? (p.charge < 0.15 ? 1 : 0)
                   : p.type === 'trap' ? p.kind : 0;
@@ -508,6 +521,14 @@ G.World = (() => {
         G.FX.twinkle(p.x + G.U.rand(-20, 20), p.y - 8 + G.U.rand(-6, 6));
       }
       return;
+    }
+    if (p.type === 'pumpkin') {
+      // Farol: la luz de dentro, temblando como una vela.
+      ctx.save();
+      ctx.globalAlpha = 0.16 + Math.sin(t * 7 + p.wiggle) * 0.04 + Math.sin(t * 13 + p.wiggle * 2) * 0.03;
+      ctx.fillStyle = '#ff9a3d';
+      ctx.beginPath(); ctx.ellipse(p.x, p.y - h * 0.45, 26, 18, 0, 0, 6.2832); ctx.fill();
+      ctx.restore();
     }
     if (p.type === 'altar' && !p.used) {
       // Halo del orbe, latiendo.

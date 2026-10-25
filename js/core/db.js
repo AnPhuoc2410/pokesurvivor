@@ -91,6 +91,9 @@ G.DB = (() => {
       ptm: {},                // dex -> [movimientos aprendidos con MT] (para siempre)
       pnat: {},               // dex -> [naturaleza, fecha]: la cambiada con Menta (si no, la que le tocó)
       pabil: {},              // dex -> [0|1|2, fecha]: la habilidad cambiada con Cápsula (2 = oculta)
+      // Halloween (25-10-2026, core/skins.js): los caramelos van en bag.candy.
+      skins: {},              // id -> fecha: skins compradas (para siempre)
+      pskin: {},              // dex -> [id, fecha]: la que lleva puesta ('' = ninguna; gana la elegida más tarde)
       tickets: { t1: 0, t10: 0 },   // tickets del gacha (x1 y x10)
       pity: {},               // generación del banner -> tiradas sin ★5
       legends: {},            // dex -> fecha: legendarios vencidos en grietas
@@ -182,6 +185,15 @@ G.DB = (() => {
         if (!Array.isArray(e) || !ok(e[0]) || (G.DEX_BY && !G.DEX_BY[d])) delete s[k][d];
         else s[k][d] = [e[0], n(e[1])];
       }
+    }
+    // Skins: las que existen; la puesta, de ese Pokémon ('' = ninguna) y con su fecha.
+    if (!isObj(s.skins)) s.skins = {};
+    for (const id of Object.keys(s.skins)) if ((G.Skins && !G.Skins.SKINS[id]) || !Number.isFinite(+s.skins[id])) delete s.skins[id];
+    if (!isObj(s.pskin)) s.pskin = {};
+    for (const d of Object.keys(s.pskin)) {
+      const e = s.pskin[d], id = Array.isArray(e) ? e[0] : null;
+      if (typeof id !== 'string' || (id && G.Skins && (!G.Skins.SKINS[id] || G.Skins.SKINS[id].dex !== +d))) delete s.pskin[d];
+      else s.pskin[d] = [id, n(e[1])];
     }
     // Atajos: 4 huecos con un movimiento que exista (o null), sin repetir.
     if (s.pbind && typeof s.pbind === 'object') {
@@ -329,7 +341,7 @@ G.DB = (() => {
     // MT aprendidas: nunca se olvidan (unión). Naturaleza y habilidad: la elegida más tarde.
     r.ptm = r.ptm || {};
     for (const d in older.ptm || {}) r.ptm[d] = [...new Set((r.ptm[d] || []).concat(older.ptm[d] || []))];
-    for (const k of ['pnat', 'pabil']) {
+    for (const k of ['pnat', 'pabil', 'pskin']) {
       r[k] = r[k] || {};
       for (const d in older[k] || {}) if (!r[k][d] || (+older[k][d][1] || 0) > (+r[k][d][1] || 0)) r[k][d] = older[k][d];
     }
@@ -358,7 +370,7 @@ G.DB = (() => {
       for (const d in older[k] || {}) if (!(d in r[k])) r[k][d] = older[k][d];
     }
     // Lo conseguido nunca se pierde: unión de legendarios, arenas, objetos, logros...
-    for (const coll of ['legends', 'arenas', 'itemsFound', 'evoMoves', 'ach']) {
+    for (const coll of ['legends', 'arenas', 'itemsFound', 'evoMoves', 'ach', 'skins']) {
       r[coll] = r[coll] || {};
       for (const k in older[coll] || {}) if (!r[coll][k]) r[coll][k] = older[coll][k];
     }
@@ -723,13 +735,16 @@ G.DB = (() => {
    * Si el admin ha baneado la cuenta del ranking (ban = true en la nube, ver
    * firestore.rules), cada guardado tiene que conservarlo: sólo se escriben
    * save, updatedAt y v (mergeFields) y el resto del documento (ban) se queda.
-   * Nunca se sube dos veces en menos de 65 s; mientras, todo está en el navegador.
+   * Nunca se sube dos veces en menos de MIN_GAP; mientras, todo está en el navegador.
    */
-  const K_OK = 'ps.cloudok.', MIN_GAP = 65000;
+  // MIN_GAP: 25 s (65 hasta el 25-10-2026; las reglas exigen 20). Con 65, el
+  // segundo Guardar de seguida quedaba "para dentro de un rato" y, si salías
+  // del juego antes, no se subía nunca: en el otro aparato faltaban los tickets.
+  const K_OK = 'ps.cloudok.', MIN_GAP = 25000, RULE_GAP = 21000;
   const sinceOk = () => Date.now() - (+read(K_OK + uid) || 0);
 
   /** Sube la partida tal cual (sin leer la nube antes: lo de la nube ya se juntó al entrar). */
-  function pushNow() {
+  function pushNow(gap = MIN_GAP) {
     if (mode !== 'cloud' || guest || !save || !uid) return Promise.resolve();
     // Si ya hay una subida en marcha, se hace otra justo después (para lo que haya cambiado mientras).
     if (pushing) { pending = true; return pushing.then(() => (pending ? pushNow() : undefined)); }
@@ -740,9 +755,9 @@ G.DB = (() => {
       pending = true; setSync('offline'); scheduleRetry();
       return Promise.resolve();
     }
-    if (sinceOk() < MIN_GAP) {
+    if (sinceOk() < gap) {
       pending = true; setSync('pending');
-      schedulePush(MIN_GAP - sinceOk() + 500);
+      schedulePush(gap - sinceOk() + 500);
       return Promise.resolve();
     }
     pending = false;
@@ -791,7 +806,7 @@ G.DB = (() => {
 
   /**
    * Botón Guardar: sube ya lo pendiente. Si no hay nada pendiente no gasta
-   * nada, y si se acaba de subir hace menos de 65 s (MIN_GAP) se sube en
+   * nada, y si se acaba de subir hace menos de 25 s (MIN_GAP) se sube en
    * cuanto se pueda. → { ok, why?: 'local'|'guest'|'done'|'wait'|'offline'|'fail', secs? }
    */
   async function saveNow() {
@@ -804,13 +819,21 @@ G.DB = (() => {
     await pushNow();
     if (pushing) await pushing;          // (si había otra subida en marcha, también la que va detrás)
     if (syncState === 'ok') return { ok: true };
-    // Lo cambiado mientras subía va en la siguiente, que espera los 65 s.
+    // Lo cambiado mientras subía va en la siguiente, que espera MIN_GAP.
     if (syncState === 'pending' && pushT) return { ok: true, why: 'wait', secs: Math.max(1, Math.ceil((pushDue - Date.now()) / 1000)) };
     return { ok: false, why: syncState === 'offline' ? 'offline' : 'fail' };
   }
 
   // Si ya había una subida programada antes, se respeta (una compra no espera a la siguiente partida).
   let pushDue = 0;
+  /*
+   * Sales del juego (lo minimizas, cambias de app o de pestaña) con un Guardar
+   * que estaba esperando: se sube ya, en cuanto lo dejan las reglas. Es la
+   * subida que pediste, no una de más (al salir sin pulsar Guardar no se sube nada).
+   */
+  if (typeof document !== 'undefined' && document.addEventListener) document.addEventListener('visibilitychange', () => {
+    if (document.hidden && pushT && mode === 'cloud' && !guest && save) pushNow(RULE_GAP);
+  });
   function schedulePush(ms) {
     const due = Date.now() + ms;
     if (pushT && pushDue && pushDue <= due) return;

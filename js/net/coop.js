@@ -161,9 +161,12 @@ G.Coop = (() => {
     const mv = (Array.isArray(s.mv) ? s.mv : []).slice(0, 8)
       .filter(m => Array.isArray(m) && typeof m[0] === 'string' && G.Moves.BY_ID[m[0]])
       .map(m => [m[0], Math.floor(num(m[1], 1, 1, 99)), Math.round(num(m[2], 0, 0, 1e13)), Math.round(num(m[3], 0, 0, 86400)), m[4] ? 1 : 0]);
+    const sk = typeof s.sk === 'string' && G.Skins && G.Skins.get(s.sk, dex) ? s.sk : '';
     return { dex, sh: s.sh === true, lv: Math.floor(num(s.lv, 1, 1, 9999)), t: Math.round(num(s.t, 0, 0, 86400)),
-             it: typeof s.it === 'string' && G.Items.BY[s.it] ? s.it : null, mv };
+             it: typeof s.it === 'string' && G.Items.BY[s.it] ? s.it : null, sk, mv };
   }
+  /** La skin (Halloween) de un compañero, que va en su resumen: se le pone a su Pokémon. */
+  function dressMate(u, c) { const m = mates.get(u); if (m && m.pl.anim && m.pl.dex === c.dex) m.pl.anim.skin = c.sk || null; }
   /** Los resúmenes de todos (el tuyo, recién hecho). Siguen ahí al acabar la partida. */
   function teamSums() { const out = Object.assign({}, sums), m = mySum(); if (m && me) out[me] = m; return out; }
   function takeSums(all) {
@@ -171,7 +174,7 @@ G.Coop = (() => {
     for (const u of Object.keys(all)) {
       if (u === me || !members.some(x => x.uid === u)) continue;
       const c = cleanSum(all[u]);
-      if (c) sums[u] = c;
+      if (c) { sums[u] = c; dressMate(u, c); }
     }
   }
 
@@ -233,7 +236,7 @@ G.Coop = (() => {
       if (o.connected && o.uid !== m.uid && o.state) p[o.uid] = o.state;
     }
     const ev = m.q; m.q = [];
-    const f = { k: 'f', t: r2(st.time), lv: st.level, xp: r2(st.xp), xn: st.xpNext, ki: st.kills, bo: st.bosses, co: st.coins, tk: [st.t1, st.t10],
+    const f = { k: 'f', t: r2(st.time), lv: st.level, xp: r2(st.xp), xn: st.xpNext, ki: st.kills, bo: st.bosses, co: st.coins, tk: [st.t1, st.t10, st.cn || 0],
                 p, e: enemyList(viewOf(m)), ev };
     const ja = G.Judgment.netState();       // Arceus en la Sentencia
     if (ja) f.ja = ja;
@@ -406,7 +409,7 @@ G.Coop = (() => {
         case 'he': holdOff(from); break;
         case 're': G.Rift.enterRequest(); break;
         case 'bye': mateGone(from); break;
-        case 'sm': { const c = cleanSum(ev[1]); if (c) sums[from] = c; break; }
+        case 'sm': { const c = cleanSum(ev[1]); if (c) { sums[from] = c; dressMate(from, c); } break; }
         // Un invitado con Sequía, Llovizna...: su clima, si no hay otro (como mucho uno por minuto).
         case 'wxq':
           if (typeof ev[1] === 'string' && G.Weather.KINDS[ev[1]] && !G.Weather.current && performance.now() - (m.wxAt || -1e9) > 60000) {
@@ -457,7 +460,7 @@ G.Coop = (() => {
       else if (!msg.lu && showing) api.resume();
     }
     api.syncTeam({ time: msg.t, level: msg.lv, xp: msg.xp, xpNext: msg.xn, kills: msg.ki, bosses: msg.bo, coins: msg.co,
-                   t1: (msg.tk || [])[0], t10: (msg.tk || [])[1] });
+                   t1: (msg.tk || [])[0], t10: (msg.tk || [])[1], cn: num((msg.tk || [])[2], 0, 0, 1e6) });
     for (const u in msg.p || {}) {
       const m = mates.get(u);
       if (m) m.pl.net = readState(msg.p[u]);
