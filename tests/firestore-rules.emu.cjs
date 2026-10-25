@@ -42,5 +42,18 @@ const no = async (who, w, what) => assert.notEqual(await commit(who, w), 200, 'N
   await ok(C, [name('gary', C), prof(C, 'Gary')], 'crear un perfil con su apodo');
   await no(C, [prof(C, 'Gary', { title: str('x') })], 'dos guardados en menos de 20 s');
   await no(B, [prof(A, 'Brock')], 'escribir el perfil de otro');
-  console.log('reglas de Firestore (perfil y apodos): todo bien');
+  // ---- ranking: el baneo sólo se mira al entrar en un top 50 (25-10-2026) ----
+  const int = n => ({ integerValue: String(n) }), arr = vs => ({ arrayValue: { values: vs } }), map = f => ({ mapValue: { fields: f } });
+  const entry = (b, uid, t) => ({ update: { name: `${DOCS}/lb/${b}/e/${uid}`, fields: { t: int(t), uids: arr([str(uid)]), names: arr([str('x')]),
+    dex: arr([int(25)]), shiny: arr([{ booleanValue: false }]), lv: int(50), kills: int(1000), dmg: int(0) } },
+    updateTransforms: [{ fieldPath: 'at', setToServerValue: 'REQUEST_TIME' }] });
+  const top = (b, uid, t) => ({ update: { name: `${DOCS}/lbs/${b}`, fields: { me: str(uid), ev: str(''),
+    top: map({ [uid]: map({ t: int(t), uids: arr([str(uid)]), names: arr([str('x')]), dex: arr([int(25)]), lv: int(50), kills: int(1000) }) }) } } });
+  const save = (uid, ban) => ({ update: { name: `${DOCS}/saves/${uid}`, fields: { ban: { booleanValue: ban }, v: int(3), save: map({}) } } });
+  await ok(null, [save(A, true), save(B, false)], 'preparar (A baneado)');
+  await ok(A, [entry('s_all4', A, 900)], 'baneado: su marca fuera del top (sólo cuenta para los puestos)');
+  await no(A, [entry('s_all4', A, 1000), top('s_all4', A, 1000)], 'baneado: entrar en el top 50');
+  await ok(B, [entry('s_all4', B, 1000), top('s_all4', B, 1000)], 'no baneado: entrar en el top 50');
+  await ok(C, [entry('s_d20261025a', C, 800)], 'sin partida en la nube: su marca');
+  console.log('reglas de Firestore (perfil, apodos y ranking): todo bien');
 })().catch(e => { console.error(e.message); process.exit(1); });
