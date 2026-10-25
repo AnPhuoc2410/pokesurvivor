@@ -107,7 +107,10 @@ service cloud.firestore {
         && (!('title' in request.resource.data) || (request.resource.data.title is string && request.resource.data.title.size() <= 40))
         && (!('best' in request.resource.data) || validBest(request.resource.data.best))
         && (!('medals' in request.resource.data) || (request.resource.data.medals is list && request.resource.data.medals.size() <= 8))
-        && getAfter(/databases/$(database)/documents/names/$(request.resource.data.lower)).data.uid == me()
+        // El apodo sólo se comprueba si cambia (25-10-2026): ya se comprobó al ponerlo, y
+        // leerlo en cada guardado del perfil era 1 lectura de más cada vez (~400.000 al día).
+        && ((resource != null && resource.data.get('lower', '') == request.resource.data.lower)
+            || getAfter(/databases/$(database)/documents/names/$(request.resource.data.lower)).data.uid == me())
         && (resource == null || every(resource.data.at, 20));
       allow delete: if signedIn() && me() == uid;
     }
