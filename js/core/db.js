@@ -33,7 +33,7 @@ G.DB = (() => {
   const NAME_DOMAIN = 'jugadores.pokesurvivor.net';   // sólo para el email interno
 
   let mode = 'local';       // 'cloud' | 'local'
-  let localReason = '';     // por qué no hay nube: 'file' | 'config' | 'host' | 'error'
+  let localReason = '';     // por qué no hay nube: 'file' | 'config' | 'host' | 'dev' | 'error'
   let user = null;          // nombre visible
   let key = null;           // clave local (minúsculas) o uid de Firebase
   let guest = false;
@@ -554,6 +554,10 @@ G.DB = (() => {
     const cfg = G.FIREBASE_CONFIG;
     if (!/^https?:$/.test(location.protocol)) { localReason = 'file'; return false; }
     if (cfg && !cfg.emulator && !HOSTS.includes(location.hostname)) { localReason = 'host'; return false; }
+    // dev.html (el código sin encerrar: G en la consola, con todo a mano) sólo usa la
+    // nube en este ordenador. En la web iba con la cuenta de quien la abriera y se
+    // podía poner las monedas, tickets o Pokémon que quisiera y guardarlo (26-10-2026).
+    if (!G.BUILT && !/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) { localReason = 'dev'; return false; }
     if (!cfg || !cfg.apiKey || !cfg.projectId) { localReason = 'config'; return false; }
     await loadScript(SDK + 'firebase-app-compat.js');
     await loadScript(SDK + 'firebase-auth-compat.js');
