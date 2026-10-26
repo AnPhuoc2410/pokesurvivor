@@ -6,19 +6,9 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
-  { d: '2026-10-26', title: ["Halloween: la Noche de Gengar", "Halloween: Gengar’s Night"], new: [
-    ["Evento de Halloween del 30 de octubre al 1 de noviembre: el mapa se vuelve de noche (Huerto de Calabazas, Cementerio Embrujado y Bosque Tenebroso), con calabazas que se pueden romper y más Pokémon Fantasma.",
-     "Halloween event from October 30 to November 1: the map turns to night (Pumpkin Patch, Haunted Graveyard and Gloomy Forest), with pumpkins you can smash and more Ghost-type Pokémon."],
-    ["Caramelos de Halloween: los sueltan sobre todo los Pokémon Fantasma y las calabazas, y llegar al minuto 30 da un buen puñado. En la Tienda Kecleon (con Kecleon de bruja) se cambian por skins de bruja, tuyas para siempre: sombrero y capa para Gengar, y sombrero para Pikachu y Umbreon. Se ponen y se quitan en la ficha del Pokémon, y en el cooperativo tus compañeros también las ven.",
-     "Halloween Candy: dropped mostly by Ghost-type Pokémon and pumpkins, and reaching minute 30 gives a good handful. At the Kecleon Shop (with a witch Kecleon) you trade it for witch skins, yours forever: hat and cape for Gengar, and a hat for Pikachu and Umbreon. Put them on or take them off from the Pokémon’s page, and in co-op your teammates see them too."],
-    ["Gacha: banner Noche Espectral con los Pokémon de tipo Fantasma de todas las regiones y el doble de shiny (2 %).",
-     "Gacha: Spooky Night banner with the Ghost-type Pokémon from every region and double shiny odds (2%)."],
-    ["Minuto 30: esos días, en vez de Arceus llega el gran Gengar bruja. Cuenta para el ranking de daño, como Arceus.",
-     "Minute 30: on those days, instead of Arceus the great witch Gengar arrives. It counts for the damage ranking, like Arceus."],
-    ["Durante el evento, el menú también es de noche, con calabazas encendidas y Pokémon Fantasma paseando, y tus caramelos se ven arriba, junto a los tickets, en la Mochila y, en la partida, junto a las monedas.",
-     "During the event, the menu is also at night, with glowing pumpkins and Ghost-type Pokémon wandering around, and your candy is shown at the top next to your tickets, in the Bag and, during a run, next to your coins."],
-    ["Durante el evento, toda la música suena en versión tenebrosa: las mismas canciones, algo más lentas, con theremin, caja de música, órgano y campanas. La del menú pasa a tono menor.",
-     "During the event, all the music plays in a spooky version: the same songs, a bit slower, with theremin, music box, organ and bells. The menu theme switches to a minor key."],
+  { d: '2026-10-26', title: ["Halloween se acerca", "Halloween is coming"], new: [
+    ["Evento de Halloween del 30 de octubre al 1 de noviembre (hora de España). Lo que trae, lo descubrirás jugando.",
+     "Halloween event from October 30 to November 1 (Spain time). What it brings, you will find out by playing."],
     ["En la pantalla principal, una cuenta atrás: desde dos semanas antes, cuánto falta para Halloween; durante el evento, cuánto queda.",
      "On the main screen, a countdown: from two weeks before, how long until Halloween; during the event, how long is left."]
   ], fix: [
