@@ -1077,5 +1077,11 @@ G.I18n.add({
   "Halloween empieza en {x}": "Halloween starts in {x}",
   "¡Halloween! Termina en {x}": "Halloween! Ends in {x}",
   "¡Halloween!": "Halloween!",
-  "En la pantalla principal, una cuenta atrás: desde dos semanas antes, cuánto falta para Halloween; durante el evento, cuánto queda.": "On the main screen, a countdown: from two weeks before, how long until Halloween; during the event, how long is left."
+  "En la pantalla principal, una cuenta atrás: desde dos semanas antes, cuánto falta para Halloween; durante el evento, cuánto queda.": "On the main screen, a countdown: from two weeks before, how long until Halloween; during the event, how long is left.",
+  "Elige una recompensa": "Choose a reward",
+  "Sólo puedes llevar uno": "You can only hold one",
+  "Móvil: los avisos del centro de la pantalla (los de las esferas, por ejemplo) se salían por los dos lados y no se podían leer. Ahora se parten en líneas y caben.": "Mobile: the messages in the middle of the screen (the orb ones, for example) went off both sides and could not be read. Now they wrap and fit.",
+  "Móvil: los avisos de abajo (logros y mensajes) ya no se quedan con los toques. Mientras se veían, tapaban los ataques y no se podía cambiar de ataque.": "Mobile: the notices at the bottom (achievements and messages) no longer catch your taps. While they were showing, they covered your moves and you could not switch moves.",
+  "En la pausa, la Defensa y la Defensa Especial de los Pokémon con naturaleza salían con decimales de más (55.00000000000001).": "In the pause screen, Defense and Special Defense of Pokémon with a nature showed extra decimals (55.00000000000001).",
+  "Móvil: en las cartas de nivel y de objeto ya no queda un «·» suelto al final (era el de las teclas, que en el móvil no salen). En horizontal, la frase del título ya no tapa el botón Jugar, y en la ficha de la colección los botones de Menta, Cápsula y MT vuelven a su tamaño.": "Mobile: the level-up and item cards no longer end with a stray \"·\" (it belonged to the keyboard keys, which are not shown on mobile). In landscape, the title tagline no longer covers the Play button, and in the collection page the Mint, Capsule and TM buttons are back to their size."
 });

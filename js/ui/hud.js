@@ -3,6 +3,17 @@
  */
 G.HUD = (() => {
   const F = (w, s) => `${w} ${s}px Pixelify,"Segoe UI",system-ui,sans-serif`;
+  /** Parte un texto en líneas de como mucho maxW de ancho (con la letra que tenga ctx). */
+  function wrap(ctx, text, maxW) {
+    const out = [];
+    let cur = '';
+    for (const word of String(text).split(' ')) {
+      const t = cur ? cur + ' ' + word : word;
+      if (cur && ctx.measureText(t).width > maxW) { out.push(cur); cur = word; } else cur = t;
+    }
+    if (cur) out.push(cur);
+    return out;
+  }
 
   /** Cartel encima de una esfera: su nombre y, con el ratón encima, también lo que hace. */
   function orbTip(ctx, id, cx, by, full, w) {
@@ -266,11 +277,22 @@ G.HUD = (() => {
       // Siempre centrado (antes heredaba la alineación de lo último dibujado, p.
       // ej. la flecha de un duende del tesoro, y salía descolocado).
       ctx.textAlign = 'center';
-      ctx.font = F(800, 22);
+      // En el móvil las frases largas (las esferas) se salían por los dos lados:
+      // se parten en líneas y, si aún no caben en tres, la letra baja.
+      let size = 22, lines;
+      for (;;) {
+        ctx.font = F(800, size);
+        lines = wrap(ctx, ban.text, w - 40);
+        if (lines.length <= 3 || size <= 14) break;
+        size -= 2;
+      }
       ctx.fillStyle = '#ffcb3d';
       ctx.strokeStyle = 'rgba(0,0,0,.7)'; ctx.lineWidth = 4;
-      ctx.strokeText(ban.text, w / 2, h * 0.3);
-      ctx.fillText(ban.text, w / 2, h * 0.3);
+      lines.forEach((ln, i) => {
+        const y = h * 0.3 + (i - (lines.length - 1) / 2) * size * 1.25;
+        ctx.strokeText(ln, w / 2, y);
+        ctx.fillText(ln, w / 2, y);
+      });
       ctx.restore();
     }
 
