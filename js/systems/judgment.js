@@ -127,7 +127,8 @@ G.Judgment = (() => {
 
   /** Quien manda: elige la arena y los legendarios, y avisa a todos. */
   function start() {
-    const pool = G.DEX.filter(p => p.leg && p.dex !== BOSS.dex && G.SPRITE_META[p.dex]);
+    // (Arceus nunca sale de legendario más, ni con el gran Gengar de jefe: BOSS aquí aún es el de la partida anterior.)
+    const pool = G.DEX.filter(p => p.leg && p.dex !== ARCEUS_B.dex && G.SPRITE_META[p.dex]);
     const q = [];
     for (let i = 0; i < 40; i++) q.push(G.U.pick(pool).dex);
     const hw = G.Halloween.inRun ? 1 : 0;

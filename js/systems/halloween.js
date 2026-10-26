@@ -15,9 +15,13 @@
  */
 G.Halloween = (() => {
   const TZ = 'Europe/Madrid';
+  // (Los formateadores se crean una vez: crearlos cuesta, y el menú pregunta en cada fotograma.)
+  const MD = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, month: '2-digit', day: '2-digit' });
+  const FULL = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+  const YEAR = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric' });
   function madrid(date) {
     const p = {};
-    for (const x of new Intl.DateTimeFormat('en-CA', { timeZone: TZ, month: '2-digit', day: '2-digit' }).formatToParts(date)) p[x.type] = x.value;
+    for (const x of MD.formatToParts(date)) p[x.type] = x.value;
     return { m: +p.month, d: +p.day };
   }
   /** ¿Es Halloween en esta fecha? (30-10, 31-10 y 1-11.) */
@@ -27,8 +31,7 @@ G.Halloween = (() => {
   function madridMidnight(y, m, d) {
     const guess = Date.UTC(y, m - 1, d);
     const p = {};
-    for (const x of new Intl.DateTimeFormat('en-CA', { timeZone: TZ, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit',
-      hour: '2-digit', minute: '2-digit' }).formatToParts(guess)) p[x.type] = x.value;
+    for (const x of FULL.formatToParts(guess)) p[x.type] = x.value;
     const off = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute) - guess;      // lo que va España por delante
     return guess - off;
   }
@@ -38,7 +41,7 @@ G.Halloween = (() => {
    */
   const SOON = 14 * 864e5;
   function countdown(now = Date.now()) {
-    const y = +new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric' }).format(now);
+    const y = +YEAR.format(now);
     for (const yy of [y - 1, y]) {
       const start = madridMidnight(yy, 10, 30), end = madridMidnight(yy, 11, 2);
       if (now >= start && now < end) return { on: true, ms: end - now };
@@ -64,7 +67,10 @@ G.Halloween = (() => {
   const canForce = () => local || !!(G.Ranking && G.Ranking.isAdmin && G.Ranking.isAdmin());
 
   let run = null;                  // ¿la partida en curso es de Halloween?
-  const on = () => (force != null && canForce() ? force : isOn());
+  // Lo de hoy se mira como mucho cada 10 s (el menú y el mapa preguntan sin parar).
+  let today = null, todayAt = -1e9;
+  const isOnNow = () => { const t = Date.now(); if (t - todayAt > 10000) { today = isOn(new Date(t)); todayAt = t; } return today; };
+  const on = () => (force != null && canForce() ? force : isOnNow());
 
   /*
    * Caramelos. Precio de cada skin: SKIN_PRICE. Lo que sale en una partida va
