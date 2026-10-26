@@ -348,14 +348,16 @@ G.Ranking = (() => {
   }
 
   /*
-   * Nivel y derrotados dentro de lo que aceptan las reglas (firestore.rules,
+   * Nivel, derrotados y daño a Arceus dentro de lo que aceptan las reglas (firestore.rules,
    * validEntry). Si se pasaban, el servidor rechazaba la marca ENTERA sin avisar
    * (25-10-2026: los mejores pasaban de 12 derrotados por segundo y su marca no
    * subía nunca). Así entra siempre; como mucho, con algún derrotado de menos.
    */
   function fit(r) {
     const t = Math.min(86400, Math.max(1, r.t | 0));
-    return { t, lv: Math.max(1, Math.min(r.lv | 0, 10 + Math.floor(t / 4))), kills: Math.max(0, Math.min(r.kills | 0, 100 + t * 12)) };
+    // Daño a Arceus: sólo desde el minuto 30, hasta 50.000 por segundo de Sentencia.
+    const dmg = t < 1800 ? 0 : Math.max(0, Math.min(Math.floor(r.dmg || 0), (t - 1799) * 50000));
+    return { t, lv: Math.max(1, Math.min(r.lv | 0, 10 + Math.floor(t / 4))), kills: Math.max(0, Math.min(r.kills | 0, 100 + t * 12)), dmg };
   }
 
   function submitSolo(r) { return submitSoloNow(r); }
@@ -364,7 +366,7 @@ G.Ranking = (() => {
     if (!fb || !G.Social.me || r.t < MIN_T) return [];
     flushDeferred();
     const ids = boardIds();
-    const entry = Object.assign({ uids: [fb.uid], names: [G.Social.me.name], dex: [r.dex], shiny: [!!r.shiny] }, fit(r), { dmg: Math.max(0, Math.floor(r.dmg || 0)) });
+    const entry = Object.assign({ uids: [fb.uid], names: [G.Social.me.name], dex: [r.dex], shiny: [!!r.shiny] }, fit(r));
     const boards = PERIODS.map(([p]) => ['s_' + ids[p], p]);
     if (r.t >= MIN_T_MON) boards.push(['s_' + ALL + '_p' + r.dex, 'p']);
     const better = await store(boards, fb.uid, entry);
@@ -380,7 +382,7 @@ G.Ranking = (() => {
     const ms = r.members.slice().sort((a, b) => (a.uid < b.uid ? -1 : 1));
     const id = ms.map(m => m.uid).join('_');
     const entry = Object.assign({ uids: ms.map(m => m.uid), names: ms.map(m => m.name), dex: ms.map(m => m.dex),
-                    shiny: ms.map(m => !!m.shiny) }, fit(r), { dmg: Math.max(0, Math.floor(r.dmg || 0)) });
+                    shiny: ms.map(m => !!m.shiny) }, fit(r));
     const ids = boardIds();
     const boards = PERIODS.map(([p]) => ['g_' + ids[p], p]);
     if (r.t >= MIN_T_MON) for (const d of new Set(entry.dex)) boards.push(['g_' + ALL + '_p' + d, 'p']);
