@@ -35,12 +35,17 @@ PAD_X, PAD_T = 8, 16          # (los mismos que G.Skins.PAD_X / PAD_T)
 # len: hasta dónde llega (parte de lo que queda hasta los pies) ·
 # under_face: nunca por encima de la boca · flare: cuánto se abre por abajo ·
 # quad: cuadrúpedo (en diagonal de espaldas, como de lado: sólo sobre el lomo) ·
+# head: dónde va el sombrero respecto a la cara, por dirección (si no, se calcula: crown) ·
 # clasp: broche de frente · sink: cuánto se hunde el ala en la cabeza.
 SKINS = {
     'bruja-gengar':  dict(dex=94,  hat='big',   sink=2, cape=dict(neck=0.28, len=0.95, under_face=False, flare=3, clasp=False)),
-    'bruja-pikachu': dict(dex=25,  hat='small', sink=2, cape=dict(neck=0.40, len=0.85, under_face=True,  flare=2, clasp=True)),
-    'bruja-umbreon': dict(dex=197, hat='small', sink=2, cape=dict(neck=0.38, len=0.55, under_face=True,  flare=2, clasp=True, quad=True)),
-    'hat':           dict(dex=352, hat='small', sink=2, cape=None),
+    'bruja-pikachu': dict(dex=25,  hat='small', sink=2, cape=None),
+    # Umbreon y Kecleon: el centro del cráneo, marcado a mano por dirección (entre
+    # las orejas / la cresta; desde la cara, en su Idle). Sigue a la cara en cada fotograma.
+    'bruja-umbreon': dict(dex=197, hat='small', sink=2, cape=None,
+                          head=[(0, -9), (-1, -8), (-2, -7), (-2, -6), (0, -7), (2, -6), (2, -7), (1, -8)]),
+    'hat':           dict(dex=352, hat='small', sink=2, cape=None,
+                          head=[(0, -11), (-2, -11), (-5, -10), (-5, -8), (0, -6), (5, -8), (5, -10), (2, -11)]),
 }
 
 ANIMS = ['Idle', 'Walk', 'Attack', 'Shoot', 'Charge', 'Hurt', 'Faint']
@@ -184,7 +189,11 @@ def paint_frame(fr, row, frame_i, anim, sk, face, body):
         face = (face[0] + PAD_X, face[1] + PAD_T)
     if body:
         body = (body[0] + PAD_X, body[1] + PAD_T)
-    cr = crown(mask, W, H, face)
+    if sk.get('head') and face:
+        dx, dy = sk['head'][row]
+        cr = (round(face[0] + dx), round(face[1] + dy))
+    else:
+        cr = crown(mask, W, H, face)
     if not cr:
         return
     hx, hy = cr

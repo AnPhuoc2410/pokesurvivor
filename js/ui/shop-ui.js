@@ -593,7 +593,7 @@ G.ShopUI = (() => {
       <b class="gold">${G.Icons.html('candy', 14)} ${G.I18n.f('Tienes {x} caramelos', have.toLocaleString(G.I18n.locale))}</b></p><div class="upg">`;
     for (const id of G.Skins.LIST) {
       const sk = G.Skins.SKINS[id], got = G.Skins.owns(s, id), name = G.DEX_BY[sk.dex].name;
-      const desc = !got ? G.I18n.f('Sombrero y capa de bruja para {x}.', name)
+      const desc = !got ? G.I18n.f(sk.dex === 94 ? 'Sombrero y capa de bruja para {x}.' : 'Sombrero de bruja para {x}.', name)
         : G.DB.owns(sk.dex) ? G.T('Comprada. Póntela o quítatela en la ficha del Pokémon.') : G.I18n.f('Comprada. Se pone cuando tengas a {x}.', name);
       const btn = got ? `<b class="gold">${G.T('Comprada')}</b>`
         : `<button class="btn small gold" data-skin="${id}" data-sfx="none" ${have < P ? 'disabled' : ''}>${G.Icons.html('candy', 14)} ${P}</button>`;
