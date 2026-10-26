@@ -31,7 +31,10 @@ G.UI = (() => {
     const s = G.DB.save;
     $('coins').textContent = s ? s.coins.toLocaleString(G.I18n.locale) : '0';
     const t = (s && s.tickets) || { t1: 0, t10: 0 };
-    $('tickets-pill').innerHTML = `${G.Icons.html('ticket', 18)} ${t.t1} &nbsp;${G.Icons.html('ticket10', 18)} ${t.t10}`;
+    // Halloween: los caramelos, al lado (title: qué son).
+    const cn = G.Halloween.on && s ? (s.bag && s.bag.candy) || 0 : null;
+    $('tickets-pill').innerHTML = `${G.Icons.html('ticket', 18)} ${t.t1} &nbsp;${G.Icons.html('ticket10', 18)} ${t.t10}` +
+      (cn != null ? ` &nbsp;<span title="${G.T('Caramelos de Halloween')}">${G.Icons.html('candy', 18)} ${cn.toLocaleString(G.I18n.locale)}</span>` : '');
     // Punto de sincronización: verde = guardado en la nube, amarillo = hay cambios
     // sin subir (sólo se suben con Guardar, desde el 20-10-2026), rojo = sin conexión.
     const st = G.DB.guest ? 'guest' : G.DB.syncState;

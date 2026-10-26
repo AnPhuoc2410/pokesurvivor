@@ -25,16 +25,18 @@ G.Skins = (() => {
   const PAL = { k: K, p: PUR, l: PUR_L, o: ORA, y: YEL };
 
   /*
-   * hat    'big' | 'small' · lift: cuánto por encima del punto de la cabeza va el ala
-   * cape   w/W ancho arriba/abajo, h alto, up: cuánto por encima del centro del cuerpo empieza
-   * (Ajustado a ojo con capturas, 25-10-2026.)
+   * hat    'big' | 'small' · sink: cuánto se hunde el ala por debajo de la coronilla
+   * cape   w/W ancho arriba/abajo, h alto, up: cuánto por encima del centro del cuerpo empieza,
+   *        fw: ancho por abajo vista de frente (detrás del Pokémon: asoma por los lados)
+   * clasp  dónde va el broche de la capa, de frente: píxeles por debajo de la cara
+   * (Ajustado a ojo con capturas, 26-10-2026.)
    */
   const SKINS = {
-    'bruja-gengar':  { dex: 94,  name: 'Gengar bruja',  hat: 'big',   lift: 5, cape: { w: 12, W: 19, h: 14, up: 5 } },
-    'bruja-pikachu': { dex: 25,  name: 'Pikachu bruja', hat: 'small', lift: 4, cape: { w: 8,  W: 14, h: 11, up: 3 } },
-    'bruja-umbreon': { dex: 197, name: 'Umbreon bruja', hat: 'small', lift: 4, cape: { w: 9,  W: 14, h: 9,  up: 4 } }
+    'bruja-gengar':  { dex: 94,  name: 'Gengar bruja',  hat: 'big',   sink: 2, clasp: 4, cape: { w: 10, W: 24, fw: 38, h: 15, up: 8 } },
+    'bruja-pikachu': { dex: 25,  name: 'Pikachu bruja', hat: 'small', sink: 1, clasp: 3, cape: { w: 7,  W: 15, fw: 21, h: 11, up: 5 } },
+    'bruja-umbreon': { dex: 197, name: 'Umbreon bruja', hat: 'small', sink: 1, clasp: 3, cape: { w: 8,  W: 15, fw: 19, h: 9,  up: 4 } }
   };
-  const HAT_ONLY = { hat: 'small', lift: 4, cape: null };
+  const HAT_ONLY = { hat: 'small', sink: 1, cape: null };
   const LIST = Object.keys(SKINS);
 
   // ---------------- dibujos (a 1 píxel de arte por píxel; se escalan al pintar) ----------------
@@ -64,7 +66,7 @@ G.Skins = (() => {
    * el morado con un cuello naranja; de lado, morada y estrecha.
    */
   function cape(c, view, wave) {
-    const W = view === 'side' ? Math.round(c.W * 0.7) : c.W, w = view === 'side' ? Math.round(c.w * 0.7) : c.w, h = c.h;
+    const W = view === 'side' ? Math.round(c.W * 0.7) : view === 'front' ? c.fw : c.W, w = view === 'side' ? Math.round(c.w * 0.7) : c.w, h = c.h;
     const k = `c:${w}:${W}:${h}:${view}:${wave}`;
     if (cache.has(k)) return cache.get(k);
     const cv = canvasOf(W + 2, h + 2), x = cv.getContext('2d');
@@ -78,7 +80,7 @@ G.Skins = (() => {
         if (y >= h - 2 && (y === h - 1 ? tooth !== 1 : tooth === 3)) continue;
         const edge = i === l || i === r - 1 || y === 0;
         let col;
-        if (view === 'front') col = edge ? PUR : ((i - l) % 5 === 2 ? ORA_D : ORA);
+        if (view === 'front' || view === 'diag') col = edge ? PUR : ((i - l) % 5 === 2 ? ORA_D : ORA);
         else if (view === 'back') col = y < 2 ? (edge ? ORA_D : ORA) : edge ? PUR_D : ((i - l) % 4 === 1 ? PUR_L : PUR);
         else col = edge ? PUR_D : (y % 5 === 2 ? PUR_L : PUR);
         x.fillStyle = col; x.fillRect(i, y + 1, 1, 1);
@@ -103,6 +105,7 @@ G.Skins = (() => {
 
   /** Filas: 0 abajo · 1 abajo-der · 2 der · 3 arriba-der · 4 arriba · 5 arriba-izq · 6 izq · 7 abajo-izq */
   const BACK = new Set([3, 4, 5]), SIDE = new Set([2, 6]), LEFT = new Set([5, 6, 7]);
+  const FACE_X = [0, 1, 1, 1, 0, -1, -1, -1];          // hacia dónde mira (en x)
   function pos(dex, anim, row, frame) {
     const a = G.SKIN_POS && G.SKIN_POS[dex];
     const r = a && (a[anim] || a.Idle);
@@ -117,34 +120,49 @@ G.Skins = (() => {
     return s && s.dex === dex ? s : null;
   }
 
+  /** Broche de la capa (de frente): dos lazos morados y una piedra naranja. */
+  const CLASP = ['kk...kk', 'kpkkkpk', 'kpoyopk', 'kpkkkpk', 'kk...kk'];
+
   /*
-   * Pinta lo de detrás (back = true, antes del sprite) o lo de delante.
+   * Pinta lo de detrás (behind = true, antes del sprite) o lo de delante.
    * (x, y) los pies del sprite, k su escala (PX * scale).
+   *
+   * La capa, según hacia dónde mira:
+   *   de espaldas (y en diagonal hacia arriba)  delante, tapando la espalda
+   *   de lado                                   delante, sólo por la mitad de atrás
+   *   de frente y en diagonal hacia abajo       detrás, más ancha para que asome por
+   *                                             los lados (y hacia atrás en diagonal),
+   *                                             con el broche bajo la cara
    */
   function draw(ctx, sk, dex, anim, row, frame, x, y, k, behind, alpha = 1) {
     const p = pos(dex, anim, row, frame);
     if (!p) return;
-    const back = BACK.has(row), side = SIDE.has(row), left = LEFT.has(row);
+    const back = BACK.has(row), side = SIDE.has(row), fx = FACE_X[row] || 0;
     const prevA = ctx.globalAlpha, prevS = ctx.imageSmoothingEnabled;
     if (alpha < 1) ctx.globalAlpha = prevA * alpha;
     ctx.imageSmoothingEnabled = false;
-    if (sk.cape && behind === !back) {
-      const view = back ? 'back' : side ? 'side' : 'front';
+    const c = sk.cape;
+    if (c && behind === !(back || side)) {
+      const view = back ? 'back' : side ? 'side' : fx ? 'diag' : 'front';
       const wave = anim === 'Walk' ? Math.floor(performance.now() / 160) % 4 : 0;
-      const c = cape(sk.cape, view, wave);
-      // De lado, la capa va hacia atrás (al contrario de donde mira).
-      const off = side ? (left ? 2 : -2) : 0;
-      const cx = x + (p[2] + off) * k, top = y + (p[3] - sk.cape.up) * k;
+      const img = cape(c, view, wave);
+      // Hacia atrás (al contrario de donde mira): de lado, casi entera detrás del cuerpo.
+      const off = -fx * (side ? img.width * 0.32 : back ? 1 : img.width * 0.2);
+      const cx = x + (p[2] + off) * k, top = y + (p[3] - c.up) * k;
       // Detrás del Pokémon no asoma por debajo de los pies (se vería el forro en el suelo).
-      const cut = !back && !side;
+      const cut = view === 'front' || view === 'diag';
       if (cut) { ctx.save(); ctx.beginPath(); ctx.rect(x - 400 * k, y - 400 * k, 800 * k, 400 * k - 2 * k); ctx.clip(); }
-      ctx.drawImage(c, Math.round(cx - c.width * k / 2), Math.round(top - k), c.width * k, c.height * k);
+      ctx.drawImage(img, Math.round(cx - img.width * k / 2), Math.round(top - k), img.width * k, img.height * k);
       if (cut) ctx.restore();
     }
     if (!behind) {
-      const h = fromRows(sk.hat === 'big' ? HAT_BIG : HAT_SMALL, left);
+      if (c && sk.clasp && !back && !side && p.length > 4) {
+        const b = fromRows(CLASP, false);
+        ctx.drawImage(b, Math.round(x + p[4] * k - b.width * k / 2), Math.round(y + (p[5] + sk.clasp) * k - b.height * k / 2), b.width * k, b.height * k);
+      }
+      const h = fromRows(sk.hat === 'big' ? HAT_BIG : HAT_SMALL, LEFT.has(row));
       const hw = h.width * k, hh = h.height * k;
-      ctx.drawImage(h, Math.round(x + p[0] * k - hw / 2), Math.round(y + (p[1] - sk.lift) * k - hh), hw, hh);
+      ctx.drawImage(h, Math.round(x + p[0] * k - hw / 2), Math.round(y + (p[1] + sk.sink) * k - hh), hw, hh);
     }
     ctx.globalAlpha = prevA;
     ctx.imageSmoothingEnabled = prevS;

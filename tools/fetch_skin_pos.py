@@ -6,8 +6,15 @@ junto a cada animación, un -Offsets.png con cuatro puntos por fotograma:
   negro = cabeza · verde = centro del cuerpo · rojo / azul = manos
 (comprobado el 25-10-2026: el negro va arriba y se adelanta hacia donde mira).
 
+Pero el punto negro es la cara (la boca, el hocico), no la coronilla: un
+sombrero puesto ahí queda por delante de la cabeza. Así que la coronilla se
+saca de la silueta del propio sprite (crown): por encima del cuerpo, entre la
+cara y el centro del cuerpo, la línea de arriba de la cabeza (la mediana de
+lo más alto de cada columna, para que las orejas y los pinchos no cuenten).
+
 Genera js/data/skin-pos.js:
-  G.SKIN_POS[dex][anim] = [fila][fotograma] -> [hx, hy, bx, by]
+  G.SKIN_POS[dex][anim] = [fila][fotograma] -> [cx, cy, bx, by, mx, my]
+  (coronilla, centro del cuerpo y cara: el broche de la capa va bajo la cara)
 en píxeles de arte, relativos al ancla al suelo de esa animación (ax, ay de
 sprites-meta.js), así que se dibujan igual que el sprite.
 
@@ -66,6 +73,29 @@ def points(png, w, h, rows, n):
     return out
 
 
+def crown(px, ox, oy, w, h, head, body):
+    """Coronilla de un fotograma (en píxeles del fotograma): → (x, y)."""
+    op = lambda x, y: 0 <= x < w and 0 <= y < h and px[ox + x, oy + y][3] > 0
+    xs = [x for x in range(w) for y in range(h) if op(x, y)]
+    if not xs:
+        return head
+    width = max(xs) - min(xs) + 1
+    c0 = head[0] * 0.6 + body[0] * 0.4
+    R = max(3, round(width * 0.2))
+    tops = []
+    for x in range(int(round(c0 - R)), int(round(c0 + R)) + 1):
+        for y in range(0, int(body[1]) + 1):
+            if op(x, y):
+                tops.append((x, y))
+                break
+    if not tops:
+        return head
+    ys = sorted(t[1] for t in tops)
+    skull = ys[len(ys) // 2]
+    near = [t[0] for t in tops if t[1] <= skull + 1]
+    return (sum(near) / len(near), skull)
+
+
 def main():
     gm = game_meta()
     res = {}
@@ -87,30 +117,34 @@ def main():
                 if geom:
                     break
             png = geom and fetch(f'{BASE}/{tag}/{src}-Offsets.png')
+            sheet = Image.open(os.path.join(ROOT, 'assets', 'pokemon', str(dex), want + '.png')).convert('RGBA')
+            spx = sheet.load()
             if not png:
                 print('  sin Offsets:', dex, want)
                 continue
             pts = points(png, g['w'], g['h'], g['r'], g['n'])
             rows = []
-            for row in pts:
+            for r, row in enumerate(pts):
                 frames = []
                 last = None
-                for head, body in row:
+                for f, (head, body) in enumerate(row):
                     head = head or (last and last[0]) or (g['ax'], g['ay'] - g['h'] * 0.5)
                     body = body or (last and last[1]) or head
                     last = (head, body)
+                    face = head
+                    head = crown(spx, f * g['w'], r * g['h'], g['w'], g['h'], head, body)
                     # Relativo al ancla al suelo (como el sprite); el +0.5 centra el píxel.
-                    frames.append([round(head[0] + 0.5 - g['ax'], 1), round(head[1] + 0.5 - g['ay'], 1),
-                                   round(body[0] + 0.5 - g['ax'], 1), round(body[1] + 0.5 - g['ay'], 1)])
+                    frames.append([round(p + 0.5 - g[k], 1) for pt in (head, body, face) for p, k in zip(pt, ('ax', 'ay'))])
                 rows.append(frames)
             res[dex][want] = rows
         print(dex, ', '.join(res[dex]))
     with open(OUT, 'w', encoding='utf8', newline='\n') as f:
         f.write('/* ============ skin-pos.js — GENERADO, no editar a mano ============\n'
                 ' * Lo produce tools/fetch_skin_pos.py a partir de los -Offsets.png de\n'
-                ' * SpriteCollab: cabeza y centro del cuerpo de cada fotograma, para\n'
-                ' * colocar el sombrero y la capa de las skins (core/skins.js).\n'
-                ' *   G.SKIN_POS[dex][anim][fila][fotograma] = [hx, hy, bx, by]\n'
+                ' * SpriteCollab y de los sprites: coronilla, centro del cuerpo y cara\n'
+                ' * de cada fotograma, para colocar el sombrero y la capa de las skins\n'
+                ' * (core/skins.js).\n'
+                ' *   G.SKIN_POS[dex][anim][fila][fotograma] = [cx, cy, bx, by, mx, my]\n'
                 ' * en píxeles de arte, relativos al ancla al suelo de la animación.\n'
                 ' */\n')
         f.write('G.SKIN_POS = ' + json.dumps(res, separators=(',', ':')) + ';\n')

@@ -14,7 +14,9 @@ G.CHANGELOG = [
     ["Gacha: banner Noche Espectral con los Pokémon de tipo Fantasma de todas las regiones y el doble de shiny (2 %).",
      "Gacha: Spooky Night banner with the Ghost-type Pokémon from every region and double shiny odds (2%)."],
     ["Minuto 30: esos días, en vez de Arceus llega el gran Gengar bruja. Cuenta para el ranking de daño, como Arceus.",
-     "Minute 30: on those days, instead of Arceus the great witch Gengar arrives. It counts for the damage ranking, like Arceus."]
+     "Minute 30: on those days, instead of Arceus the great witch Gengar arrives. It counts for the damage ranking, like Arceus."],
+    ["Durante el evento, el menú también es de noche, con calabazas encendidas y Pokémon Fantasma paseando, y tus caramelos se ven arriba, junto a los tickets, en la Mochila y, en la partida, junto a las monedas.",
+     "During the event, the menu is also at night, with glowing pumpkins and Ghost-type Pokémon wandering around, and your candy is shown at the top next to your tickets, in the Bag and, during a run, next to your coins."]
   ]},
   { d: '2026-10-25', title: ['Tickets y Pokémon iguales en todos tus aparatos', 'The same tickets and Pokémon on all your devices'], new: [
     ['Al acabar la partida, sola o en grupo, sale el resumen: cada ataque con el daño que ha hecho y su daño por segundo, el daño total y tu objeto. En grupo, también el de cada compañero, con una pestaña por jugador.',

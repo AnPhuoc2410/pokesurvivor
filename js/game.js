@@ -908,12 +908,15 @@ G.Game = (() => {
   const Backdrop = (() => {
     let wanderers = [], t = 0, ready = false, biomeT = 0, bi = 0;
     const CAST = [1, 4, 7, 25, 133, 52, 39, 35, 16, 43, 60, 69, 74, 92, 129, 147, 113, 143, 54, 79];
+    // Halloween: paseando por la noche, sobre todo Fantasma.
+    const CAST_HW = [92, 93, 94, 200, 355, 353, 425, 429, 442, 479, 562, 592, 607, 708, 710, 778, 25, 197, 302, 351];
+    const cast = () => (G.Halloween.on ? CAST_HW : CAST).filter(d => G.SPRITE_META[d]);
 
     function init() {
-      G.World.reset(4242);
+      G.World.reset(G.World.MENU_SEED);
       G.World.setBiome(G.Tiles.runBiome(0), true);
       G.Camera.x = 0; G.Camera.y = 0;
-      wanderers = CAST.map(dex => spawn(dex, true));
+      wanderers = cast().map(dex => spawn(dex, true));
       ready = true;
     }
 
@@ -978,15 +981,16 @@ G.Game = (() => {
       G.Camera.apply(ctx);
       drawScene(G.Camera, wanderers);
       ctx.restore();
+      if (G.Halloween.on) G.World.drawNight(ctx, w, h, G.Camera, t);
       G.World.drawVignette(ctx, w, h);
     }
 
     /** Al volver de una run, recupera el mundo del menú. */
     function restore() {
-      G.World.reset(4242);
+      G.World.reset(G.World.MENU_SEED);
       G.World.setBiome(G.Tiles.runBiome(bi), true);
       G.FX.clear(); G.Projectiles.clear(); G.Combat.clearFields(); G.EnemyMgr.clear(); G.Pickups.clear();
-      wanderers = CAST.map(dex => spawn(dex, true));
+      wanderers = cast().map(dex => spawn(dex, true));
     }
 
     return { init, render, restore };

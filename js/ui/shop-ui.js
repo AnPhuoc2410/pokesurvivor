@@ -546,6 +546,7 @@ G.ShopUI = (() => {
         const r = G.Shop.buySkin(b.dataset.skin);
         if (!r.ok) { if (r.error) G.UI.toast(G.T(r.error)); G.Audio.sfx('error'); return; }
         G.Audio.sfx('buy');
+        G.UI.refreshCoins();
         Scene.cheer();
         say(G.T('¡Feliz Halloween! Póntela en la ficha del Pokémon.'));
         render();

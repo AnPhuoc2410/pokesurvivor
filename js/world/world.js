@@ -119,17 +119,25 @@ G.World = (() => {
 
   const arena_outer = () => (arena ? arena.r + 7 : 0);
 
+  const MENU_SEED = 4242;                   // el mundo del fondo de los menús (game.js)
+
   function placeProps(c) {
+    // Halloween, en el fondo del menú: más calabazas, también en el claro del centro (ahí mira la cámara).
+    const menuHw = seed === MENU_SEED && G.Halloween && G.Halloween.on;
     for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
       if (c.terr[j * N + i] !== FLOOR) continue;
       const tx = c.cx * N + i, ty = c.cy * N + j;
-      if (Math.hypot(tx, ty) < 7) continue;
+      if (Math.hypot(tx, ty) < 7 && !menuHw) continue;
       if (broken.has(tx + ',' + ty)) continue;
 
       // Necesita suelo alrededor para no pegarse a paredes / agua.
       let open = true;
       for (let b = -1; b <= 1 && open; b++) for (let a = -1; a <= 1; a++)
         if (terrainRaw(tx + a, ty + b) !== FLOOR) { open = false; break; }
+      if (Math.hypot(tx, ty) < 7) {           // (sólo llega aquí el menú de Halloween)
+        if (open && H(tx, ty, seed + 404) > 0.96) { const p = makeProp('pumpkin', tx, ty); c.props.push(p); c.propAt.set(tx + ',' + ty, p); }
+        continue;
+      }
 
       // Dentro de la arena: la decoración de su tipo (y nada en el pasillo).
       const ad = arenaDist(tx, ty);
@@ -157,7 +165,7 @@ G.World = (() => {
       else if (open && h < (grove ? 0.07 : 0.006)) type = 'tree';
       else if (open && h > 0.992) type = 'rock';
       // Halloween: calabazas por todo el mapa (mismo sitio para todos: va con la semilla).
-      else if (open && h > 0.972 && h <= 0.985 && G.Halloween && G.Halloween.inRun) type = 'pumpkin';
+      else if (open && h > (menuHw ? 0.955 : 0.972) && h <= 0.985 && G.Halloween && G.Halloween.inRun) type = 'pumpkin';
       else if (open && h > 0.985 && h <= 0.992 && H(tx, ty, seed + 606) < 0.07) type = 'chest';
       else if (fbm(tx / 5, ty / 5, seed + 707) > 0.66 && H(tx, ty, seed + 808) < 0.75) type = 'grass';
       if (!type) continue;
@@ -609,8 +617,43 @@ G.World = (() => {
     ctx.fillRect(0, 0, w, h);
   }
 
+  /*
+   * Halloween (fondo del menú): de noche. Todo se oscurece menos un halo
+   * alrededor de cada calabaza, que además da luz naranja y tiembla como
+   * una vela. (x, y) de pantalla = (mundo - esquina de la cámara) * escala.
+   */
+  let night = null;
+  function drawNight(ctx, w, h, cam, t) {
+    const W = Math.ceil(w), Hh = Math.ceil(h), k = cam.scale;
+    if (!night) night = document.createElement('canvas');
+    if (night.width !== W || night.height !== Hh) { night.width = W; night.height = Hh; }
+    const n = night.getContext('2d');
+    n.globalCompositeOperation = 'source-over';
+    n.clearRect(0, 0, W, Hh);
+    n.fillStyle = 'rgba(8,4,24,0.64)';
+    n.fillRect(0, 0, W, Hh);
+    const lights = visibleProps(cam).filter(p => p.type === 'pumpkin').map(p => ({
+      x: (p.x - cam.left()) * k, y: (p.y - 14 - cam.top()) * k,
+      f: 1 + Math.sin(t * 7 + p.wiggle) * 0.05 + Math.sin(t * 13 + p.wiggle * 2) * 0.03 }));
+    n.globalCompositeOperation = 'destination-out';
+    for (const l of lights) {
+      const r = 110 * k * l.f, g = n.createRadialGradient(l.x, l.y, 0, l.x, l.y, r);
+      g.addColorStop(0, 'rgba(0,0,0,.95)'); g.addColorStop(0.45, 'rgba(0,0,0,.6)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+      n.fillStyle = g; n.fillRect(l.x - r, l.y - r, r * 2, r * 2);
+    }
+    ctx.drawImage(night, 0, 0, w, h);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (const l of lights) {
+      const r = 70 * k * l.f, g = ctx.createRadialGradient(l.x, l.y, 0, l.x, l.y, r);
+      g.addColorStop(0, 'rgba(255,138,42,.32)'); g.addColorStop(1, 'rgba(255,138,42,0)');
+      ctx.fillStyle = g; ctx.fillRect(l.x - r, l.y - r, r * 2, r * 2);
+    }
+    ctx.restore();
+  }
+
   return {
-    TS, CW, reset, setBiome, biomeName, liquidKind, liquidEffect, walkable,
+    TS, CW, MENU_SEED, reset, setBiome, biomeName, drawNight, liquidKind, liquidEffect, walkable,
     kindAt, isWall, isLiquid, isFree, collide, projectileBlock, propsInCircle, nearestBreakable,
     damageProp, breakAt, specialsNear, update,
     breakProp(p) { if (!broken.has(p.tx + ',' + p.ty)) destroyProp(p); },
