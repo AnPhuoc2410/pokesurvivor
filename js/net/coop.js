@@ -266,7 +266,11 @@ G.Coop = (() => {
     if ((sumT -= dt) <= 0) {
       sumT = SUM_EVERY;
       if (host) emit(['sms', teamSums()]);
-      else { const m = mySum(); if (m) outEv.push(['sm', m]); }
+      else {
+        const m = mySum(); if (m) outEv.push(['sm', m]);
+        // El sello del ranking (ranking.js): el anfitrión lo necesita para subir la marca.
+        const sl = G.Ranking.mySeal(); if (sl) outEv.push(['seal', sl.s, sl.g]);
+      }
     }
     if (host) {
       for (const m of mates.values()) {
@@ -406,6 +410,7 @@ G.Coop = (() => {
         case 're': G.Rift.enterRequest(); break;
         case 'bye': mateGone(from); break;
         case 'sm': { const c = cleanSum(ev[1]); if (c) { sums[from] = c; dressMate(from, c); } break; }
+        case 'seal': if (Number.isSafeInteger(ev[1]) && typeof ev[2] === 'string' && /^[0-9a-f]{64}$/.test(ev[2])) m.seal = { s: ev[1], g: ev[2] }; break;
         // Un invitado con Sequía, Llovizna...: su clima, si no hay otro (como mucho uno por minuto).
         case 'wxq':
           if (typeof ev[1] === 'string' && G.Weather.KINDS[ev[1]] && !G.Weather.current && performance.now() - (m.wxAt || -1e9) > 60000) {
@@ -646,6 +651,8 @@ G.Coop = (() => {
     broadcast(ev) { emit(ev); },
     toHost(ev) { if (active && !host) { outEv.push(ev); flushClient(true); } },
     mate(u) { return mates.get(u); },
+    /** Anfitrión: el sello del ranking que mandó el invitado u (o null). */
+    sealOf(u) { const m = mates.get(u); return m && m.seal ? { s: m.seal.s, g: m.seal.g } : null; },
     get mates() { return [...mates.values()]; },
     get members() { return members; },
     /** uid -> resumen de cada jugador (ver cleanSum), también al acabar. */

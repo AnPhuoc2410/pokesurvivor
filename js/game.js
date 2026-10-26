@@ -216,6 +216,7 @@ G.Game = (() => {
     G.Sprites.preload([mon.dex], 8000, pl.shiny, pl.anim.skin || '');
     G.Audio.music(G.BIOME_MUSIC[0]);
     // Ranking: sube las marcas del histórico que estaban esperando (ver DEFER en ranking.js).
+    G.Ranking.newSeal();          // el sello del ranking de esta partida (también el invitado)
     if (!coop || G.Coop.isHost) G.Ranking.runStarted();
     deathT = 0;
 
@@ -387,7 +388,8 @@ G.Game = (() => {
     if (state === 'over' || !pl) return;
     const coop = !!pl.uid;                    // sólo las partidas en grupo le ponen uid
     const wasHost = !!pl.coopHost;
-    const team = coop ? G.Coop.members.slice() : [];
+    // (Con el sello del ranking que mandó cada invitado, antes de cerrar la partida en grupo.)
+    const team = coop ? G.Coop.members.map(m => Object.assign({}, m, { seal: G.Coop.sealOf(m.uid) })) : [];
     // Resumen de cada uno (en grupo, también el de los compañeros; ver coop.js).
     const sums = coop ? G.Coop.sums() : {};
     const meUid = coop ? pl.uid : '';
