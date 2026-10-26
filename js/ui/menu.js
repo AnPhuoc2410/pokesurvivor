@@ -46,6 +46,7 @@ G.MenuUI = (() => {
     G.UI.chrome(true);
     G.UI.show('scr-menu');
     bagLine();
+    hwLine();
     G.UI.sprite($('menu-partner'), mon.dex, { lively: true, scale: 4, hero: true, shiny, skin: G.Skins.worn(s, mon.dex) });
     $('menu-partner').style.setProperty('--stage-c', shiny ? '#9ae6ff' : G.U.TYPE_COLOR[mon.types[0]]);
     $('menu-partner').classList.toggle('shiny', shiny);
@@ -93,6 +94,23 @@ G.MenuUI = (() => {
   }
 
   /** Texto bajo "Mochila": cuántos objetos y MT llevas (y los Amuletos Iris, si hay). */
+  /*
+   * Halloween: cuenta atrás bajo el título (systems/halloween.js): 14 días antes,
+   * cuánto falta; durante el evento, cuánto queda. Se pone al día cada segundo
+   * mientras se ve el menú.
+   */
+  const hms = ms => { const t = Math.floor(ms / 1000); return [Math.floor(t / 3600) % 24, Math.floor(t / 60) % 60, t % 60].map(v => String(v).padStart(2, '0')).join(':'); };
+  const left = ms => { const d = Math.floor(ms / 864e5); return d ? G.I18n.f('{x} d {x}', d, hms(ms)) : hms(ms); };
+  let hwT = 0;
+  function hwLine() {
+    const el = $('menu-hw'), c = G.Halloween.countdown();
+    const txt = G.Halloween.on ? (c && c.on ? G.I18n.f('¡Halloween! Termina en {x}', left(c.ms)) : G.T('¡Halloween!'))
+      : c && !c.on ? G.I18n.f('Halloween empieza en {x}', left(c.ms)) : '';
+    el.classList.toggle('hidden', !txt);
+    if (txt) el.innerHTML = `${G.Icons.html('pumpkin', 18)} <span>${txt}</span>`;
+    if (!hwT && txt) hwT = setInterval(() => { if (G.UI.isOpen('scr-menu')) hwLine(); }, 1000);
+  }
+
   function bagLine() {
     const s = G.DB.save, sum = o => Object.values(o || {}).reduce((a, b) => a + (+b || 0), 0);
     const candy = (s.bag && s.bag.candy) || 0;

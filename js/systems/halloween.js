@@ -23,6 +23,30 @@ G.Halloween = (() => {
   /** ¿Es Halloween en esta fecha? (30-10, 31-10 y 1-11.) */
   function isOn(date = new Date()) { const { m, d } = madrid(date); return (m === 10 && d >= 30) || (m === 11 && d === 1); }
 
+  /** La medianoche de España de ese día, como instante (con el horario de verano o invierno que toque). */
+  function madridMidnight(y, m, d) {
+    const guess = Date.UTC(y, m - 1, d);
+    const p = {};
+    for (const x of new Intl.DateTimeFormat('en-CA', { timeZone: TZ, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit' }).formatToParts(guess)) p[x.type] = x.value;
+    const off = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute) - guess;      // lo que va España por delante
+    return guess - off;
+  }
+  /*
+   * Cuenta atrás del menú: SOON días antes, cuánto falta para que empiece; durante
+   * el evento, cuánto queda. → { on, ms } o null (el resto del año).
+   */
+  const SOON = 14 * 864e5;
+  function countdown(now = Date.now()) {
+    const y = +new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric' }).format(now);
+    for (const yy of [y - 1, y]) {
+      const start = madridMidnight(yy, 10, 30), end = madridMidnight(yy, 11, 2);
+      if (now >= start && now < end) return { on: true, ms: end - now };
+      if (now < start && start - now <= SOON) return { on: false, ms: start - now };
+    }
+    return null;
+  }
+
   // Forzarlo para probar (sólo en pruebas: ?dev o el juego en este ordenador).
   let force = null;
   try {
@@ -53,7 +77,7 @@ G.Halloween = (() => {
   }
 
   return {
-    SKIN_PRICE, JUDGE, isOn, takeCandy,
+    SKIN_PRICE, JUDGE, isOn, takeCandy, countdown,
     /** ¿Es Halloween ahora (menús, tienda, gacha)? */
     get on() { return on(); },
     /** ¿La partida en curso es de Halloween? (fuera de partida, lo de ahora) */

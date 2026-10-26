@@ -1072,5 +1072,10 @@ G.I18n.add({
   "Caramelos: {x}": "Candy: {x}",
   "{x} · {x} DERROTADOS · {x} MONEDAS · {x} CARAMELOS": "{x} · {x} DEFEATED · {x} COINS · {x} CANDY",
   "Durante el evento, el menú también es de noche, con calabazas encendidas y Pokémon Fantasma paseando, y tus caramelos se ven arriba, junto a los tickets, en la Mochila y, en la partida, junto a las monedas.": "During the event, the menu is also at night, with glowing pumpkins and Ghost-type Pokémon wandering around, and your candy is shown at the top next to your tickets, in the Bag and, during a run, next to your coins.",
-  "Durante el evento, toda la música suena en versión tenebrosa: las mismas canciones, algo más lentas, con theremin, caja de música, órgano y campanas. La del menú pasa a tono menor.": "During the event, all the music plays in a spooky version: the same songs, a bit slower, with theremin, music box, organ and bells. The menu theme switches to a minor key."
+  "Durante el evento, toda la música suena en versión tenebrosa: las mismas canciones, algo más lentas, con theremin, caja de música, órgano y campanas. La del menú pasa a tono menor.": "During the event, all the music plays in a spooky version: the same songs, a bit slower, with theremin, music box, organ and bells. The menu theme switches to a minor key.",
+  "{x} d {x}": "{x} d {x}",
+  "Halloween empieza en {x}": "Halloween starts in {x}",
+  "¡Halloween! Termina en {x}": "Halloween! Ends in {x}",
+  "¡Halloween!": "Halloween!",
+  "En la pantalla principal, una cuenta atrás: desde dos semanas antes, cuánto falta para Halloween; durante el evento, cuánto queda.": "On the main screen, a countdown: from two weeks before, how long until Halloween; during the event, how long is left."
 });
