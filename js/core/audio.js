@@ -382,7 +382,8 @@ G.Audio = (() => {
 
   function startSong(name) {
     if (!ctx || !G.MUSIC[name]) return;
-    const hw = !!(G.Halloween && G.Halloween.on), key = name + (hw ? ':hw' : '');
+    // (inRun: en partida, lo que era al empezarla; en los menús, lo de ahora.)
+    const hw = !!(G.Halloween && G.Halloween.inRun), key = name + (hw ? ':hw' : '');
     const src = G.MUSIC[name];
     // Halloween: además, la campana grave en la raíz de cada compás.
     const song = compiled[key] || (compiled[key] = hw

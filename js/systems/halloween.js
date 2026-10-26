@@ -40,7 +40,8 @@ G.Halloween = (() => {
    * el evento, cuánto queda. → { on, ms } o null (el resto del año).
    */
   const SOON = 14 * 864e5;
-  function countdown(now = Date.now()) {
+  function countdown(now = realNow()) {
+    if (now == null) return null;                    // (aún sin la hora de la web)
     const y = +YEAR.format(now);
     for (const yy of [y - 1, y]) {
       const start = madridMidnight(yy, 10, 30), end = madridMidnight(yy, 11, 2);
@@ -48,6 +49,27 @@ G.Halloween = (() => {
       if (now < start && start - now <= SOON) return { on: false, ms: start - now };
     }
     return null;
+  }
+
+  /*
+   * La hora, la de la web y no la del aparato (26-10-2026): cambiando la fecha
+   * del móvil se podía tener Halloween cualquier día (caramelos, skins, banner).
+   * Se pide la cabecera Date de version.json (nuestra web, gratis) al cargar y
+   * cada 15 min, y el tiempo que pasa desde entonces se cuenta con
+   * performance.now(), que no cambia aunque se toque el reloj del aparato.
+   * Mientras no se sabe (al abrir, o sin conexión), no es Halloween.
+   */
+  let srvAt = null, perfAt = 0;
+  function realNow() { return srvAt == null ? null : srvAt + (performance.now() - perfAt); }
+  function syncClock() {
+    if (typeof fetch !== 'function' || !/^https?:$/.test((typeof location !== 'undefined' && location.protocol) || '')) return;
+    const t0 = performance.now();
+    fetch('version.json?t=' + Date.now(), { method: 'HEAD', cache: 'no-store' }).then(r => {
+      const d = Date.parse(r.headers.get('date') || '');
+      if (!d) return;
+      srvAt = d + 500; perfAt = (t0 + performance.now()) / 2;      // (la cabecera va en segundos)
+      todayAt = -1e9; check();
+    }).catch(() => {});
   }
 
   /*
@@ -68,9 +90,25 @@ G.Halloween = (() => {
 
   let run = null;                  // ¿la partida en curso es de Halloween?
   // Lo de hoy se mira como mucho cada 10 s (el menú y el mapa preguntan sin parar).
-  let today = null, todayAt = -1e9;
-  const isOnNow = () => { const t = Date.now(); if (t - todayAt > 10000) { today = isOn(new Date(t)); todayAt = t; } return today; };
+  let today = false, todayAt = -1e9;
+  function isOnNow() {
+    const t = performance.now();
+    if (t - todayAt > 10000) { todayAt = t; const n = realNow(); today = n != null && isOn(new Date(n)); }
+    return today;
+  }
   const on = () => (force != null && canForce() ? force : isOnNow());
+  // Cuando cambia (llega la hora de la web, o empieza o acaba el evento con el
+  // juego abierto), se avisa (game.js rehace el menú de fondo y la música).
+  const listeners = [];
+  let last = false;                // (al abrir, sin la hora de la web, no lo es)
+  function check() {
+    const v = on();
+    if (v !== last) listeners.forEach(fn => { try { fn(v); } catch (e) { console.warn(e); } });
+    last = v;
+  }
+  syncClock();
+  setInterval(syncClock, 15 * 60 * 1000);
+  setInterval(check, 10000);
 
   /*
    * Caramelos. Precio de cada skin: SKIN_PRICE. Lo que sale en una partida va
@@ -91,6 +129,8 @@ G.Halloween = (() => {
 
   return {
     SKIN_PRICE, JUDGE, isOn, takeCandy, countdown,
+    /** fn(on): Halloween ha empezado o acabado (o ya se sabe la hora de la web). */
+    onChange(fn) { listeners.push(fn); },
     /** ¿Es Halloween ahora (menús, tienda, gacha)? */
     get on() { return on(); },
     /** ¿La partida en curso es de Halloween? (fuera de partida, lo de ahora) */

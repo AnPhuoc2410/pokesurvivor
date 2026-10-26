@@ -46,6 +46,16 @@ G.Game = (() => {
     addEventListener('blur', () => { if (G.Touch.active) autoPause(); });
     G.RunUI.wirePause(() => { state = 'playing'; G.UI.hideAll(); }, quitRun);
     Backdrop.init();
+    // Halloween empieza o acaba con el juego abierto (o llega la hora de la web, al
+    // abrir): en los menús, el mundo de fondo y la música cambian al momento. (Una
+    // partida sigue como empezó: systems/halloween.js, runStart.)
+    G.Halloween.onChange(() => {
+      if (state !== 'ui') return;
+      Backdrop.restore();
+      const t = G.Audio.track;
+      if (t) { G.Audio.music(null); G.Audio.music(t); }
+      if (G.UI.isOpen('scr-menu')) G.MenuUI.open();
+    });
     last = performance.now();
     requestAnimationFrame(loop);
   }
