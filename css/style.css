@@ -537,6 +537,7 @@ kbd {
 
 @media (max-width: 760px) and (min-height: 521px) {
   #scr-menu { flex-direction: column; overflow-y: auto; }
+  .menu-left { padding-top: 60px; }               /* (el título quedaba debajo de la barra de arriba) */
   .menu-right { width: 100%; background: rgba(5,10,25,.7); }
   .split { grid-template-columns: 1fr; }
   .logo .t1 { font-size: 34px; }
@@ -898,6 +899,8 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
   .menu-right > .box:last-child { display: none; }
   .menu-right > :first-child { margin-top: 0; }
   .ach-pop { top: auto; bottom: 8px; }
+  /* En partida, abajo tapaba los ataques: arriba y más pequeño. */
+  body.in-run .ach-pop { top: 4px; bottom: auto; transform: translateX(-50%) scale(.8); transform-origin: top center; }
   .menu-list { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 4px; }
   .menu-item { font-size: 15px; padding: 4px 6px; grid-template-columns: 22px 1fr; column-gap: 6px; }
   .menu-item small { font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1033,4 +1036,51 @@ html:lang(zh) .btn, html:lang(zh) .chip { letter-spacing: 0; }
   .sound-panel { top: 82px; }
   .menu-left { padding-top: 92px; }
   #scr-goals, #scr-dex, #scr-upgrades, #scr-gacha, #scr-friends, #scr-rank, #scr-lobby, #scr-profile, #scr-shop, #scr-news { padding-top: 92px; }
+}
+
+/* ============ barra de arriba: limpia en cualquier pantalla (26-10-2026) ============
+ * Antes iba en una sola línea pegada a la derecha y, con todo puesto (Guardar,
+ * EN DIRECTO, Apoyar, los caramelos de Halloween...), en muchas pantallas (hasta
+ * en tabletas de 1180 px) las monedas y los tickets se salían por la izquierda y
+ * los botones se partían en dos líneas. Ahora:
+ *   - nada se parte por dentro (cada pastilla y cada botón en una línea)
+ *   - según se estrecha la pantalla, los botones se quedan sólo con su icono
+ *     (el nombre sigue en el título al pasar el ratón) y el apodo se recorta
+ *   - si aun así no cabe, pasa a otra línea en vez de salirse
+ *     (la barra ocupa todo el ancho, pero sólo sus botones reciben los clics) */
+.topbar { left: 16px; justify-content: flex-end; flex-wrap: wrap; row-gap: 6px; pointer-events: none; }
+.topbar > * { pointer-events: auto; flex: 0 0 auto; white-space: nowrap; }
+.topbar .btn { display: inline-flex; align-items: center; gap: 5px; }
+#user-pill { max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
+#user-pill > span { overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 1600px) {
+  #btn-news span, #btn-support span, #btn-save span, #btn-yt:not(.live) span { display: none; }
+  #user-pill { max-width: 170px; }
+}
+@media (max-width: 1280px) {
+  .topbar { gap: 6px; }
+  .topbar .pill { padding: 4px 10px; gap: 6px; }
+  .topbar .btn.small { padding: 4px 8px; }
+  #user-pill { max-width: 160px; }
+}
+@media (max-width: 1000px), (max-height: 520px) {
+  .topbar { gap: 4px; }
+  .topbar .pill { padding: 2px 7px; font-size: 13px; gap: 4px; }
+  .topbar .btn.small { padding: 2px 5px; }
+  #user-pill { max-width: 104px; }
+  .topbar img { width: 16px; height: 16px; }
+}
+/* Las pantallas más estrechas: tu apodo se queda en la corona (tocarla abre tu perfil),
+ * y EN DIRECTO, en el botón rojo con el punto que parpadea. */
+@media (max-width: 800px) {
+  #user-pill > span { display: none; }
+  #btn-yt.live span { display: none; }
+  .topbar { gap: 3px; }
+}
+/* Los móviles más pequeños (568 px): «Salir» sólo en Ajustes → Cuenta (Cerrar sesión). */
+@media (max-width: 620px) and (max-height: 520px) {
+  #btn-logout { display: none; }
+  .topbar .pill { padding: 2px 5px; gap: 3px; }
+  .topbar .btn.small { padding: 2px 4px; }
+  .topbar img { width: 14px; height: 14px; }
 }

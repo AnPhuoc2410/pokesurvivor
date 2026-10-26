@@ -288,8 +288,10 @@ G.HUD = (() => {
       }
       ctx.fillStyle = '#ffcb3d';
       ctx.strokeStyle = 'rgba(0,0,0,.7)'; ctx.lineWidth = 4;
+      // (Nunca por encima de la línea de bioma, derrotados y monedas, bajo el reloj.)
+      const y0 = Math.max(78 + size * 0.5, h * 0.3 - (lines.length - 1) / 2 * size * 1.25);
       lines.forEach((ln, i) => {
-        const y = h * 0.3 + (i - (lines.length - 1) / 2) * size * 1.25;
+        const y = y0 + i * size * 1.25;
         ctx.strokeText(ln, w / 2, y);
         ctx.fillText(ln, w / 2, y);
       });
