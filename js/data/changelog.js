@@ -16,7 +16,9 @@ G.CHANGELOG = [
     ["Minuto 30: esos días, en vez de Arceus llega el gran Gengar bruja. Cuenta para el ranking de daño, como Arceus.",
      "Minute 30: on those days, instead of Arceus the great witch Gengar arrives. It counts for the damage ranking, like Arceus."],
     ["Durante el evento, el menú también es de noche, con calabazas encendidas y Pokémon Fantasma paseando, y tus caramelos se ven arriba, junto a los tickets, en la Mochila y, en la partida, junto a las monedas.",
-     "During the event, the menu is also at night, with glowing pumpkins and Ghost-type Pokémon wandering around, and your candy is shown at the top next to your tickets, in the Bag and, during a run, next to your coins."]
+     "During the event, the menu is also at night, with glowing pumpkins and Ghost-type Pokémon wandering around, and your candy is shown at the top next to your tickets, in the Bag and, during a run, next to your coins."],
+    ["Durante el evento, toda la música suena en versión tenebrosa: las mismas canciones, algo más lentas, con theremin, caja de música, órgano y campanas. La del menú pasa a tono menor.",
+     "During the event, all the music plays in a spooky version: the same songs, a bit slower, with theremin, music box, organ and bells. The menu theme switches to a minor key."]
   ]},
   { d: '2026-10-25', title: ['Tickets y Pokémon iguales en todos tus aparatos', 'The same tickets and Pokémon on all your devices'], new: [
     ['Al acabar la partida, sola o en grupo, sale el resumen: cada ataque con el daño que ha hecho y su daño por segundo, el daño total y tu objeto. En grupo, también el de cada compañero, con una pestaña por jugador.',

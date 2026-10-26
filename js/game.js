@@ -160,7 +160,7 @@ G.Game = (() => {
     }
     G.Camera.x = pl.x; G.Camera.y = pl.y; G.Camera.shake = 0;
     // Hojas de sprites locales: el compañero y los primeros enemigos.
-    G.Sprites.preload([mon.dex], 8000, pl.shiny);
+    G.Sprites.preload([mon.dex], 8000, pl.shiny, pl.anim.skin || '');
     G.Audio.music(G.BIOME_MUSIC[0]);
     // Para el ranking: el servidor apunta cuándo empieza la partida (anti-trampas).
     if (!coop || G.Coop.isHost) G.Ranking.runStarted(coop ? 'g' : 's');

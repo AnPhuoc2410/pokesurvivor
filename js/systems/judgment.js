@@ -148,7 +148,7 @@ G.Judgment = (() => {
     const s = G.DB.save;
     // La primera vez se ve entera; en grupo la salta el anfitrión.
     canSkip = !!(s && s.stats && s.stats.judged > 0) && authority();
-    G.Sprites.preload([BOSS.dex, ...new Set(c.q.slice(0, 12))], 12000);
+    G.Sprites.preload([BOSS.dex, ...new Set(c.q.slice(0, 12))], 12000, false, BOSS.skin || '');
     cineAnim = new G.Sprites.Animator(BOSS.dex, 1);
     cineAnim.skin = BOSS.skin;
     G.Touch.reset();
