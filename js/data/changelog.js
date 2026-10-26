@@ -22,6 +22,8 @@ G.CHANGELOG = [
     ["En la pantalla principal, una cuenta atrás: desde dos semanas antes, cuánto falta para Halloween; durante el evento, cuánto queda.",
      "On the main screen, a countdown: from two weeks before, how long until Halloween; during the event, how long is left."]
   ], fix: [
+    ["Móvil: el botón «atrás» (o el gesto de volver) ya no te saca del juego. En plena partida la pausa, en una pantalla del menú vuelve al menú y sólo en el menú principal sale de la web. Y si bajas la cortina de avisos u otra app se pone por encima, la partida también se pausa (jugando solo).",
+     "Mobile: the \"back\" button (or the back gesture) no longer takes you out of the game. During a run it pauses, on a menu screen it goes back to the menu, and only on the main menu does it leave the site. And if you pull down the notification shade or another app opens on top, the run also pauses (when playing solo)."],
     ["Móvil: los avisos del centro de la pantalla (los de las esferas, por ejemplo) se salían por los dos lados y no se podían leer. Ahora se parten en líneas y caben.",
      "Mobile: the messages in the middle of the screen (the orb ones, for example) went off both sides and could not be read. Now they wrap and fit."],
     ["Móvil: los avisos de abajo (logros y mensajes) ya no se quedan con los toques. Mientras se veían, tapaban los ataques y no se podía cambiar de ataque.",

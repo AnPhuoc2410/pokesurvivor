@@ -41,6 +41,9 @@ G.Game = (() => {
     G.Touch.init(cv);
     // En móvil: al cambiar de app o girarlo en vertical, la partida se pausa.
     document.addEventListener('visibilitychange', () => { if (document.hidden) autoPause(); });
+    // En el móvil, bajar la cortina de avisos o abrir otra app por encima a veces
+    // sólo quita el foco a la página (sin ocultarla): también se pausa.
+    addEventListener('blur', () => { if (G.Touch.active) autoPause(); });
     G.RunUI.wirePause(() => { state = 'playing'; G.UI.hideAll(); }, quitRun);
     Backdrop.init();
     last = performance.now();
@@ -67,6 +70,42 @@ G.Game = (() => {
     resizeTs.forEach(clearTimeout);
     resizeTs = [100, 350, 800].map(ms => setTimeout(resize, ms));
   }
+
+  /*
+   * Botón «atrás» del móvil (o el gesto de volver, también en el iPhone). Antes
+   * te sacaba de la web: en plena partida se perdían sus monedas y no contaba
+   * para el ranking. Mientras juegas o estás en una pantalla del menú hay una
+   * entrada de más en el historial (needsTrap); «atrás» la gasta y aquí se
+   * decide: en partida, pausa; en una pantalla del menú, vuelve al menú (o
+   * cierra la ventana de encima). En el menú principal no hay entrada de más:
+   * «atrás» sale de la web, como siempre.
+   */
+  const BACK_SCREENS = ['scr-dex', 'scr-upgrades', 'scr-shop', 'scr-bag', 'scr-gacha', 'scr-friends', 'scr-rank', 'scr-goals', 'scr-lobby', 'scr-mod'];
+  const shown = id => { const el = document.getElementById(id); return !!el && !el.classList.contains('hidden'); };
+  let trapped = false;
+  function needsTrap() {
+    if (state !== 'ui') return true;
+    return BACK_SCREENS.some(shown) || ['scr-settings', 'scr-news', 'scr-support', 'scr-profile', 'pull-fx'].some(shown);
+  }
+  function ensureTrap() {
+    if (trapped || !needsTrap() || !window.history || !history.pushState) return;
+    try { history.pushState({ ps: 1 }, ''); trapped = true; } catch (e) { /* nada */ }
+  }
+  addEventListener('popstate', () => {
+    trapped = false;                          // (en cuanto haga falta, el bucle vuelve a poner otra)
+    if (state !== 'ui') {
+      // En partida: pausa (en grupo abre la pausa sin parar a los demás). Con las
+      // cartas, la pausa o el resumen abiertos, no pasa nada: te quedas donde estás.
+      if (state === 'playing' && !G.Judgment.cinematic && !G.UI.isOpen('scr-pause')) togglePause();
+      return;
+    }
+    if (shown('pull-fx')) return;                                  // la tirada del gacha
+    if (shown('scr-profile')) { document.getElementById('scr-profile').classList.add('hidden'); return; }
+    if (G.SettingsUI.isOpen) { G.SettingsUI.close(); return; }
+    if (shown('scr-news')) { G.NewsUI.close(); return; }
+    if (shown('scr-support')) { G.SupportUI.close(); return; }
+    if (BACK_SCREENS.some(shown) && G.DB.save && G.DB.save.partner) G.MenuUI.open();
+  });
 
   /** Móvil en vertical: aviso de girarlo (y pausa). */
   function checkOrientation() {
@@ -661,7 +700,7 @@ G.Game = (() => {
     G.Audio.sfx('click');
   }
 
-  let frameDt = 0, speedK = 1;
+  let frameDt = 0, speedK = 1, trapT = 0;
   let fpsShown = 60, fpsAcc = 0, fpsN = 0;
   // El siguiente fotograma se pide ANTES de nada: si algo falla a mitad, el
   // juego sigue (antes se quedaba congelado para siempre y había que recargar;
@@ -697,6 +736,7 @@ G.Game = (() => {
 
     G.Pad.poll(real);
     handleKeys();
+    if ((trapT -= real) <= 0) { trapT = 0.5; ensureTrap(); }
 
     if (state === 'playing') update(dt);
     else if (pl && state !== 'ui') { G.FX.update(dt * 0.25); pl.anim.update(dt * 0.25); }

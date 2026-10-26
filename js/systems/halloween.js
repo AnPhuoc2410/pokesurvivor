@@ -11,7 +11,7 @@
  *   - minuto 30: en vez de Arceus sale el gran Gengar bruja (systems/judgment.js)
  *
  * Una partida empezada durante el evento lo es hasta que acaba (runStart).
- * Para probarlo otro día: ?halloween=1 (o =0) con ?dev o en localhost.
+ * Para probarlo otro día: ?halloween=1 (o =0), sólo en localhost o con la cuenta de admin.
  */
 G.Halloween = (() => {
   const TZ = 'Europe/Madrid';
@@ -47,17 +47,24 @@ G.Halloween = (() => {
     return null;
   }
 
-  // Forzarlo para probar (sólo en pruebas: ?dev o el juego en este ordenador).
+  /*
+   * Forzarlo para probar otro día (?halloween=1 o =0; se queda en la pestaña):
+   * SÓLO en este ordenador (localhost o file://) o con la cuenta de admin. Antes
+   * valía con ?dev en la web, y cualquiera podía comprar las skins o tirar en
+   * el banner Espectral cualquier día del año.
+   */
   let force = null;
+  const local = (() => { try { return /^(localhost|127\.0\.0\.1)$/.test(location.hostname) || location.protocol === 'file:'; } catch (e) { return false; } })();
   try {
-    const q = new URLSearchParams(location.search), local = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) || location.protocol === 'file:';
-    if ((q.has('dev') || local) && q.has('halloween')) sessionStorage.setItem('ps.halloween', q.get('halloween') === '0' ? '0' : '1');
-    const v = (q.has('dev') || local) ? sessionStorage.getItem('ps.halloween') : null;
+    const q = new URLSearchParams(location.search);
+    if (q.has('halloween')) sessionStorage.setItem('ps.halloween', q.get('halloween') === '0' ? '0' : '1');
+    const v = sessionStorage.getItem('ps.halloween');
     if (v != null) force = v === '1';
   } catch (e) { /* nada */ }
+  const canForce = () => local || !!(G.Ranking && G.Ranking.isAdmin && G.Ranking.isAdmin());
 
   let run = null;                  // ¿la partida en curso es de Halloween?
-  const on = () => (force != null ? force : isOn());
+  const on = () => (force != null && canForce() ? force : isOn());
 
   /*
    * Caramelos. Precio de cada skin: SKIN_PRICE. Lo que sale en una partida va
