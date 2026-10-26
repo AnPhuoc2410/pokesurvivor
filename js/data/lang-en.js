@@ -304,7 +304,6 @@ G.I18n.add({
   'Repetido ·': 'Duplicate ·', '· {x} {x} shiny': '· {x} {x} shiny', '{x} Shiny': '{x} Shiny', 'Clic para acelerar': 'Click to speed up',
   'TIRADA': 'PULL', 'TIRADA ×10': 'PULL ×10', '¡SUERTE!': 'GOOD LUCK!', '¡¿SHINY?!': 'SHINY?!', '¡¿LEGENDARIO?!': 'LEGENDARY?!', '¡¿ÉPICO?!': 'EPIC?!', 'SHINY ·': 'SHINY ·',
   // mejoras
-  'Pokémon': 'Pokémon',
 
   // ---------------- misiones, logros y perfil ----------------
   'Logros': 'Achievements', 'Perfil': 'Profile', 'Diarias': 'Daily', 'Semanales': 'Weekly', 'Se renuevan en {x}': 'Refreshes in {x}',
@@ -723,7 +722,7 @@ G.I18n.add({
     "Can't connect to one of your friends: their network (or yours) doesn't allow group play. Try another Wi-Fi or mobile data; it retries automatically.",
   'Ahora mismo no se pueden crear cuentas nuevas. Si ya tienes cuenta, entra normal; si no, puedes jugar como invitado.':
     'New accounts cannot be created right now. If you already have an account, sign in as usual; otherwise, you can play as a guest.',
-  'Atajos de movimientos': 'Move shortcuts', 'Libre': 'Free',
+  'Atajos de movimientos': 'Move shortcuts',
   'Elige qué movimiento va siempre en cada hueco (teclas 1-4 o los iconos de abajo), para la memoria muscular. Si aún no tienes tantos movimientos, va al hueco más cercano.':
     'Choose which move always goes in each slot (keys 1-4 or the icons at the bottom), for muscle memory. If you do not have that many moves yet, it goes to the closest slot.',
   'Golpe Crítico': 'Critical Hit', '+3% de críticos (x1,5 de daño)': '+3% critical chance (x1.5 damage)',
@@ -753,7 +752,7 @@ G.I18n.add({
   // ---------------- recuperar la cuenta (vincular Gmail) ----------------
   '¿Olvidaste tu contraseña?': 'Forgot your password?',
   '¿Te da miedo perder tu cuenta?': 'Afraid of losing your account?',
-  'Vincular mi Gmail': 'Link my Gmail', 'Ahora no': 'Not now', 'No volver a preguntar': "Don't ask again",
+  'Vincular mi Gmail': 'Link my Gmail', 'No volver a preguntar': "Don't ask again",
   '¡Gmail vinculado! Si olvidas la contraseña, entra con Google.': 'Gmail linked! If you forget your password, sign in with Google.',
   'Ese Gmail ya tiene su propia cuenta del juego. Usa otro Gmail.': 'That Gmail already has its own game account. Use another Gmail.',
   'Inicia sesión primero.': 'Sign in first.',

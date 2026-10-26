@@ -14,8 +14,8 @@
  * porque la conexión parpadea, el siguiente envío lo arregla y nadie se queda
  * esperando a otro para siempre (pasaba en 2026-10).
  *
- * Mensajes (por net.js, unas 15 veces por segundo; 5 si va por el relé):
- *   invitado -> anfitrión  { k:'f', p:[estado], ev:[eventos] }
+ * Mensajes (por net.js, unas 15 veces por segundo; 3 si va por el relé):
+ *   invitado -> anfitrión  { k:'f', p:[estado], ev:[eventos], h, w }   (h, w: ver flushClient)
  *   anfitrión -> invitado  { k:'f', t, lv, xp, xn, ki, bo, co, p:{uid:[estado]},
  *                            e:[[id,x,y,vida,anim,dir,estados]], ev:[eventos],
  *                            ja:[x,y,anim,dir,daño] (Arceus, sólo en la Sentencia) }
@@ -59,7 +59,7 @@ G.Coop = (() => {
   /**
    * @param cfg   { seed, host, members }
    * @param pl    tu Player (ya creado)
-   * @param cb    { levelStart(lv), resume(), waiting(names), over(data), lost(msg), team(t), shiny(dex) }
+   * @param cb    lo que hace falta del juego (coopApi en game.js: levelStart, resume, over, hold...)
    */
   function begin(cfg, pl, cb) {
     active = true;
@@ -108,12 +108,10 @@ G.Coop = (() => {
 
   // ---------------- lista de jugadores ----------------
 
-  function players() {
-    const out = [local];
-    for (const m of mates.values()) if (m.connected) out.push(m.pl);
-    return out;
-  }
+  /** Los Pokémon de los compañeros conectados. */
   function puppets() { const out = []; for (const m of mates.values()) if (m.connected) out.push(m.pl); return out; }
+  /** Todos: tú primero. */
+  function players() { return [local, ...puppets()]; }
 
   /**
    * Multiplicador de la experiencia del equipo: la media de los bonus de
@@ -287,8 +285,7 @@ G.Coop = (() => {
       flushT -= dt;
       if (flushT <= 0) {
         flushT = rateFor(hostUid);
-        G.Net.toHost({ k: 'f', p: myState(), ev: outEv });
-        outEv = [];
+        flushClient(true);
       }
     }
   }
@@ -357,7 +354,6 @@ G.Coop = (() => {
     G.Spawner.say(m.name + ' ha dejado la partida', 2.6);
     if (waiting.has(u)) picked(u);
     if (holds.has(u)) holdOff(u);
-    if (api.mateLeft) api.mateLeft(m);
   }
 
   // --- en el anfitrión ---

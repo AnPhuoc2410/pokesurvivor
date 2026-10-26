@@ -35,7 +35,6 @@ G.Tiles = (() => {
       prop: 'dead', leaf: ['#4a3a30', '#5e4a3c', '#6f5a49', '#806a58'], trunk: ['#3a2e27', '#52423a'],
       rock: ['#4e4642', '#6a605b', '#877c76'], grass: ['#6b4a2a', '#94693a', '#c4914e'] },
   ];
-  const NORMAL = 3;                   // biomas que se van turnando en una run
   const ARENA = 3;                    // a partir de aquí, las arenas de la grieta (una por tipo)
 
   // ---------------- arenas de la grieta ----------------
@@ -696,7 +695,7 @@ G.Tiles = (() => {
 
   function clearProps() { propCache.clear(); }
 
-  return { T, BIOMES, NORMAL, ARENA, ARENA_THEMES, ARENA_TYPES, HW, runBiome, paintChunk, propSprite, clearProps,
+  return { T, BIOMES, ARENA, ARENA_THEMES, ARENA_TYPES, HW, runBiome, paintChunk, propSprite, clearProps,
            /** Índice de bioma de la arena de un tipo. */
            arenaBiome: type => ARENA + Math.max(0, ARENA_TYPES.indexOf(type)) };
 })();

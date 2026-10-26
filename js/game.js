@@ -84,9 +84,13 @@ G.Game = (() => {
     if (state === 'playing' && !G.Coop.active) { state = 'paused'; G.RunUI.showPause(); }
   }
 
-  /** Pausa/continúa (tecla Esc o P, o el botón de pausa del móvil). */
-  let holdBy = [];                   // grupo: quién está eligiendo fusión (todo parado)
+  // Grupo: quién está eligiendo fusión u objeto (todo parado), y el anfitrión
+  // que se ha ido de la pestaña o no responde (coopApi.hold / away).
+  let holdBy = [];
+  let awayBy = null;
+  const awayText = () => 'Pausa: esperando a ' + awayBy + ' (anfitrión)…';
 
+  /** Pausa/continúa (tecla Esc o P, o el botón de pausa del móvil). */
   function togglePause() {
     // En grupo la pausa no para el juego (los demás siguen jugando).
     if (G.Coop.active) {
@@ -162,8 +166,8 @@ G.Game = (() => {
     // Hojas de sprites locales: el compañero y los primeros enemigos.
     G.Sprites.preload([mon.dex], 8000, pl.shiny, pl.anim.skin || '');
     G.Audio.music(G.BIOME_MUSIC[0]);
-    // Para el ranking: el servidor apunta cuándo empieza la partida (anti-trampas).
-    if (!coop || G.Coop.isHost) G.Ranking.runStarted(coop ? 'g' : 's');
+    // Ranking: sube las marcas del histórico que estaban esperando (ver DEFER en ranking.js).
+    if (!coop || G.Coop.isHost) G.Ranking.runStarted();
     deathT = 0;
 
     state = 'playing';
@@ -199,13 +203,13 @@ G.Game = (() => {
              mv: pl.moves.slice(0, 8).map(m => [m.id, m.lvl, Math.round(m.dealt || 0), Math.round(m.since || 0), m.evolved ? 1 : 0]) };
   }
 
-  /** Lo que el cooperativo necesita del juego. */
   /**
    * Los tickets recogidos se guardan en cuanto los coges (como los shinies):
    * antes sólo al acabar, y si la pestaña se cerraba de golpe se perdían.
-   * `banked` = los de esta partida que ya están en la partida guardada.
+   * `banked` = los de esta partida que ya están en la partida guardada
+   * (también los caramelos de Halloween, cn).
    */
-  let banked = { t1: 0, t10: 0 };
+  let banked = { t1: 0, t10: 0, cn: 0 };
   function bankTickets(save_ = true) {
     const sv = G.DB.save;
     if (!sv || !pl) return;
@@ -219,6 +223,7 @@ G.Game = (() => {
     if (save_) G.DB.commit('run');
   }
 
+  /** Lo que el cooperativo necesita del juego (ver net/coop.js). */
   const coopApi = {
     team: teamState,
     summary,
@@ -268,7 +273,6 @@ G.Game = (() => {
     item(id) { offerItem(id); },
     /** El anfitrión te da una esfera que has cogido. */
     orb(id) { if (pl && state !== 'over') G.Orbs.got(pl, id); },
-    mateLeft() {},
     /** Grupo: quién está eligiendo fusión. Mientras haya alguien, todo parado. */
     hold(names) {
       holdBy = names || [];
@@ -296,8 +300,6 @@ G.Game = (() => {
       }
     }
   };
-  let awayBy = null;
-  const awayText = () => 'Pausa: esperando a ' + awayBy + ' (anfitrión)…';
 
   /** Has llevado a casa a un Pokémon perdido y se une a ti (events.js). */
   G.onRescue = (dex, name) => {
@@ -374,8 +376,7 @@ G.Game = (() => {
     G.Judgment.reset();
     G.Progress.event('runEnd', { time, level: pl.level, coins: pl.coins, types: pl.mon.types, group: coop });
     G.Progress.checkAch();
-    // A la nube al acabar la partida (como mucho cada hora); si la marca entra
-    // en un top (hoy, semana o mes), enseguida (abajo, tras subirla al ranking).
+    // Se guarda en este aparato; a la nube sube al pulsar Guardar (ver db.js).
     G.DB.commit('run');
     if (G.Social.me) G.Social.publishProfile();
 
@@ -385,7 +386,7 @@ G.Game = (() => {
     const ok = clean();
     const sent = ok && !coop ? G.Ranking.submitSolo(Object.assign(mark, { dex: pl.dex, shiny: pl.shiny }))
                : ok && wasHost ? G.Ranking.submitGroup(Object.assign(mark, { members: team })) : null;
-    if (sent) sent.then(b => { if (b && b.some(p => p !== 'a')) G.DB.commit(true); }).catch(() => {});
+    if (sent) sent.catch(() => {});
 
     G.RunUI.showOver({
       dead, time, level: pl.level, kills: pl.kills, bosses: pl.bosses, coins, record, t1: pl.t1, t10: pl.t10, candy: pl.candy || 0, judge,

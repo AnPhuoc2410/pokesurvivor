@@ -86,7 +86,7 @@ G.Judgment = (() => {
   let phase = null;                   // null | 'cine' | 'fight'
   let ct = 0;                         // reloj de la animación
   let cfg = null;                     // { tx, ty, q: [dex de los legendarios] }
-  let ported = false, landed = false, canSkip = false, cues = {};
+  let ported = false, landed = false, canSkip = false;
   let A = null;                       // Arceus
   let center = null;                  // centro de la arena (mundo)
   let arenaT = 0, bossT = 0, bossN = 0, base = 0, downs = 0;
@@ -100,7 +100,7 @@ G.Judgment = (() => {
   let cineAnim = null;
 
   function reset() {
-    phase = null; ct = 0; cfg = null; ported = landed = canSkip = false; cues = {};
+    phase = null; ct = 0; cfg = null; ported = landed = canSkip = false;
     A = null; center = null; arenaT = bossT = 0; bossN = 0; base = 0; downs = 0;
     dealt = 0; shielded = broke = false; brk = 0;
     hits = new Map(); hitT = 0; samples = []; embers = []; cam = null;
@@ -144,7 +144,7 @@ G.Judgment = (() => {
     BOSS = c.hw ? GENGAR_B : ARCEUS_B;
     GOLD = BOSS.col; PALE = BOSS.pale; GLOW = BOSS.glow;
     cfg = c;
-    phase = 'cine'; ct = 0; cues = {};
+    phase = 'cine'; ct = 0;
     const s = G.DB.save;
     // La primera vez se ve entera; en grupo la salta el anfitrión.
     canSkip = !!(s && s.stats && s.stats.judged > 0) && authority();

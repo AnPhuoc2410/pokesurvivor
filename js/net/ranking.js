@@ -210,7 +210,6 @@ G.Ranking = (() => {
    * y derrotados con sentido y el baneo (firestore.rules; el tope de 45 min se
    * quitó el 23-10-2026: en el minuto 35 Arceus rompe los objetos).
    */
-  let busy = Promise.resolve();
   /** Al empezar a jugar: sube las marcas del histórico que esperaban (ver DEFER). */
   function runStarted() { flushDeferred(); }
 
@@ -254,8 +253,6 @@ G.Ranking = (() => {
     const d = deferred(), k = b + ':' + id;
     if (d[k] && d[k].e) { d[k] = { up: Date.now() }; saveDeferred(d); }
   }
-  /** La subida de una marca (para que la partida siguiente espere a que acabe). */
-  function track(p) { busy = p.catch(() => {}); return p; }
 
   /** Guarda la entrada en cada tabla donde mejore (tiempo o daño). → periodos mejorados */
   async function store(boards, id, entry) {
@@ -361,7 +358,7 @@ G.Ranking = (() => {
     return { t, lv: Math.max(1, Math.min(r.lv | 0, 10 + Math.floor(t / 4))), kills: Math.max(0, Math.min(r.kills | 0, 100 + t * 12)) };
   }
 
-  function submitSolo(r) { return track(submitSoloNow(r)); }
+  function submitSolo(r) { return submitSoloNow(r); }
   async function submitSoloNow(r) {
     const fb = fbx();
     if (!fb || !G.Social.me || r.t < MIN_T) return [];
@@ -376,7 +373,7 @@ G.Ranking = (() => {
   }
 
   /** La sube el anfitrión, con todo el equipo. */
-  function submitGroup(r) { return track(submitGroupNow(r)); }
+  function submitGroup(r) { return submitGroupNow(r); }
   async function submitGroupNow(r) {
     const fb = fbx();
     if (!fb || r.t < MIN_T || !r.members || r.members.length < 2) return [];
@@ -410,8 +407,6 @@ G.Ranking = (() => {
     }
     return inflight.get(b);
   }
-  /** El top 50 de tiempo de una tabla. */
-  async function summary(b) { return (await sumOf(b)).top; }
 
   /*
    * Lo que se enseña de una tabla: su resumen y, encima, lo que este navegador

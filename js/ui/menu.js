@@ -463,7 +463,7 @@ G.MenuUI = (() => {
     });
     const host = box.querySelector('#mx-picker');
     if (!host || !extraOpen) return;
-    const s = G.DB.save, mon = G.DEX_BY[dex];
+    const mon = G.DEX_BY[dex];
     const chips = (list, label, onPick) => {
       host.innerHTML = `<div class="panel ban-picker"><div class="ban-moves">${list.map(x => `<button class="chip" data-v="${x.v}">${x.html}</button>`).join('')}</div></div>`;
       host.querySelectorAll('[data-v]').forEach(c => { c.onclick = () => onPick(c.dataset.v); });
