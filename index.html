@@ -57,7 +57,17 @@
       "@id": "https://pokesurvivor.com/#web",
       "url": "https://pokesurvivor.com/",
       "name": "PokéSurvivor",
-      "inLanguage": "es"
+      "inLanguage": "es",
+      "publisher": { "@id": "https://pokesurvivor.com/#autor" }
+    },
+    {
+      "@type": "Person",
+      "@id": "https://pokesurvivor.com/#autor",
+      "name": "Jonathan Piera Torregrosa",
+      "alternateName": "JPTER78",
+      "url": "https://pokesurvivor.com/",
+      "sameAs": ["https://www.youtube.com/@jpter78", "https://www.tiktok.com/@jpter78", "https://www.twitch.tv/jpter78",
+        "https://x.com/JPTER78", "https://github.com/JPTER78"]
     },
     {
       "@type": ["VideoGame", "WebApplication"],
@@ -75,14 +85,16 @@
       "numberOfPlayers": { "@type": "QuantitativeValue", "minValue": 1, "maxValue": 4 },
       "isAccessibleForFree": true,
       "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR", "availability": "https://schema.org/InStock" },
+      "author": { "@id": "https://pokesurvivor.com/#autor" },
+      "publisher": { "@id": "https://pokesurvivor.com/#autor" },
       "isPartOf": { "@id": "https://pokesurvivor.com/#web" }
     }
   ]
 }
 </script>
 
-<link rel="stylesheet" href="css/style.css?v=fd07d5accc">
-<script src="js/core/locales.js?v=62ba17356e"></script>
+<link rel="stylesheet" href="css/style.css?v=e10c4224d9">
+<script src="js/core/locales.js?v=dd310e98cd"></script>
 <script src="js/noframe.js"></script>
 </head>
 <body>
@@ -224,6 +236,19 @@
   <div class="box news-box">
     <div class="row between"><h2>Novedades</h2><button class="btn small ghost" id="news-close">Cerrar</button></div>
     <div id="news-body" class="news-body"></div>
+  </div>
+</section>
+
+<!-- ====== Vídeo nuevo del canal (js/ui/video-ui.js) ====== -->
+<section id="scr-video" class="scr dim hidden">
+  <div class="box video-box">
+    <h2>¡Vídeo nuevo en el canal!</h2>
+    <div id="video-thumb" class="video-thumb"></div>
+    <div class="row">
+      <button class="btn grow" id="video-play">Verlo aquí</button>
+      <button class="btn ghost grow" id="video-yt">Ver en YouTube</button>
+      <button class="btn small ghost" id="video-close">Ahora no</button>
+    </div>
   </div>
 </section>
 
@@ -610,6 +635,6 @@
 </section>
 
 <!-- datos generados -->
-<script defer src="js/app.min.js?v=0efb42e511"></script>
+<script defer src="js/app.min.js?v=4211f2e32a"></script>
 </body>
 </html>
