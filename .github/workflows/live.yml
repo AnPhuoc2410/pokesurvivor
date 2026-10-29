@@ -45,6 +45,8 @@ jobs:
               echo "ficha rara de $v: sin cambios"; rm -f streams.html video.html; exit 0
             fi
             # En directo ahora: isLiveNow true (al acabar pasa a false y lleva endTimestamp).
+            # Lo que ve de cada vídeo (para saber por qué no detecta un directo).
+            echo "$v: $(grep -oE '"playabilityStatus":\{"status":"[A-Z_]+"' video.html | head -1 | cut -d'"' -f6) $(grep -oE '"isLiveNow":(true|false)' video.html | head -1) $(wc -c < video.html) bytes"
             if grep -q '"liveBroadcastDetails":{"isLiveNow":true' video.html; then id=$v; live=true; break; fi
           done
           rm -f streams.html video.html
