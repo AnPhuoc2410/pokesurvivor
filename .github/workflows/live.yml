@@ -9,6 +9,11 @@ on:
   schedule:
     - cron: '*/5 * * * *'
   workflow_dispatch:
+    inputs:
+      prueba:
+        description: 'Sólo para probar: id de otro canal (UC…). Dice si está en directo y no cambia live.json'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -26,8 +31,15 @@ jobs:
         with:
           ref: live
       - name: Mirar el canal
+        env:
+          PRUEBA: ${{ inputs.prueba }}
         run: |
           set -u
+          CH=UC5nyI589EfbS3KvyNdAVOGA
+          if [ -n "${PRUEBA:-}" ]; then
+            echo "$PRUEBA" | grep -qE '^UC[A-Za-z0-9_-]{22}$' || { echo "prueba: id de canal no válido"; exit 1; }
+            CH=$PRUEBA
+          fi
           get() {
             curl -sL --max-time 20 -A 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36' \
               -H 'Accept-Language: en' --cookie 'CONSENT=YES+1; SOCS=CAI' "$1" -o "$2" || true
@@ -38,9 +50,14 @@ jobs:
           # THUMBNAIL_OVERLAY_BADGE_STYLE_LIVE (los acabados, ..._DEFAULT).
           # La ficha de cada vídeo no sirve: desde GitHub, YouTube la da con LOGIN_REQUIRED
           # («confirma que no eres un bot») y sin isLiveNow (por eso no se vio el 24, 27 y 28-10-2026).
-          get 'https://www.youtube.com/channel/UC5nyI589EfbS3KvyNdAVOGA/streams' streams.html
+          # A veces YouTube la da sin la lista de vídeos: hasta 3 intentos.
+          for n in 1 2 3; do
+            get "https://www.youtube.com/channel/$CH/streams" streams.html
+            grep -q '"richItemRenderer"' streams.html && break
+            echo "intento $n: sin lista de vídeos"; sleep 5
+          done
           # Si YouTube no da la página de verdad (aviso de bots, error...), no se toca nada.
-          if ! grep -qE '"(channelId|externalId|browseId)":"UC5nyI589EfbS3KvyNdAVOGA"' streams.html; then echo 'página rara: sin cambios'; rm -f streams.html; exit 0; fi
+          if ! grep -qE "\"(channelId|externalId|browseId)\":\"$CH\"" streams.html; then echo 'página rara: sin cambios'; rm -f streams.html; exit 0; fi
           id=$(python3 - <<'PY'
           import re, sys
           s = open('streams.html', encoding='utf-8', errors='replace').read()
@@ -56,6 +73,7 @@ jobs:
           if [ "$id" = '?' ]; then echo 'sin etiquetas de directo: sin cambios'; exit 0; fi
           live=false; [ -n "$id" ] && live=true
           echo "directo: $live $id"
+          if [ -n "${PRUEBA:-}" ]; then echo 'prueba: live.json no se toca'; exit 0; fi
           old_live=$(grep -oE '"live":(true|false)' live.json 2>/dev/null | cut -d: -f2)
           old_id=$(grep -oE '"id":"[^"]*"' live.json 2>/dev/null | cut -d'"' -f4)
           old_at=$(grep -oE '"at":"[^"]*"' live.json 2>/dev/null | cut -d'"' -f4)
