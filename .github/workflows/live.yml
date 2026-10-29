@@ -34,22 +34,28 @@ jobs:
           }
           # No sirve /live: lleva a una emisión de la PS4 de 2018 que sigue «programada»
           # (afwp0I0hZeY) y no al directo de verdad (por eso el 27-10-2026 no se vio).
-          # Se mira la pestaña de directos y, de los 3 primeros vídeos, la ficha de cada uno.
+          # Se mira la pestaña de directos: el que se está emitiendo lleva la etiqueta
+          # THUMBNAIL_OVERLAY_BADGE_STYLE_LIVE (los acabados, ..._DEFAULT).
+          # La ficha de cada vídeo no sirve: desde GitHub, YouTube la da con LOGIN_REQUIRED
+          # («confirma que no eres un bot») y sin isLiveNow (por eso no se vio el 24, 27 y 28-10-2026).
           get 'https://www.youtube.com/channel/UC5nyI589EfbS3KvyNdAVOGA/streams' streams.html
           # Si YouTube no da la página de verdad (aviso de bots, error...), no se toca nada.
           if ! grep -qE '"(channelId|externalId|browseId)":"UC5nyI589EfbS3KvyNdAVOGA"' streams.html; then echo 'página rara: sin cambios'; rm -f streams.html; exit 0; fi
-          live=false; id=''
-          for v in $(grep -oE '"videoId":"[A-Za-z0-9_-]{11}"' streams.html | cut -d'"' -f4 | awk '!s[$0]++' | head -3); do
-            get "https://www.youtube.com/watch?v=$v" video.html
-            if ! grep -q '"channelId":"UC5nyI589EfbS3KvyNdAVOGA"' video.html; then
-              echo "ficha rara de $v: sin cambios"; rm -f streams.html video.html; exit 0
-            fi
-            # En directo ahora: isLiveNow true (al acabar pasa a false y lleva endTimestamp).
-            # Lo que ve de cada vídeo (para saber por qué no detecta un directo).
-            echo "$v: $(grep -oE '"playabilityStatus":\{"status":"[A-Z_]+"' video.html | head -1 | cut -d'"' -f6) $(grep -oE '"isLiveNow":(true|false)' video.html | head -1) $(wc -c < video.html) bytes"
-            if grep -q '"liveBroadcastDetails":{"isLiveNow":true' video.html; then id=$v; live=true; break; fi
-          done
-          rm -f streams.html video.html
+          id=$(python3 - <<'PY'
+          import re, sys
+          s = open('streams.html', encoding='utf-8', errors='replace').read()
+          if 'THUMBNAIL_OVERLAY_BADGE_STYLE_' not in s: print('?'); sys.exit()
+          for b in s.split('"richItemRenderer"')[1:6]:
+              if 'THUMBNAIL_OVERLAY_BADGE_STYLE_LIVE' in b:
+                  m = re.search(r'"(?:contentId|videoId)":"([A-Za-z0-9_-]{11})"', b)
+                  if m: print(m.group(1)); break
+          PY
+          )
+          rm -f streams.html
+          # Sin etiquetas: YouTube ha cambiado la página; mejor no tocar nada que poner «no» a ciegas.
+          if [ "$id" = '?' ]; then echo 'sin etiquetas de directo: sin cambios'; exit 0; fi
+          live=false; [ -n "$id" ] && live=true
+          echo "directo: $live $id"
           old_live=$(grep -oE '"live":(true|false)' live.json 2>/dev/null | cut -d: -f2)
           old_id=$(grep -oE '"id":"[^"]*"' live.json 2>/dev/null | cut -d'"' -f4)
           old_at=$(grep -oE '"at":"[^"]*"' live.json 2>/dev/null | cut -d'"' -f4)
