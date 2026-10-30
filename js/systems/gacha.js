@@ -32,8 +32,8 @@ G.Gacha = (() => {
   }
   const RATES = [[1, 45], [2, 30], [3, 17], [4, 6.5], [5, 1.5]];
   const PITY_5 = 70;
-  const SHINY_RATE = 1 / 100;
-  const SHINY_RATE_IRIS = 2 / 100;
+  const SHINY_RATE = 1 / 50;
+  const SHINY_RATE_IRIS = 2 / 50;
   const REFUND = { 1: 15, 2: 30, 3: 60, 4: 120, 5: 300 };
   let forceShiny = 0;           // para pruebas y vídeos: las N próximas salen shiny
 

@@ -21,7 +21,7 @@
  */
 G.Social = (() => {
   const VALID = /^[A-Za-z0-9_ñÑáéíóúÁÉÍÓÚ]{3,16}$/;
-  const MAX_PLAYERS = 4;
+  const MAX_PLAYERS = 10;
   const INVITE_TTL = 3 * 60 * 1000;
   const REINVITE_MS = 20 * 1000;     // volver a invitar al mismo amigo antes de esto no escribe nada
   /*

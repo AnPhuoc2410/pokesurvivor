@@ -28,7 +28,7 @@ G.DB = (() => {
   const K_ACC = 'ps.accounts', K_SES = 'ps.session', K_SAVE = 'ps.save.';
   const K_CLOUD = 'ps.cloud.', K_MIGRATED = 'ps.migrated.';
   const VERSION = 3;
-  const START_COINS = 500;
+  const START_COINS = 1500;
   const SDK = 'https://www.gstatic.com/firebasejs/13.0.0/';
   const NAME_DOMAIN = 'jugadores.pokesurvivor.net';   // sólo para el email interno
 
@@ -98,7 +98,7 @@ G.DB = (() => {
       // Halloween (25-10-2026, core/skins.js): los caramelos van en bag.candy.
       skins: {},              // id -> fecha: skins compradas (para siempre)
       pskin: {},              // dex -> [id, fecha]: la que lleva puesta ('' = ninguna; gana la elegida más tarde)
-      tickets: { t1: 0, t10: 0 },   // tickets del gacha (x1 y x10)
+      tickets: { t1: 100, t10: 10 },   // tickets del gacha (x1 y x10)
       pity: {},               // generación del banner -> tiradas sin ★5
       legends: {},            // dex -> fecha: legendarios vencidos en grietas
       arenas: {},             // tipo -> fecha: arenas de grieta ganadas
@@ -548,16 +548,17 @@ G.DB = (() => {
    * cierra de verdad es la clave de la API restringida a estos dominios en
    * Google Cloud; esto frena las copias que ni lo miran (14-10-2026).
    */
-  const HOSTS = ['pokesurvivor.com', 'www.pokesurvivor.com', 'jpter78.github.io', 'localhost', '127.0.0.1'];
+  const isLocalHost = h => /^(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|100\.\d+\.\d+\.\d+)$/.test(h);
+  const HOSTS = ['pokesurvivor.com', 'www.pokesurvivor.com', 'jpter78.github.io'];
 
   async function initCloud() {
     const cfg = G.FIREBASE_CONFIG;
     if (!/^https?:$/.test(location.protocol)) { localReason = 'file'; return false; }
-    if (cfg && !cfg.emulator && !HOSTS.includes(location.hostname)) { localReason = 'host'; return false; }
+    if (cfg && !cfg.emulator && !HOSTS.includes(location.hostname) && !isLocalHost(location.hostname)) { localReason = 'host'; return false; }
     // dev.html (el código sin encerrar: G en la consola, con todo a mano) sólo usa la
     // nube en este ordenador. En la web iba con la cuenta de quien la abriera y se
     // podía poner las monedas, tickets o Pokémon que quisiera y guardarlo (26-10-2026).
-    if (!G.BUILT && !/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) { localReason = 'dev'; return false; }
+    if (!G.BUILT && !isLocalHost(location.hostname)) { localReason = 'dev'; return false; }
     if (!cfg || !cfg.apiKey || !cfg.projectId) { localReason = 'config'; return false; }
     await loadScript(SDK + 'firebase-app-compat.js');
     await loadScript(SDK + 'firebase-auth-compat.js');
