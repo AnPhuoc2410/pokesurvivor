@@ -39,6 +39,8 @@ G.Player = class Player {
     this.active = 0;           // hueco activo
     this.maxMoves = 4;         // huecos
     this.bonds = 0;            // vínculos por usar (premio de los legendarios)
+    this.autoSwap = false;     // tự động đổi skill 1 ⇄ 2
+    this.autoSwapTimer = 0;
 
     // patk / satk: Danza Espada y Danza Dragón (físico) y Maquinación (especial).
     this.buffs = {
@@ -95,8 +97,10 @@ G.Player = class Player {
   static get REVIVE_TIME() { return 3; }
 
   // (×2 y luego ×4 el 2026-10-10: se subía de nivel demasiado rápido.)
-  static xpFor(level) {
-    return Math.floor((8 + level * 6 + Math.pow(level, 1.75) * 1.6) * 4);
+  static xpFor(level, hurry = false) {
+    const isHurry = hurry || (typeof G !== 'undefined' && G.Game && G.Game.st && G.Game.st.hurryMode);
+    const k = isHurry ? 2 : 4;
+    return Math.floor((8 + level * 6 + Math.pow(level, 1.75) * 1.6) * k);
   }
 
   cy() { return this.y; }
@@ -166,7 +170,7 @@ G.Player = class Player {
 
   hasMove(id) { return this.moves.some(m => m.id === id); }
 
-  setActive(i) {
+  setActive(i, silent = false) {
     if (i < 0 || i >= this.slots.length || i === this.active) return;
     // Cinta Elección: no se puede cambiar de movimiento.
     if (this.hasItem('choiceband') && this.slots[this.active]) {
@@ -175,10 +179,25 @@ G.Player = class Player {
     }
     this.active = i;
     G.Projectiles.clearOrbs(this);
-    G.Audio.sfx('select');
+    if (!silent) G.Audio.sfx('select');
     for (const m of this.slots[i]) m.t = Math.min(m.t, m.cd * 0.35);
     const m = this.slots[i][0];
-    G.FX.ring(this.x, this.y - G.LIFT * 0.5, 6, this.r * 3.4, G.U.TYPE_COLOR[m.type], 0.3, 3);
+    if (!silent) G.FX.ring(this.x, this.y - G.LIFT * 0.5, 6, this.r * 3.4, G.U.TYPE_COLOR[m.type], 0.3, 3);
+  }
+
+  toggleAutoSwap() {
+    if (!this.slots || this.slots.length < 2) {
+      if (G.UI && G.UI.toast) G.UI.toast('Cần ít nhất 2 chiêu thức để tự động đổi!', 2000);
+      return false;
+    }
+    this.autoSwap = !this.autoSwap;
+    this.autoSwapTimer = 0;
+    if (this.autoSwap && this.active !== 0 && this.active !== 1) {
+      this.setActive(0, true);
+    }
+    if (G.Audio && G.Audio.sfx) G.Audio.sfx(this.autoSwap ? 'upgrade' : 'click');
+    if (G.UI && G.UI.toast) G.UI.toast(this.autoSwap ? '⚡ Auto đổi chiêu [U ⇄ I]: BẬT' : 'Auto đổi chiêu: TẮT', 2000);
+    return this.autoSwap;
   }
 
   cycle(dir) {
@@ -328,7 +347,7 @@ G.Player = class Player {
 
   /** Devuelve cuántos niveles ha subido (pueden ser varios de golpe). */
   gainXp(amount) {
-    const add = amount * this.xpMul;
+    const add = amount * 2.3 * this.xpMul;
     if (!Number.isFinite(add) || add <= 0) return 0;     // una experiencia infinita no acababa nunca de subir niveles
     this.xp += add;
     let leveled = 0;

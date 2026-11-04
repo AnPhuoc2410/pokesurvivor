@@ -20,6 +20,27 @@ G.Combat = (() => {
 
   function tick(dt, pl, now) {
     if (pl.dead) return;
+
+    if (pl.autoSwap && pl.slots && pl.slots.length >= 2) {
+      const cur = (pl.active === 0 || pl.active === 1) ? pl.active : 0;
+      const other = cur === 0 ? 1 : 0;
+
+      // Hồi chiêu đồng thời cho slot không active để cả 2 skill đều sẵn sàng tung chiêu liên tục
+      if (pl.slots[other]) {
+        for (const m of pl.slots[other]) {
+          if (m.t > 0) m.t -= dt;
+        }
+      }
+
+      pl.autoSwapTimer = (pl.autoSwapTimer || 0) + dt;
+
+      // Đổi chiêu cực nhanh (mỗi 0.08s ~ 80ms) tạo hiệu ứng nháy liên tục, hoặc đổi NGAY khi chiêu kia đã hồi xong
+      const otherReady = pl.slots[other] && pl.slots[other].some(m => m.t <= 0);
+      if (otherReady || pl.autoSwapTimer >= 0.08) {
+        pl.autoSwapTimer = 0;
+        pl.setActive(other, true);
+      }
+    }
     // Vínculos: todos los movimientos del hueco activo, cada uno con su recarga.
     for (const m of pl.activeGroup()) tickMove(dt, pl, m, now);
   }
@@ -43,6 +64,19 @@ G.Combat = (() => {
     m.castAt = performance.now();
 
     run(pl, m);
+
+    // Tự động đổi chiêu giữa 1 và 2 liên tục sau khi tung đòn
+    if (!ghost && !pl.remote && pl.autoSwap && pl.slots && pl.slots.length >= 2) {
+      if (pl.active === 0) {
+        pl.autoSwapTimer = 0;
+        pl.setActive(1, true);
+      } else if (pl.active === 1) {
+        pl.autoSwapTimer = 0;
+        pl.setActive(0, true);
+      }
+    }
+
+
   }
 
   function run(pl, m) {
@@ -888,6 +922,7 @@ G.Combat = (() => {
 
     // --- contacto enemigo <-> jugador ---
     if (pl.dead) return;
+
     for (const e of G.EnemyMgr.queryCircle(pl.x, pl.y, pl.r + 40)) {
       if (G.U.dist2(e.x, e.y, pl.x, pl.y) > (e.r + pl.r) * (e.r + pl.r)) continue;
       if (e.arceus || e.touchCd > 0 || e.behavior === 'thief' || e.stunT > 0 || e.sleepT > 0 || (e.net && e.net.st & 16)) continue;

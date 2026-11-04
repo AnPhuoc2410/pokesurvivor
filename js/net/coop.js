@@ -125,7 +125,7 @@ G.Coop = (() => {
   function xpFactor() {
     let s = local.xpMul, n = 1;
     for (const m of mates.values()) if (m.connected) { s += m.xpMul || 1; n++; }
-    return (s / n) / local.xpMul / (1 + 0.45 * (n - 1));
+    return (s / n) / local.xpMul / (1 + 0.20 * (n - 1));
   }
 
   // ---------------- estado de un jugador ----------------
@@ -248,6 +248,7 @@ G.Coop = (() => {
       k: 'f', t: r2(st.time), lv: st.level, xp: r2(st.xp), xn: st.xpNext, ki: st.kills, bo: st.bosses, co: st.coins, tk: [st.t1, st.t10, st.cn || 0],
       p, e: enemyList(viewOf(m)), ev
     };
+    if (Number.isFinite(st.matchTime)) f.mt = r2(st.matchTime);
     const ja = G.Judgment.netState();       // Arceus en la Sentencia
     if (ja) f.ja = ja;
     // Siempre: quién está eligiendo y, si hay cartas de nivel, cuáles (ver arriba).
@@ -479,7 +480,7 @@ G.Coop = (() => {
       else if (!msg.lu && showing) api.resume();
     }
     api.syncTeam({
-      time: msg.t, level: msg.lv, xp: msg.xp, xpNext: msg.xn, kills: msg.ki, bosses: msg.bo, coins: msg.co,
+      time: msg.t, matchTime: msg.mt, level: msg.lv, xp: msg.xp, xpNext: msg.xn, kills: msg.ki, bosses: msg.bo, coins: msg.co,
       t1: (msg.tk || [])[0], t10: (msg.tk || [])[1], cn: num((msg.tk || [])[2], 0, 0, 1e6)
     });
     for (const u in msg.p || {}) {

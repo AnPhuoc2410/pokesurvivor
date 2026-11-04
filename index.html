@@ -378,6 +378,19 @@
     <div id="lobby-members" class="lobby-members"></div>
     <h3 id="lobby-inv-title" style="margin:14px 0 6px">Invitar amigos</h3>
     <div id="lobby-invite" class="fr-list"></div>
+    <div id="lobby-mode-row" class="row between" style="margin-top:12px; padding:10px 14px; background:rgba(20,30,50,0.7); border:1px solid rgba(140,170,210,0.25); border-radius:10px">
+      <span style="font-size:13px; font-weight:700">⏱️ Chế độ trận đấu:</span>
+      <div class="row" style="gap:14px">
+        <label style="cursor:pointer; display:flex; align-items:center; gap:6px; font-size:12px">
+          <input type="radio" name="lobby-mode" value="0" id="mode-opt-std">
+          <span>Tiêu chuẩn (30:00)</span>
+        </label>
+        <label style="cursor:pointer; display:flex; align-items:center; gap:6px; font-size:12px">
+          <input type="radio" name="lobby-mode" value="1" id="mode-opt-hurry" checked>
+          <span style="color:#ffd23f; font-weight:700">⚡ Nhanh (15:00 - Arceus)</span>
+        </label>
+      </div>
+    </div>
     <div class="row" style="margin-top:14px">
       <button id="lobby-start" class="btn gold grow">Empezar partida</button>
     </div>
@@ -582,7 +595,7 @@
 <section id="scr-pause" class="scr dim hidden">
   <div class="box center pause-box">
     <h2>Pausa</h2>
-    <p class="sub kbd-hint"><kbd>WASD</kbd> moverse · <kbd>1</kbd>–<kbd>4</kbd> movimiento · <kbd>Q</kbd>/<kbd>E</kbd> ciclar · <kbd>5</kbd>–<kbd>8</kbd> esferas · <kbd>Esc</kbd> pausa</p>
+    <p class="sub kbd-hint"><kbd>WASD</kbd> moverse · <kbd>U</kbd> <kbd>I</kbd> <kbd>O</kbd> <kbd>P</kbd> đổi chiêu · <kbd>J</kbd> auto 1 ⇄ 2 · <kbd>Q</kbd>/<kbd>E</kbd> ciclar · <kbd>5</kbd>–<kbd>8</kbd> esferas · <kbd>Esc</kbd> pausa</p>
     <p class="sub touch-hint">Arrastra el dedo para moverte · toca un ataque para cambiarlo · toca una esfera para usarla</p>
     <p id="pause-coop" class="note hidden">Partida en grupo: el juego sigue mientras estás aquí.</p>
     <div class="row" style="justify-content:center">

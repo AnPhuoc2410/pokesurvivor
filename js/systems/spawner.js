@@ -14,10 +14,10 @@ G.Spawner = (() => {
   // Tope de enemigos a la vez (antes 420: con tantos se ralentizaba). Cuando
   // se llega al tope, los que siguen saliendo son "élite" (más vida, daño y
   // experiencia), así la dificultad no baja.
-  const CAP = 64, ELITE_FROM = 0.85;
+  const CAP = 128, ELITE_FROM = 0.85;
   // Menos Pokémon pero más fuertes (la pantalla no se satura): salen ~24% de
   // los de antes, cada uno con más vida, daño y experiencia.
-  const DENSITY = 0.24, DMG_K = 2.4, XP_K = 5.6;
+  const DENSITY = 0.48, DMG_K = 2.4, XP_K = 5.6;
   // La resistencia extra crece con la run: al principio ×3,3 y hasta ×5
   // hacia el minuto 6, cuando ya tienes ataques para tumbarlos.
   const hpK = t => 3.3 + Math.min(1.7, t / 210);
@@ -168,7 +168,7 @@ G.Spawner = (() => {
       surgeT = G.U.rand(38, 56);
       const base = Math.random() * 6.2832;
       const target = anchor();
-      const n = Math.min(CAP - G.EnemyMgr.count, Math.round((14 + Math.floor(t / 22)) * G.Coop.scaleRate(players.length) * 0.4));
+      const n = Math.min(CAP - G.EnemyMgr.count, Math.round((14 + Math.floor(t / 22)) * G.Coop.scaleRate(players.length) * 0.8));
       for (let i = 0; i < n; i++) spawnOne(target, t, base + G.U.rand(-0.55, 0.55));
       say('¡Marea de Pokémon!', 2.2);
       G.Audio.sfx('surge');

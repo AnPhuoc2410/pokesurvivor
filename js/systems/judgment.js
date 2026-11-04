@@ -346,7 +346,7 @@ G.Judgment = (() => {
     const tg = target();
     if (A.cast) { castTick(dt, tg); return; }
     if (!tg) { A.anim.loop('Idle'); return; }
-    if (!broke && G.Game.st.time >= BREAK_AT) {
+    if (!broke && arenaT >= 300) {
       broke = true;
       cast('break', tg);
       if (G.Coop.isHost) G.Coop.broadcast(['jb']);

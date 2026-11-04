@@ -240,6 +240,18 @@
         }
       }
 
+      const optStd = document.getElementById('mode-opt-std');
+      const optHurry = document.getElementById('mode-opt-hurry');
+      if (optStd && optHurry) {
+        const saved = localStorage.getItem('ps.hurryMode');
+        if (saved === '0') { optStd.checked = true; optHurry.checked = false; }
+        else { optHurry.checked = true; optStd.checked = false; }
+        optStd.disabled = !room.isHost;
+        optHurry.disabled = !room.isHost;
+        optStd.onchange = () => localStorage.setItem('ps.hurryMode', '0');
+        optHurry.onchange = () => localStorage.setItem('ps.hurryMode', '1');
+      }
+
       const btn = $('lobby-start');
       btn.classList.toggle('hidden', !room.isHost);
       const connecting = ms.some(m => m.uid !== room.host && G.Net.mode(m.uid) === 'connecting');
@@ -256,7 +268,8 @@
       const room = G.Social.room;
       if (!room || !room.isHost || room.members.length < 2) return;
       const cfg = {
-        k: 'start', seed: Math.floor(Math.random() * 1e6), host: room.host, hw: G.Halloween.on,   // hw: ¿partida de Halloween?
+        k: 'start', seed: Math.floor(Math.random() * 1e6), host: room.host, hw: G.Halloween.on,
+        hurry: document.getElementById('mode-opt-hurry') ? document.getElementById('mode-opt-hurry').checked : true,
         members: room.members.map(m => ({ uid: m.uid, name: m.name, dex: m.dex, shiny: !!m.shiny }))
       };
       G.Social.setOpen(false);

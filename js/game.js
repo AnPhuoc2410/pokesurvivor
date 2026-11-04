@@ -17,12 +17,18 @@
 G.Game = (() => {
   let cv, ctx, dpr = 1, w = 0, h = 0;
   let state = 'ui';
-  let time = 0, last = 0, pendingLevels = 0;
+  let realTime = 0, matchTime = 0, last = 0, pendingLevels = 0;
+  let hurryMode = false;
   let pl = null;
   let caught = [];          // shinies conseguidos en esta run
   let biome = -1;
 
-  const st = { get time() { return time; } };
+  const st = {
+    get time() { return realTime; },
+    get matchTime() { return matchTime; },
+    get hurryMode() { return hurryMode; },
+    get timeScale() { return (hurryMode && (!G.Judgment || !G.Judgment.active)) ? 2 : 1; }
+  };
 
   // ---------------- arranque ----------------
 
@@ -183,7 +189,8 @@ G.Game = (() => {
     G.World.reset(coop ? coop.seed : Math.floor(Math.random() * 1e6));
     G.World.setBiome(G.Tiles.runBiome(0), true);
     biome = 0;
-    time = 0; pendingLevels = 0;
+    realTime = 0; matchTime = 0; pendingLevels = 0;
+    hurryMode = coop ? !!coop.hurry : (typeof localStorage !== 'undefined' && localStorage.getItem('ps.hurryMode') !== '0');
     runReal = performance.now(); tampered = false;
 
     pl = new G.Player(mon, perks, !!save.partnerShiny && G.DB.ownsShiny(mon.dex));
@@ -245,13 +252,13 @@ G.Game = (() => {
   function flash(col, dur) { flashCol = col; flashDur = dur; flashT = dur; }
 
   function teamState() {
-    return { time, level: pl.level, xp: pl.xp, xpNext: pl.xpNext, kills: pl.kills, bosses: pl.bosses, coins: pl.coins, t1: pl.t1, t10: pl.t10, cn: pl.candy || 0 };
+    return { time: realTime, matchTime, hurry: hurryMode, level: pl.level, xp: pl.xp, xpNext: pl.xpNext, kills: pl.kills, bosses: pl.bosses, coins: pl.coins, t1: pl.t1, t10: pl.t10, cn: pl.candy || 0 };
   }
-  function summary() { return { t: time, ki: pl.kills, bo: pl.bosses, co: pl.coins, lv: pl.level, t1: pl.t1, t10: pl.t10, cn: pl.candy || 0 }; }
+  function summary() { return { t: realTime, mt: matchTime, hurry: hurryMode, ki: pl.kills, bo: pl.bosses, co: pl.coins, lv: pl.level, t1: pl.t1, t10: pl.t10, cn: pl.candy || 0 }; }
   /** Tu resumen para el final de la partida (y para los compañeros, ver coop.js): ataques con su daño, objeto... */
   function mySum() {
     if (!pl) return null;
-    return { dex: pl.dex, sh: !!pl.shiny, lv: pl.level, t: Math.floor(time), it: pl.item || null, sk: pl.anim.skin || '',
+    return { dex: pl.dex, sh: !!pl.shiny, lv: pl.level, t: Math.floor(realTime), mt: Math.floor(matchTime), hurry: hurryMode, it: pl.item || null, sk: pl.anim.skin || '',
              mv: pl.moves.slice(0, 8).map(m => [m.id, m.lvl, Math.round(m.dealt || 0), Math.round(m.since || 0), m.evolved ? 1 : 0]) };
   }
 
@@ -282,7 +289,9 @@ G.Game = (() => {
     mySum,
     // Invitado: el anfitrión manda el reloj y lo del equipo.
     syncTeam(t) {
-      if (Math.abs(t.time - time) > 0.4) time = t.time;
+      if (t.time != null && Math.abs(t.time - realTime) > 0.4) realTime = t.time;
+      if (t.matchTime != null && Math.abs(t.matchTime - matchTime) > 0.8) matchTime = t.matchTime;
+      if (t.hurry != null) hurryMode = !!t.hurry;
       if (t.level > pl.level) G.Audio.sfx('xp');
       pl.level = t.level; pl.xp = t.xp; pl.xpNext = t.xpNext;
       pl.kills = t.kills; pl.bosses = t.bosses; pl.coins = t.coins;
@@ -317,7 +326,9 @@ G.Game = (() => {
     over(d) {
       if (d) Object.assign(pl, { kills: d.ki, bosses: d.bo, coins: d.co, level: Math.max(pl.level, d.lv || 1), t1: d.t1 || pl.t1, t10: d.t10 || pl.t10,
                                   candy: Math.max(pl.candy || 0, +d.cn || 0) });
-      if (d && d.t) time = d.t;
+      if (d && d.t) realTime = d.t;
+      if (d && d.mt) matchTime = d.mt;
+      if (d && d.hurry != null) hurryMode = !!d.hurry;
       if (d && d.why === 'host') G.UI.toast('El anfitrión ha terminado la partida', 3200);
       endRun(!(d && d.why === 'host'));
     },
@@ -405,44 +416,48 @@ G.Game = (() => {
     const save = G.DB.save;
     const mul = pl.coinMul;
     const parts = {
-      tiempo: Math.floor(time / 5),
-      derrotados: Math.floor(pl.kills * 0.25),
+      tiempo: Math.floor(matchTime / 5),
+      derrotados: Math.floor(pl.kills * 0.25 * (hurryMode ? 2 : 1)),
       jefes: pl.bosses * 80,
       recogidas: pl.coins
     };
     const coins = Math.round((parts.tiempo + parts.derrotados + parts.jefes + parts.recogidas) * mul);
-    const record = time > save.stats.bestTime;
+    const bestT = hurryMode ? (save.stats.bestTimeHurry || 0) : save.stats.bestTime;
+    const record = realTime > bestT;
 
     save.coins += coins;
     bankTickets(false);
     G.Halloween.runEnd();
     save.stats.runs++;
     save.pused = save.pused || {};
-    save.pused[pl.dex] = (+save.pused[pl.dex] || 0) + 1;     // para "más usados" en la colección
+    save.pused[pl.dex] = (+save.pused[pl.dex] || 0) + 1;
     save.stats.totalKills += pl.kills;
-    save.stats.bestTime = Math.max(save.stats.bestTime, Math.floor(time));
-    if (coop) save.stats.bestGroupTime = Math.max(save.stats.bestGroupTime || 0, Math.floor(time));
+    if (hurryMode) {
+      save.stats.bestTimeHurry = Math.max(save.stats.bestTimeHurry || 0, Math.floor(realTime));
+      if (coop) save.stats.bestGroupTimeHurry = Math.max(save.stats.bestGroupTimeHurry || 0, Math.floor(realTime));
+    } else {
+      save.stats.bestTime = Math.max(save.stats.bestTime, Math.floor(realTime));
+      if (coop) save.stats.bestGroupTime = Math.max(save.stats.bestGroupTime || 0, Math.floor(realTime));
+    }
     save.stats.bestLevel = Math.max(save.stats.bestLevel, pl.level);
     save.stats.coinsEarned += coins;
     const judge = G.Judgment.summary();
     if (judge) G.Progress.event('judgeEnd', judge);
     G.Judgment.reset();
-    G.Progress.event('runEnd', { time, level: pl.level, coins: pl.coins, types: pl.mon.types, group: coop });
+    G.Progress.event('runEnd', { time: realTime, matchTime, hurry: hurryMode, level: pl.level, coins: pl.coins, types: pl.mon.types, group: coop });
     G.Progress.checkAch();
-    // Se guarda en este aparato; a la nube sube al pulsar Guardar (ver db.js).
     G.DB.commit('run');
     if (G.Social.me) G.Social.publishProfile();
 
-    // Ranking: en solitario cada uno lo suyo; en grupo lo sube el anfitrión.
-    const mark = { t: Math.floor(time), lv: pl.level, kills: pl.kills, dmg: judge ? judge.dmg : 0 };   // dmg: a Arceus
-    // Si la partida se ha tocado (ver clean()), no sube al ranking (sin avisar); lo demás, sí.
-    const ok = clean();
+    // Ranking: các trận đấu Hurry không nạp vào bảng xếp hạng 30 phút tiêu chuẩn
+    const mark = { t: Math.floor(realTime), mt: Math.floor(matchTime), mode: hurryMode ? 'hurry' : 'standard', hurry: hurryMode, lv: pl.level, kills: pl.kills, dmg: judge ? judge.dmg : 0 };
+    const ok = clean() && !hurryMode;
     const sent = ok && !coop ? G.Ranking.submitSolo(Object.assign(mark, { dex: pl.dex, shiny: pl.shiny }))
                : ok && wasHost ? G.Ranking.submitGroup(Object.assign(mark, { members: team })) : null;
     if (sent) sent.catch(() => {});
 
     G.RunUI.showOver({
-      dead, time, level: pl.level, kills: pl.kills, bosses: pl.bosses, coins, record, t1: pl.t1, t10: pl.t10, candy: pl.candy || 0, judge,
+      dead, time: realTime, matchTime, hurry: hurryMode, level: pl.level, kills: pl.kills, bosses: pl.bosses, coins, record, t1: pl.t1, t10: pl.t10, candy: pl.candy || 0, judge,
       team: (coop ? team : [{ uid: meUid }]).filter(m => sums[m.uid]).map(m => ({ name: m.name, me: m.uid === meUid, sum: sums[m.uid] }))
         .sort((a, b) => b.me - a.me),
       moves: pl.moves, caught,
@@ -463,10 +478,10 @@ G.Game = (() => {
   let runReal = 0, tampered = false;
   function clean() {
     if (tampered) return false;
-    if (time > (performance.now() - runReal) / 1000 + 10) return false;
+    if (realTime > (performance.now() - runReal) / 1000 + 10) return false;
     for (const k of ['hurt', 'update', 'heal', 'gainXp']) if (Object.prototype.hasOwnProperty.call(pl, k)) return false;
     if (!isFinite(pl.hp) || !isFinite(pl.maxHp) || pl.hp > pl.maxHp + 1 || pl.maxHp > 50000) return false;
-    if (pl.atkMul > 2000 || pl.spdMul > 25 || pl.cdMul < 0.03 || pl.level > 20 + time / 3) return false;
+    if (pl.atkMul > 2000 || pl.spdMul > 25 || pl.cdMul < 0.03 || pl.level > 60 + matchTime) return false;
     return true;
   }
 
@@ -676,10 +691,35 @@ G.Game = (() => {
           && document.getElementById('pull-fx').classList.contains('hidden')) G.MenuUI.open();
       return;
     }
-    if (G.Input.tap('escape') || G.Input.tap('keyp')) { togglePause(); return; }
+    if (G.Input.tap('escape')) { togglePause(); return; }
     if (state !== 'playing' || !pl) return;
+    const MOVE_HOTKEYS = [
+      ['keyu', 'u', 'digit1', 'numpad1'],
+      ['keyi', 'i', 'digit2', 'numpad2'],
+      ['keyo', 'o', 'digit3', 'numpad3'],
+      ['keyp', 'p', 'digit4', 'numpad4']
+    ];
     for (let i = 0; i < 4; i++) {
-      if (G.Input.tap('digit' + (i + 1)) || G.Input.tap('numpad' + (i + 1))) pl.setActive(i);
+      if (MOVE_HOTKEYS[i].some(k => G.Input.tap(k))) {
+        pl.setActive(i);
+        if (pl.autoSwap && i >= 2) {
+          pl.autoSwap = false;
+          if (G.UI && G.UI.toast) G.UI.toast('Auto đổi chiêu: TẮT', 1000);
+        }
+      }
+    }
+    if (['keyj', 'j', 'keyy', 'y'].some(k => G.Input.tap(k))) {
+      pl.toggleAutoSwap();
+    }
+    // Debug Time Warp (Shift + T): tua nhanh 60s trận đấu trên localhost/dev
+    const isLocalDev = !G.BUILT || /^(localhost|127\.0\.0\.1|192\.168\.|10\.|100\.)/.test(location.hostname);
+    if (isLocalDev && (!G.Coop.active || G.Coop.isHost)) {
+      if ((G.Input.held('shiftleft') || G.Input.held('shiftright')) && G.Input.tap('keyt')) {
+        matchTime += 60;
+        realTime += 30;
+        runReal -= 30000;
+        if (G.UI && G.UI.toast) G.UI.toast(`⏩ Shift+T: +1 phút (Trận:  / Thực: )`, 1500);
+      }
     }
     // Caído en grupo: Q / E cambian a quién miras.
     if (pl.dead) { if (G.Input.tap('keyq')) cycleWatch(-1); if (G.Input.tap('keye') || G.Input.tap('tab')) cycleWatch(1); return; }
@@ -787,9 +827,12 @@ G.Game = (() => {
       if (deathT > 1.3) { deathT = 0; endRun(true); }
       return;
     }
-    time += dt;
+    realTime += dt;
+    // Hurry mode: TIME_SCALE = 2 trước khi Arceus giáng thế; khi vào Judgment thì TIME_SCALE = 1
+    const timeScale = (hurryMode && !G.Judgment.active) ? 2 : 1;
+    matchTime += dt * timeScale;
 
-    const b = Math.floor(time / 240);
+    const b = Math.floor(matchTime / 240);
     if (b !== biome && !G.Rift.inArena && !G.Judgment.active) {
       biome = b;
       G.World.setBiome(G.Tiles.runBiome(b));
@@ -802,7 +845,7 @@ G.Game = (() => {
     pl.update(dt);
     G.Orbs.update(dt, pl);
     if (coop) {
-      for (const p of G.Coop.puppets()) { p.netUpdate(dt); G.Combat.ghostOrbit(p, dt, time); }
+      for (const p of G.Coop.puppets()) { p.netUpdate(dt); G.Combat.ghostOrbit(p, dt, realTime); }
       if (pl.dead) reviveTick(dt);
     }
     const view = watched() || pl;
@@ -810,21 +853,21 @@ G.Game = (() => {
     G.World.update(dt, G.Camera);
 
     const all = everyone();
-    if (!coop || G.Coop.isHost) { G.Path.update(dt, all); G.Spawner.update(dt, all, time); }
+    if (!coop || G.Coop.isHost) { G.Path.update(dt, all); G.Spawner.update(dt, all, matchTime); }
     else G.Spawner.tickBanner(dt);
     G.EnemyMgr.update(dt, all);
     G.EnemyMgr.rebuildGrid();
-    G.Combat.tick(dt, pl, time);
+    G.Combat.tick(dt, pl, realTime);
     G.Projectiles.update(dt, pl, G.EnemyMgr.all());
-    G.Combat.resolve(dt, pl, time);
+    G.Combat.resolve(dt, pl, realTime);
     G.Combat.updateFields(dt);
     G.Pickups.update(dt, all, onCollect);
     G.Hazards.update(dt);
     G.Interact.update(dt, pl);
-    G.Rift.update(dt, pl, time);
-    G.Judgment.update(dt, pl, time);
-    G.Events.update(dt, all, time);
-    G.Weather.update(dt, time, pl);
+    G.Rift.update(dt, pl, matchTime);
+    G.Judgment.update(dt, pl, matchTime);
+    G.Events.update(dt, all, matchTime);
+    G.Weather.update(dt, matchTime, pl);
     G.FX.update(dt);
 
     G.Audio.music(G.Judgment.active ? G.Judgment.music : G.Rift.inArena ? 'rift' : G.EnemyMgr.bossAlive() ? 'boss' : G.BIOME_MUSIC[biome % G.BIOME_MUSIC.length]);
@@ -1054,7 +1097,12 @@ G.Game = (() => {
   return {
     init, startRun, everyone, levelXp, flash, offerBond,
     /** Para pruebas: salta el reloj de la run. */
-    debugTime(t) { tampered = true; time = t; },
+    debugTime(t) { tampered = true; matchTime = t; realTime = t / 2; },
+    get hurryMode() { return hurryMode; },
+    get timeScale() { return (hurryMode && (!G.Judgment || !G.Judgment.active)) ? 2 : 1; },
+    setHurryMode(v) { hurryMode = !!v; },
+    get matchTime() { return matchTime; },
+    get realTime() { return realTime; },
     /** Halloween: caramelos de golpe (al llegar al gran Gengar; en grupo, los da el anfitrión a todos). */
     addCandy(n) {
       if (!pl || !(n > 0)) return;

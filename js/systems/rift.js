@@ -52,7 +52,7 @@ G.Rift = (() => {
       if (rift.ttl <= 0) { rift = null; return; }
       if (!arena && !pl.dead && G.U.dist2(pl.x, pl.y, rift.x, rift.y - 10) < 30 * 30) enter();
     } else if (!arena && authority() && time > FROM && time < G.Judgment.AT - 120) {
-      checkT -= dt;
+      checkT -= dt * (G.Game && G.Game.timeScale != null ? G.Game.timeScale : 1);
       if (checkT <= 0) {
         checkT = CHECK;
         if (G.EnemyMgr.bossAlive()) return;           // con un jefe vivo no cuenta como intento

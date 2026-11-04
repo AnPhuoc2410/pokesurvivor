@@ -120,9 +120,17 @@ G.HUD = (() => {
 
     // ---------- reloj / bioma / kills ----------
     ctx.textAlign = 'center';
-    ctx.font = F(800, 26);
-    ctx.fillStyle = 'rgba(255,255,255,.95)';
-    ctx.fillText(G.U.mmss(st.time), w / 2, 42);
+    if (st.hurryMode) {
+      ctx.font = F(800, 24);
+      ctx.fillStyle = '#ffd23f';
+      const inJudge = G.Judgment && G.Judgment.active;
+      const timeStr = (inJudge || st.time >= 900) ? ('⚡ ' + G.U.mmss(st.time)) : ('⚡ ' + G.U.mmss(st.time) + ' / 15:00');
+      ctx.fillText(timeStr, w / 2, 42);
+    } else {
+      ctx.font = F(800, 26);
+      ctx.fillStyle = 'rgba(255,255,255,.95)';
+      ctx.fillText(G.U.mmss(st.time), w / 2, 42);
+    }
     ctx.font = F(600, 10);
     ctx.fillStyle = '#8fa3c4';
     // Halloween: también los caramelos que llevas en esta partida.
@@ -380,7 +388,8 @@ G.HUD = (() => {
       ctx.font = F(800, 9);
       ctx.fillStyle = fused ? BOND : on ? col : 'rgba(180,200,230,.6)';
       ctx.textAlign = 'left';
-      ctx.fillText(String(i + 1), x + 3, y + 10);
+      const MOVE_LABELS = ['U', 'I', 'O', 'P'];
+      ctx.fillText(MOVE_LABELS[i] || String(i + 1), x + 3, y + 10);
 
       // nombre encima del activo (con un vínculo: "Ascuas +2")
       if (on) {
@@ -388,6 +397,35 @@ G.HUD = (() => {
         ctx.textAlign = 'center';
         ctx.fillStyle = fused ? BOND : col;
         ctx.fillText(fused ? G.T(m.name, 'move') + ' +' + (g.length - 1) : G.T(m.name, 'move'), x + S / 2, y - 7);
+      }
+    }
+
+    // ---------- nút / chỉ báo AUTO đổi chiêu [J] ----------
+    if (pl.slots && pl.slots.length >= 2) {
+      const autoActive = pl.autoSwap;
+      const abw = 56, abh = 20;
+      const abx = sx + totalW + (pl.bonds > 0 ? (pl.bonds > 1 ? 52 : 40) : 10);
+      const aby = sy + (S - abh) / 2;
+      roundRect(ctx, abx, aby, abw, abh, 6);
+      ctx.fillStyle = autoActive ? 'rgba(74, 222, 128, 0.25)' : 'rgba(10, 16, 28, 0.65)';
+      ctx.fill();
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = autoActive ? '#4ade80' : 'rgba(140, 170, 210, 0.3)';
+      ctx.stroke();
+      ctx.font = F(800, 9);
+      ctx.textAlign = 'center';
+      ctx.fillStyle = autoActive ? '#4ade80' : 'rgba(180, 200, 230, 0.7)';
+      ctx.fillText(autoActive ? '⚡ AUTO [J]' : 'AUTO [J]', abx + abw / 2, aby + 13);
+      G.Touch.addButton(abx, aby, abw, abh, () => {
+        if (G.Game.state === 'playing') pl.toggleAutoSwap();
+      }, 4);
+      if (autoActive) {
+        const midX = sx + S + GAP / 2;
+        const midY = sy + S / 2;
+        ctx.font = F(900, 12);
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#4ade80';
+        ctx.fillText('⇄', midX, midY + 4);
       }
     }
 
@@ -499,7 +537,7 @@ G.HUD = (() => {
       ctx.textAlign = 'center';
       ctx.fillStyle = 'rgba(180,200,230,.55)';
       ctx.fillText(touch ? 'Arrastra el dedo para moverte  ·  toca un ataque para cambiarlo'
-                         : 'WASD moverse  ·  1-4 / Q / E o clic en un ataque para cambiarlo  ·  Esc pausa', w / 2, h - 4);
+                         : 'WASD di chuyển  ·  U I O P đổi chiêu  ·  J auto 1 ⇄ 2  ·  Esc tạm dừng', w / 2, h - 4);
     }
 
     ctx.restore();
