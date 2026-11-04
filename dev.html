@@ -187,6 +187,7 @@
     <div class="box">
       <div class="menu-list">
         <button class="menu-item play" data-go="play">Jugar<small>Entra en la mazmorra</small></button>
+        <button class="menu-item coop" data-go="coop">Multijugador<small id="menu-coop-sub">Crear sala o unirse</small></button>
         <button class="menu-item" data-go="dex">Pokémon<small id="menu-dex-count">Tu colección</small></button>
         <button class="menu-item" data-go="upgrades">Mejoras<small>Haz más fuerte cada run</small></button>
         <button class="menu-item" data-go="shop">Tienda Kecleon<small>Mentas, Cápsulas y MT</small></button>
@@ -364,7 +365,7 @@
 <section id="scr-friends" class="scr dim hidden">
   <div class="box wide">
     <div class="row between"><h2>Amigos</h2>
-      <div class="row"><button id="fr-room" class="btn small gold hidden">Ir a la sala</button><button class="btn small ghost" data-back>Volver</button></div></div>
+      <div class="row"><button id="fr-create-room" class="btn small gold">Crear sala</button><button id="fr-room" class="btn small gold hidden">Ir a la sala</button><button class="btn small ghost" data-back>Volver</button></div></div>
     <p class="sub" id="fr-me"></p>
     <form id="fr-add" class="row" autocomplete="off">
       <input id="fr-name" class="field grow" maxlength="16" spellcheck="false" placeholder="Apodo de tu amigo">
@@ -382,6 +383,10 @@
       <div class="row"><button id="lobby-menu" class="btn small ghost">Menú</button><button id="lobby-leave" class="btn small ghost">Salir de la sala</button></div></div>
     <p class="sub" id="lobby-sub"></p>
     <div id="lobby-members" class="lobby-members"></div>
+    <div id="lobby-join-box" class="row" style="margin-top:12px;gap:8px">
+      <input id="lobby-join-name" class="field grow" maxlength="16" spellcheck="false" placeholder="Apodo del anfitrión para unirte a su sala">
+      <button id="lobby-join-btn" class="btn gold" type="button">Unirme</button>
+    </div>
     <h3 id="lobby-inv-title" style="margin:14px 0 6px">Invitar amigos</h3>
     <div id="lobby-invite" class="fr-list"></div>
     <div class="row" style="margin-top:14px">

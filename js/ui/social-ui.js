@@ -64,6 +64,8 @@
         if (r.ok) $('fr-name').value = '';
       };
       $('fr-room').onclick = () => G.LobbyUI.open();
+      const cr = $('fr-create-room');
+      if (cr) cr.onclick = () => G.LobbyUI.openOrCreate();
       G.Social.on(() => { if (G.UI.isOpen('scr-friends')) render(); });
     }
 
@@ -91,6 +93,8 @@
       const room = G.Social.room;
       $('fr-me').innerHTML = 'Tu apodo: <b class="gold" translate="no">' + esc(G.Social.me ? G.Social.me.name : '') + '</b> · dáselo a tus amigos para que te añadan.';
       $('fr-room').classList.toggle('hidden', !room);
+      const cr = $('fr-create-room');
+      if (cr) cr.classList.toggle('hidden', !!room);
       const list = G.Social.friends.sort((a, b) => {
         const rank = f => f.status === 'in' ? 0 : f.status === 'ok' ? 1 : 2;
         return rank(a) - rank(b) || a.name.localeCompare(b.name);
@@ -149,6 +153,21 @@
       $('lobby-menu').onclick = () => G.MenuUI.open();
       $('lobby-start').onclick = start;
       $('lobby-start').dataset.sfx = 'confirm';
+      const joinBtn = $('lobby-join-btn');
+      if (joinBtn) {
+        joinBtn.onclick = async () => {
+          const val = ($('lobby-join-name').value || '').trim();
+          if (!val) { G.UI.toast('Escribe el apodo del anfitrión'); return; }
+          joinBtn.disabled = true;
+          const r = await G.Social.joinByName(val);
+          joinBtn.disabled = false;
+          if (!r.ok) G.UI.toast(r.error, 3000);
+          else {
+            G.UI.toast('¡Te has unido a la sala!');
+            $('lobby-join-name').value = '';
+          }
+        };
+      }
       // Conecta / desconecta la red al entrar o salir de una sala.
       G.Social.on(what => {
         const room = G.Social.room;
@@ -167,13 +186,20 @@
       G.Net.onPeer(() => { if (G.UI.isOpen('scr-lobby')) render(); });
     }
 
-    function open() {
+    async function open() {
+      if (!G.Social.room) {
+        await G.Social.createRoom();
+      }
       if (!G.Social.room) { G.MenuUI.open(); return; }
       G.Social.refreshMember();
       G.Social.ensureFriends().then(() => { if (G.UI.isOpen('scr-lobby')) { membersKey = ''; render(); } });
       G.UI.show('scr-lobby', true);
       membersKey = '';
       render();
+    }
+
+    function openOrCreate() {
+      withNick(() => open());
     }
 
     function close() { G.UI.hide('scr-lobby'); }
@@ -264,7 +290,7 @@
       G.Flow.startCoop(cfg);
     }
 
-    return { init, open, close, render };
+    return { init, open, openOrCreate, close, render };
   })();
 
   // ======================= INVITACIONES =======================
