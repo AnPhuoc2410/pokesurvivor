@@ -98,7 +98,7 @@ G.DB = (() => {
       // Halloween (25-10-2026, core/skins.js): los caramelos van en bag.candy.
       skins: {},              // id -> fecha: skins compradas (para siempre)
       pskin: {},              // dex -> [id, fecha]: la que lleva puesta ('' = ninguna; gana la elegida más tarde)
-      tickets: { t1: 100, t10: 10 },   // tickets del gacha (x1 y x10)
+      tickets: { t1: 9999, t10: 999 },   // tickets del gacha (x1 y x10)
       pity: {},               // generación del banner -> tiradas sin ★5
       legends: {},            // dex -> fecha: legendarios vencidos en grietas
       arenas: {},             // tipo -> fecha: arenas de grieta ganadas
