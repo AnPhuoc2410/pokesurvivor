@@ -330,6 +330,18 @@ G.Social = (() => {
     return { ok: true };
   }
 
+  async function joinByName(name) {
+    name = (name || '').trim();
+    if (!name) return { ok: false, error: 'Escribe el apodo del anfitrión.' };
+    if (!me) return { ok: false, error: 'Primero elige tu apodo.' };
+    if (!fb || !fb.fs) return { ok: false, error: 'Función sólo disponible online.' };
+    const n = await fb.fs.collection('names').doc(name.toLowerCase()).get().catch(() => null);
+    if (!n || !n.exists) return { ok: false, error: 'No se encontró ningún jugador con ese apodo.' };
+    const targetUid = n.data().uid;
+    if (targetUid === uid) return { ok: false, error: 'Esa es tu propia sala.' };
+    return joinRoom(targetUid);
+  }
+
   function enterRoom(id, host) {
     room = { id, host, isHost: host === uid, members: [], open: true, lost: false };
     watchRoom(id);
@@ -618,7 +630,7 @@ G.Social = (() => {
 
   return {
     start, stop, claimNick, request, accept, remove, publishProfile, getProfile, profileData,
-    createRoom, joinRoom, leaveRoom, setOpen, refreshMember, dropMember, setPlaying, ensureFriends,
+    createRoom, joinRoom, joinByName, leaveRoom, setOpen, refreshMember, dropMember, setPlaying, ensureFriends,
     invite, acceptInvite, declineInvite,
     on(fn) { listeners.add(fn); }, off(fn) { listeners.delete(fn); },
     get me() { return me; },
