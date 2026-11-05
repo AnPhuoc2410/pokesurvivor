@@ -60,7 +60,7 @@ G.UI = (() => {
   let toastEl = null, toastT = 0;
   function toast(msg, ms = 2200) {
     if (!toastEl) { toastEl = document.createElement('div'); toastEl.className = 'toast'; document.body.appendChild(toastEl); }
-    toastEl.textContent = msg;
+    toastEl.textContent = G.T ? G.T(msg) : msg;
     toastEl.style.display = 'block';
     clearTimeout(toastT);
     toastT = setTimeout(() => { toastEl.style.display = 'none'; }, ms);

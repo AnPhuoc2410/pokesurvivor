@@ -241,7 +241,7 @@
         const m = ms.find(x => x.uid === el.dataset.u);
         if (!m) return;
         const t = connText(m, room);
-        el.textContent = t;
+        el.textContent = G.T ? G.T(t) : t;
         el.className = 'conn' + (t === 'Conectando…' ? ' wait' : '');
       });
 

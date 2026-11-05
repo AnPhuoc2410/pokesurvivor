@@ -194,7 +194,7 @@ G.Player = class Player {
 
   toggleAutoSwap() {
     if (!this.slots || this.slots.length < 2) {
-      if (G.UI && G.UI.toast) G.UI.toast('Cần ít nhất 2 chiêu thức để tự động đổi!', 2000);
+      if (G.UI && G.UI.toast) G.UI.toast('Necesitas al menos 2 movimientos para el cambio automático', 2000);
       return false;
     }
     this.autoSwap = !this.autoSwap;
@@ -203,7 +203,7 @@ G.Player = class Player {
       this.setActive(0, true);
     }
     if (G.Audio && G.Audio.sfx) G.Audio.sfx(this.autoSwap ? 'upgrade' : 'click');
-    if (G.UI && G.UI.toast) G.UI.toast(this.autoSwap ? '⚡ Auto đổi chiêu [U ⇄ I]: BẬT' : 'Auto đổi chiêu: TẮT', 2000);
+    if (G.UI && G.UI.toast) G.UI.toast(this.autoSwap ? '⚡ Cambio automático [U ⇄ I]: ACTIVADO' : 'Cambio automático: DESACTIVADO', 2000);
     return this.autoSwap;
   }
 

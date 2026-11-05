@@ -537,7 +537,7 @@ G.HUD = (() => {
       ctx.textAlign = 'center';
       ctx.fillStyle = 'rgba(180,200,230,.55)';
       ctx.fillText(touch ? 'Arrastra el dedo para moverte  ·  toca un ataque para cambiarlo'
-                         : 'WASD di chuyển  ·  U I O P đổi chiêu  ·  J auto 1 ⇄ 2  ·  Esc tạm dừng', w / 2, h - 4);
+                         : 'WASD moverse  ·  U I O P cambiar movimiento  ·  J auto 1 ⇄ 2  ·  Esc pausa', w / 2, h - 4);
     }
 
     ctx.restore();
