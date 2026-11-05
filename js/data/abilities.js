@@ -1235,6 +1235,7 @@ G.DEX_ABIL = {
   1005:["protosynthesis",0,0],
   1006:["quark-drive",0,0],
   1007:["orichalcum-pulse",0,0],
+  1008:["electric-surge",0,0],
   1009:["protosynthesis",0,0],
   1010:["quark-drive",0,0],
   1011:["supersweet-syrup","gluttony","sticky-hold"],

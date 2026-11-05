@@ -27,12 +27,16 @@ G.Net = (() => {
   // Primero se intenta sin TURN (lo normal es conectar directo) y sólo si falla se
   // reintenta al momento con él: el navegador reserva un hueco en el TURN por cada
   // conexión que lo lleve, aunque luego vaya directa, y así los huecos llegan para todos.
-  const DIRECT_TIMEOUT = 9000, TURN_TIMEOUT = 15000;   // ms para conseguir canal
+
   // Relé por la Realtime Database APAGADO (12-10-2026): a 1 $ el GB era lo que más
   // costaba del cooperativo. Sin conexión directa, esa pareja no puede jugar
   // junta ('failed') y el anfitrión lo reintenta cada RETRY_MS. Por la base de datos
   // sólo pasa la señalización (unos pocos mensajes pequeños para conectarse).
-  const ALLOW_RELAY = false, RETRY_MS = 15000;
+  const DIRECT_TIMEOUT = 9000, TURN_TIMEOUT = 15000;   // ms para conseguir canal
+  // Trên web chính thức (pokesurvivor.com) và unit tests tắt relay; trên dev/LAN browser bật relay để không bị kẹt khi mạng chặn P2P.
+  const ALLOW_RELAY = typeof window !== 'undefined' && typeof location !== 'undefined' &&
+    location.hostname !== 'pokesurvivor.com' && !location.hostname.endsWith('.pokesurvivor.com');
+  const RETRY_MS = 15000;
   const ICE_BATCH = 250, ICE_MAX = 40;    // candidatos: se juntan 250 ms (o 40) en un mensaje (ver newPeer)
   // Lo que puede quedar por salir en el canal. El canal no pierde nada y va en orden:
   // si la conexión da menos de lo que se manda, lo de más se queda en cola y el otro lo
@@ -89,6 +93,8 @@ G.Net = (() => {
   }
 
   function turnServers() {
+    const isLocal = typeof location !== 'undefined' && location.hostname !== 'pokesurvivor.com' && !location.hostname.endsWith('.pokesurvivor.com');
+    if (isLocal) return Promise.resolve([]);
     const now = turnNow(), user = turnUser();
     if (now) return Promise.resolve(now);
     if (!turnAsk) {

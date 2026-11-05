@@ -19,8 +19,8 @@ const i = dev.indexOf(BEGIN), j = dev.indexOf(END);
 if (i < 0 || j < 0) throw new Error('dev.html no tiene las marcas ' + BEGIN + ' / ' + END);
 const block = dev.slice(i, j + END.length);
 const files = [...block.matchAll(/<script[^>]*src="(js\/[^"]+\.js)"/g)].map(m => m[1])
-  .filter(f => f !== 'js/core/firebase-config.js' || fs.existsSync(path.join(ROOT, f)));
-if (!files.includes('js/core/firebase-config.js')) console.warn('Sin firebase-config.js: build local, sin servicios de Firebase.');
+  .filter(f => f !== 'js/core/firebase-config.js');
+// Firebase config loaded separately
 
 // Une los archivos en orden; cada uno separado por ';' por si alguno no acaba en punto y coma.
 let joined = files.map(f => `/* ${f} */\n` + fs.readFileSync(path.join(ROOT, f), 'utf8')).join('\n;\n');
@@ -70,7 +70,8 @@ const locHash = crypto.createHash('sha1').update(fs.readFileSync(path.join(ROOT,
 for (const f of fs.readdirSync(path.join(ROOT, 'js', 'lang')).sort()) locHash.update(fs.readFileSync(path.join(ROOT, 'js', 'lang', f)));
 if (!dev.includes(LOC)) throw new Error('dev.html no carga ' + LOC + ' como se esperaba: revisa build.js');
 
-let html = dev.slice(0, i) + `<script defer src="js/app.min.js?v=${hash}"></script>` + dev.slice(j + END.length);
+const hasFb = fs.existsSync(path.join(ROOT, 'js/core/firebase-config.js'));
+let html = dev.slice(0, i) + (hasFb ? '<script defer src="js/core/firebase-config.js"></script>\n' : '') + `<script defer src="js/app.min.js?v=${hash}"></script>` + dev.slice(j + END.length);
 html = html.replace(LOC, `<script src="js/core/locales.js?v=${locHash.digest('hex').slice(0, 10)}"></script>`);
 // La hoja de estilos también con huella: si no, el navegador puede juntar la página nueva
 // con el style.css viejo que tiene guardado.

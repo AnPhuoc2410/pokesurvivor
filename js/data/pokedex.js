@@ -963,6 +963,7 @@ G.DEX = [
   {"dex":1005,"name":"Bramaluna","types":["dragon","dark"],"hp":117,"spd":128,"atk":1.46,"pa":1.46,"sa":1.0,"df":71,"sd":101,"rarity":5,"bst":590,"starter":false,"gen":9},
   {"dex":1006,"name":"Ferropaladín","types":["fairy","fighting"],"hp":103,"spd":127,"atk":1.42,"pa":1.42,"sa":1.36,"df":90,"sd":60,"rarity":5,"bst":590,"starter":false,"gen":9},
   {"dex":1007,"name":"Koraidon","types":["fighting","dragon"],"hp":115,"spd":135,"atk":1.44,"pa":1.44,"sa":1.17,"df":115,"sd":100,"rarity":5,"bst":670,"starter":false,"gen":9,"leg":true},
+  {"dex":1008,"name":"Miraidon","types":["electric","dragon"],"hp":250,"spd":250,"atk":1.44,"pa":1.17,"sa":1.44,"df":100,"sd":115,"rarity":5,"bst":670,"starter":true,"gen":9,"leg":true},
   {"dex":1009,"name":"Ondulagua","types":["water","dragon"],"hp":115,"spd":124,"atk":1.39,"pa":1.16,"sa":1.39,"df":91,"sd":83,"rarity":5,"bst":590,"starter":false,"gen":9},
   {"dex":1010,"name":"Ferroverdor","types":["grass","psychic"],"hp":110,"spd":122,"atk":1.42,"pa":1.42,"sa":1.08,"df":88,"sd":108,"rarity":5,"bst":590,"starter":false,"gen":9},
   {"dex":1011,"name":"Dipplin","types":["grass","dragon"],"hp":106,"spd":95,"atk":1.22,"pa":1.14,"sa":1.22,"df":110,"sd":80,"rarity":3,"bst":485,"starter":false,"gen":9},

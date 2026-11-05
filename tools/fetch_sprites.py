@@ -175,7 +175,7 @@ def download_set(url_base, out_dir, anims, geometry_from=None):
 
 
 def do_dex(job):
-    dex, want_shiny = job
+    dex, form, want_shiny = job
     cache_file = os.path.join(CACHE, f'{dex}.json')
     out_dir = os.path.join(OUT_ASSETS, str(dex))
     if os.path.exists(cache_file):
@@ -184,19 +184,21 @@ def do_dex(job):
             return dex, meta
 
     tag = f'{dex:04d}'
-    xml = fetch(f'{BASE}/{tag}/AnimData.xml')
+    base_path = f'{BASE}/{tag}/{form}' if form else f'{BASE}/{tag}'
+    xml = fetch(f'{base_path}/AnimData.xml')
     if not xml:
         return dex, None
     anims, shadow = parse_animdata(xml.decode('utf-8', 'replace'))
-    normal = download_set(f'{BASE}/{tag}', out_dir, anims)
+    normal = download_set(base_path, out_dir, anims)
     if not REQUIRED & set(normal):
         return dex, None
     meta = {'s': shadow, 'a': normal}
 
     if want_shiny:
-        sxml = fetch(f'{BASE}/{tag}/0000/0001/AnimData.xml')
+        s_path = f'{base_path}/0001' if form else f'{BASE}/{tag}/0000/0001'
+        sxml = fetch(f'{s_path}/AnimData.xml')
         sanims = parse_animdata(sxml.decode('utf-8', 'replace'))[0] if sxml else anims
-        shiny = download_set(f'{BASE}/{tag}/0000/0001', os.path.join(out_dir, 's'), sanims, normal)
+        shiny = download_set(s_path, os.path.join(out_dir, 's'), sanims, normal)
         if REQUIRED <= set(shiny) or ('Idle' in shiny and 'Walk' in shiny):
             meta['sh'] = 1
             # Sólo se guarda la geometría shiny si difiere de la normal.
@@ -222,12 +224,26 @@ def main():
     tracker = json.loads(fetch(RAW + '/tracker.json').decode('utf-8'))
     jobs = []
     for dex in range(lo, hi + 1):
-        e = tracker.get(f'{dex:04d}')
-        if not e or not REQUIRED <= set(e.get('sprite_files', {})):
+        tag = f'{dex:04d}'
+        e = tracker.get(tag)
+        if not e:
             continue
-        s = e.get('subgroups', {}).get('0000', {}).get('subgroups', {}).get('0001', {})
-        jobs.append((dex, {'Idle', 'Walk'} <= set(s.get('sprite_files', {}))))
-    print(f'{len(jobs)} Pokemon con sprites en {lo}-{hi} ({sum(1 for _, s in jobs if s)} con shiny)')
+        form = None
+        has_shiny = False
+        if REQUIRED <= set(e.get('sprite_files', {})):
+            form = ''
+            s = e.get('subgroups', {}).get('0000', {}).get('subgroups', {}).get('0001', {})
+            has_shiny = {'Idle', 'Walk'} <= set(s.get('sprite_files', {}))
+        else:
+            for sub_k, sub_v in sorted(e.get('subgroups', {}).items()):
+                if REQUIRED <= set(sub_v.get('sprite_files', {})):
+                    form = sub_k
+                    s = sub_v.get('subgroups', {}).get('0001', {})
+                    has_shiny = {'Idle', 'Walk'} <= set(s.get('sprite_files', {}))
+                    break
+        if form is not None:
+            jobs.append((dex, form, has_shiny))
+    print(f'{len(jobs)} Pokemon con sprites en {lo}-{hi} ({sum(1 for _, _, s in jobs if s)} con shiny)')
 
     metas, missing, done = {}, [], 0
     with ThreadPoolExecutor(max_workers=16) as ex:
@@ -248,11 +264,27 @@ def main():
             if miss:
                 m['sm'] = miss
 
-    # Funde con lo que ya hubiera en caché fuera del rango pedido.
-    for fn in os.listdir(CACHE):
-        d = int(fn.split('.')[0])
-        if d not in metas and os.path.isdir(os.path.join(OUT_ASSETS, str(d))):
-            metas[d] = json.load(open(os.path.join(CACHE, fn), encoding='utf-8'))
+    # Funde con lo que ya hubiera en sprites-meta.js y en caché fuera del rango pedido.
+    if os.path.exists(OUT_META):
+        try:
+            with io.open(OUT_META, 'r', encoding='utf-8') as f:
+                content = f.read()
+            for m in re.finditer(r'^\s*(\d+):\s*(\{.*\}),\s*$', content, re.MULTILINE):
+                d = int(m.group(1))
+                if d not in metas:
+                    metas[d] = json.loads(m.group(2))
+        except Exception as e:
+            print(f'Warning khi đọc sprites-meta.js: {e}')
+
+    if os.path.exists(CACHE):
+        for fn in os.listdir(CACHE):
+            if fn.endswith('.json'):
+                try:
+                    d = int(fn.split('.')[0])
+                    if d not in metas and os.path.isdir(os.path.join(OUT_ASSETS, str(d))):
+                        metas[d] = json.load(open(os.path.join(CACHE, fn), encoding='utf-8'))
+                except ValueError:
+                    continue
 
     lines = [
         '/* ============ sprites-meta.js — GENERADO, no editar a mano ============',
