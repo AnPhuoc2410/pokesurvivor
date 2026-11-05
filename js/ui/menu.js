@@ -10,6 +10,10 @@ G.MenuUI = (() => {
   const SORTS = [['num', 'Nº'], ['name', 'Nombre'], ['rar', 'Rareza'], ['new', 'Recién conseguidos'], ['used', 'Más usados']];
 
   function init() {
+    $('menu-mode').onchange = () => {
+      localStorage.setItem('ps.hurryMode', $('menu-mode').value);
+      $('menu-mode-hint').classList.toggle('hidden', $('menu-mode').value !== '1');
+    };
     const ICON = { play: 'ball', coop: 'friends', dex: 'book', upgrades: 'up', shop: 'shop', bag: 'bag', gacha: 'ball4', goals: 'medal3', friends: 'friends', rank: 'trophy', settings: 'gear' };
     document.querySelectorAll('#scr-menu [data-go]').forEach(b => {
       b.insertAdjacentHTML('afterbegin', `<span class="mi-ico">${G.Icons.html(ICON[b.dataset.go], 26)}</span>`);
@@ -46,6 +50,8 @@ G.MenuUI = (() => {
     const shiny = !!s.partnerShiny && G.DB.ownsShiny(mon.dex);
     G.UI.chrome(true);
     G.UI.show('scr-menu');
+    $('menu-mode').value = localStorage.getItem('ps.hurryMode') === '0' ? '0' : '1';
+    $('menu-mode-hint').classList.toggle('hidden', $('menu-mode').value !== '1');
     bagLine();
     hwLine();
     G.UI.sprite($('menu-partner'), mon.dex, { lively: true, scale: 4, hero: true, shiny, skin: G.Skins.worn(s, mon.dex) });

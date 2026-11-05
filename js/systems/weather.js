@@ -94,7 +94,7 @@ G.Weather = (() => {
       cur.t += dt;
       if (cur.t >= cur.dur) cur = null;
     } else if (authority() && time > FROM && !G.Rift.inArena && !G.Judgment.active) {
-      checkT -= dt;
+      checkT -= dt * G.Game.timeScale;
       if (checkT <= 0) {
         checkT = CHECK;
         if (Math.random() < CHANCE) {

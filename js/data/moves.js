@@ -678,16 +678,19 @@
   }
 
   /** Sube de nivel una instancia ya creada. */
-  function levelUp(s) {
+  function levelUp(s, levels = 1) {
     if (s.lvl >= s.def.maxLvl) return false;
-    applyMods(s, s.def.ups[s.lvl - 1].m);
-    s.lvl++;
+    const end = Math.min(s.def.maxLvl, s.lvl + levels);
+    while (s.lvl < end) {
+      applyMods(s, s.def.ups[s.lvl - 1].m);
+      s.lvl++;
+    }
     return true;
   }
 
   /** Texto de la próxima mejora, para la carta de subida de nivel. */
-  function nextUpText(s) {
-    return s.lvl >= s.def.maxLvl ? null : s.def.ups[s.lvl - 1].t;
+  function nextUpText(s, levels = 1) {
+    return s.lvl >= s.def.maxLvl ? null : s.def.ups.slice(s.lvl - 1, s.lvl - 1 + levels).map(u => u.t).join('<br>');
   }
 
   /** Movimiento inicial según el tipo principal (si el Pokémon no trae uno). */

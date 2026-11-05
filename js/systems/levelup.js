@@ -27,6 +27,17 @@ G.LevelUp = (() => {
       apply: pl => pl.heal(pl.maxHp * 0.45) }
   ];
 
+  function statDescription(s, n, pl) {
+    if (n === 1) return s.desc;
+    const values = {
+      hp: 20 * n, atk: (1.10 ** n - 1) * 100, spd: (1.07 ** n - 1) * 100,
+      cd: (1 - 0.92 ** n) * 100, def: (Math.min(0.7, pl.dmgReduce + 0.06 * n) - pl.dmgReduce) * 100,
+      rgn: 0.9 * n, mag: (1.30 ** n - 1) * 100, xp: (1.12 ** n - 1) * 100
+    };
+    // Traduce antes de cambiar la cifra para reutilizar los textos de todos los idiomas.
+    return G.T(s.desc).replace(/\d+(?:[.,]\d+)?/, String(Math.round(values[s.id] * 10) / 10));
+  }
+
   /** n elementos distintos de list, cada uno con probabilidad según weight(x). */
   function pickWeighted(list, n, weight) {
     const rest = list.map(x => [x, weight(x)]), out = [];
@@ -41,6 +52,7 @@ G.LevelUp = (() => {
   /** Construye el conjunto de cartas candidatas, con pesos. */
   function candidates(pl) {
     const out = [];
+    const hurry = !!(G.Game && G.Game.st && G.Game.st.hurryMode);
 
     // --- movimientos nuevos ---
     if (pl.slots.length < pl.maxMoves) {
@@ -94,14 +106,15 @@ G.LevelUp = (() => {
 
     // --- mejoras de movimientos que ya tienes ---
     for (const m of pl.moves) {
-      const txt = G.Moves.nextUpText(m);
+      const steps = hurry ? 2 : 1;
+      const txt = G.Moves.nextUpText(m, steps);
       if (!txt) continue;
       out.push({
         w: 8, type: 'up', key: 'up:' + m.id,
         icon: 'move:' + m.id, color: G.U.TYPE_COLOR[m.type],
-        tag: 'Nv.' + m.lvl + ' > ' + (m.lvl + 1),
+        tag: 'Nv.' + m.lvl + ' > ' + Math.min(m.def.maxLvl, m.lvl + steps),
         title: G.T(m.name, 'move'), desc: txt,
-        apply: () => G.Moves.levelUp(m)
+        apply: () => G.Moves.levelUp(m, steps)
       });
     }
 
@@ -111,15 +124,20 @@ G.LevelUp = (() => {
     // acumulaban sin fin (velocidad, recarga y experiencia por las nubes) y el
     // juego acababa colgándose. Las que piden una evolución salen siempre.
     const room = s => !s.max || (pl.statsTaken[s.id] || 0) < s.max;
-    const pickStats = G.U.pickN(STATS.filter(s => !waiting[s.id] && room(s)), 5).concat(STATS.filter(s => waiting[s.id]));
+    const pickStats = G.U.pickN(STATS.filter(s => !waiting[s.id] && room(s)), 5).concat(STATS.filter(s => waiting[s.id] && room(s)));
     for (const s of pickStats) {
       const evoFor = waiting[s.id];
+      const steps = Math.min(hurry && s.id !== 'heal' ? 5 : 1, s.max ? s.max - (pl.statsTaken[s.id] || 0) : Infinity);
       out.push({
         w: evoFor ? 14 : pl.slots.length < pl.maxMoves ? 4 : 7,
         type: 'stat', key: 'stat:' + s.id,
         icon: s.icon, color: evoFor ? '#ffd23f' : '#8fa3c4', tag: evoFor ? 'Evoluciona ' + G.T(evoFor.name, 'move') : 'Mejora',
-        title: s.title, desc: s.desc,
-        apply: p => { s.apply(p); p.statsTaken[s.id] = (p.statsTaken[s.id] || 0) + 1; }
+        title: s.title, desc: statDescription(s, steps, pl),
+        apply: p => {
+          const n = Math.min(steps, s.max ? s.max - (p.statsTaken[s.id] || 0) : Infinity);
+          for (let i = 0; i < n; i++) s.apply(p);
+          p.statsTaken[s.id] = (p.statsTaken[s.id] || 0) + n;
+        }
       });
     }
 

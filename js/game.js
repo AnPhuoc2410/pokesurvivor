@@ -243,7 +243,7 @@ G.Game = (() => {
   /** Experiencia que hace falta para el siguiente nivel (cofres con candado). */
   function levelXp() {
     if (!pl) return 20;
-    const k = (G.Coop.active ? G.Coop.xpFactor() : 1) * (pl.xpMul || 1);
+    const k = (G.Coop.active ? G.Coop.xpFactor() : 1) * (pl.xpMul || 1) * (hurryMode ? 2.3 : 1);
     return Math.ceil((pl.xpNext - pl.xp + 1) / k);
   }
 
@@ -652,7 +652,7 @@ G.Game = (() => {
       G.FX.ring(who.x, who.y, 20, R, '#ff7b3d', 0.5, 6);
       for (const e of G.EnemyMgr.all()) {
         if (mine ? !G.Camera.sees(e.x, e.y, 0) : G.U.dist2(e.x, e.y, who.x, who.y) > R * R) continue;
-        e.hurt(60 + pl.level * 14, '#ff7b3d', e.x - who.x, e.y - who.y, 160);
+        e.hurt(60 + G.Player.powerLevel(pl.level, hurryMode) * 14, '#ff7b3d', e.x - who.x, e.y - who.y, 160);
       }
     }
   }
@@ -716,8 +716,8 @@ G.Game = (() => {
     if (isLocalDev && (!G.Coop.active || G.Coop.isHost)) {
       if ((G.Input.held('shiftleft') || G.Input.held('shiftright')) && G.Input.tap('keyt')) {
         matchTime += 60;
-        realTime += 30;
-        runReal -= 30000;
+        realTime += 60 / st.timeScale;
+        runReal -= 60000 / st.timeScale;
         if (G.UI && G.UI.toast) G.UI.toast(`⏩ Shift+T: +1 phút (Trận:  / Thực: )`, 1500);
       }
     }
@@ -829,7 +829,7 @@ G.Game = (() => {
     }
     realTime += dt;
     // Hurry mode: TIME_SCALE = 2 trước khi Arceus giáng thế; khi vào Judgment thì TIME_SCALE = 1
-    const timeScale = (hurryMode && !G.Judgment.active) ? 2 : 1;
+    const timeScale = st.timeScale;
     matchTime += dt * timeScale;
 
     const b = Math.floor(matchTime / 240);
@@ -1097,9 +1097,9 @@ G.Game = (() => {
   return {
     init, startRun, everyone, levelXp, flash, offerBond,
     /** Para pruebas: salta el reloj de la run. */
-    debugTime(t) { tampered = true; matchTime = t; realTime = t / 2; },
+    debugTime(t) { tampered = true; matchTime = t; realTime = t / st.timeScale; },
     get hurryMode() { return hurryMode; },
-    get timeScale() { return (hurryMode && (!G.Judgment || !G.Judgment.active)) ? 2 : 1; },
+    get timeScale() { return st.timeScale; },
     setHurryMode(v) { hurryMode = !!v; },
     get matchTime() { return matchTime; },
     get realTime() { return realTime; },

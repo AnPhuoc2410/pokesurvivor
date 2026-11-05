@@ -99,7 +99,7 @@ G.Interact = (() => {
     if (k === 2 && G.U.dist2(x, y, G.Camera.x, G.Camera.y) < 500 * 500) G.Camera.kick(0.7);
 
     const pl = G.Game.player;
-    const lvl = pl ? pl.level : 1;
+    const lvl = pl ? G.Player.powerLevel(pl.level) : 1;
     if (authority()) {
       for (const e of G.EnemyMgr.queryCircle(x, y, TRAP_R)) {
         if (e.remote) continue;

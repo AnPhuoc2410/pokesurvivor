@@ -179,15 +179,24 @@ G.Enemies = (() => {
 
   // (El "tiempo extra" del minuto 60 se quitó al llegar la Sentencia de Arceus,
   //  que acaba todas las partidas en el minuto 30: ver systems/judgment.js.)
-  function scale(t) {
-    return { hp: 1 + t / 95, dmg: 1 + t / 420, spd: 1 + Math.min(0.35, t / 1400) };
+  function hurryScale(t, boss = false, hurry = !!(G.Game && G.Game.st && G.Game.st.hurryMode)) {
+    const progress = hurry ? Math.min(1, Math.max(0, t / 1800)) : 0;
+    return { hp: 1 + progress * (boss ? 0.4 : 0.6), dmg: 1 + progress * (boss ? 0.12 : 0.2), spd: 1 };
+  }
+
+  function scale(t, hurry = !!(G.Game && G.Game.st && G.Game.st.hurryMode)) {
+    const k = hurryScale(t, false, hurry);
+    return { hp: (1 + t / 95) * k.hp, dmg: (1 + t / 420) * k.dmg, spd: 1 + Math.min(0.35, t / 1400) };
   }
 
   /**
    * Los jefes ya traen su vida base creciente (1.400 ... 16.000), así que
    * escalan mucho más suave: con la curva normal el último llegaba a 168.000 PV.
    */
-  function bossScale(t) { return { hp: 1 + t / 600, dmg: 1 + t / 600, spd: 1 }; }
+  function bossScale(t, hurry = !!(G.Game && G.Game.st && G.Game.st.hurryMode)) {
+    const k = hurryScale(t, true, hurry);
+    return { hp: (1 + t / 600) * k.hp, dmg: (1 + t / 600) * k.dmg, spd: 1 };
+  }
 
   /** Tramo que toca en el segundo `t`. */
   function tierAt(t) { let ti = 0; TIERS.forEach((tr, i) => { if (t >= tr.from) ti = i; }); return ti; }
@@ -230,7 +239,7 @@ G.Enemies = (() => {
   }
 
   return {
-    TIERS, BOSS_SLOTS, rollRun, scale, bossScale, bagAt, upcomingDex, candidates, hordeTypes, hordeDefs,
+    TIERS, BOSS_SLOTS, rollRun, scale, bossScale, hurryScale, bagAt, upcomingDex, candidates, hordeTypes, hordeDefs,
     get BOSSES() { if (!bosses) rollRun(); return bosses; },
     get cast() { if (!cast) rollRun(); return cast; }
   };

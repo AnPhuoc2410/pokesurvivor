@@ -96,11 +96,18 @@ G.Player = class Player {
   /** Segundos que hay que estar junto a un compañero caído para levantarlo. */
   static get REVIVE_TIME() { return 3; }
 
-  // (×2 y luego ×4 el 2026-10-10: se subía de nivel demasiado rápido.)
-  static xpFor(level, hurry = false) {
-    const isHurry = hurry || (typeof G !== 'undefined' && G.Game && G.Game.st && G.Game.st.hurryMode);
-    const k = isHurry ? 2 : 4;
-    return Math.floor((8 + level * 6 + Math.pow(level, 1.75) * 1.6) * k);
+  // Los tres primeros niveles conservan el arranque; después cada nivel Hurry agrupa cinco antiguos.
+  static powerLevel(level, hurry = !!(G.Game && G.Game.st && G.Game.st.hurryMode)) {
+    return hurry && level > 4 ? 4 + (level - 4) * 5 : level;
+  }
+
+  static xpFor(level, hurry = !!(G.Game && G.Game.st && G.Game.st.hurryMode)) {
+    const from = Player.powerLevel(level, hurry), to = Player.powerLevel(level + 1, hurry);
+    let xp = 0;
+    for (let lv = from; lv < to; lv++) {
+      xp += Math.floor((8 + lv * 6 + Math.pow(lv, 1.75) * 1.6) * (hurry ? 2 : 4));
+    }
+    return xp;
   }
 
   cy() { return this.y; }

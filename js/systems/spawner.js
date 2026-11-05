@@ -163,7 +163,7 @@ G.Spawner = (() => {
     }
 
     // --- marea ---
-    if (!bossFight) surgeT -= dt;
+    if (!bossFight) surgeT -= dt * (G.Game ? G.Game.timeScale : 1);
     if (surgeT <= 0) {
       surgeT = G.U.rand(38, 56);
       const base = Math.random() * 6.2832;
@@ -177,7 +177,7 @@ G.Spawner = (() => {
 
   /** Unos cuantos de golpe desde un lado (al empezar una horda). */
   function burst(n) {
-    const base = Math.random() * 6.2832, target = anchor() || G.Game.player, t = G.Game.st.time;
+    const base = Math.random() * 6.2832, target = anchor() || G.Game.player, t = G.Game.st.matchTime;
     for (let i = 0; i < n && G.EnemyMgr.count < CAP + 10; i++) spawnOne(target, t, base + G.U.rand(-0.6, 0.6));
   }
 

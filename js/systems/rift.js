@@ -149,7 +149,7 @@ G.Rift = (() => {
 
   function spawnLegend() {
     const mon = G.DEX_BY[arena.dex];
-    const t = G.Game.st.time;
+    const t = G.Game.st.matchTime;
     const n = G.Game.everyone().length;
     const ts = TS();
     const def = {
@@ -160,7 +160,7 @@ G.Rift = (() => {
       behavior: mon.types.some(x => ['psychic', 'electric', 'ghost', 'fairy', 'fire', 'water', 'ice', 'dragon'].includes(x)) ? 'ranged' : 'charger',
       shotDmg: Math.round(18 + t / 40), shotCd: 0.9, range: 300
     };
-    const e = new G.Enemy(def, arena.x, arena.y - ts * 3.5, { hp: 1, spd: 1, dmg: 1 }, true);
+    const e = new G.Enemy(def, arena.x, arena.y - ts * 3.5, G.Enemies.hurryScale(t, true), true);
     e.legend = true;
     // Choca con las paredes y columnas como tú: si volara por encima de las
     // rocas, tus disparos no podrían alcanzarle (bug de Celebi).
