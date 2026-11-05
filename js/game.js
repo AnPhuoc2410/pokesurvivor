@@ -718,7 +718,21 @@ G.Game = (() => {
         matchTime += 60;
         realTime += 60 / st.timeScale;
         runReal -= 60000 / st.timeScale;
-        if (G.UI && G.UI.toast) G.UI.toast(`⏩ Shift+T: +1 phút (Trận:  / Thực: )`, 1500);
+        if (G.UI && G.UI.toast) G.UI.toast('⏩ Shift+T: +1 phút', 1500);
+      }
+    }
+    // Debug Rapid Fire (Shift + F): bật/tắt siêu tốc bắn x20
+    if (isLocalDev && pl) {
+      if ((G.Input.held('shiftleft') || G.Input.held('shiftright')) && G.Input.tap('keyf')) {
+        pl._rapidFire = !pl._rapidFire;
+        if (pl._rapidFire) {
+          pl._origCdMul = pl.cdMul;
+          pl.cdMul = 0.05;
+          if (G.UI && G.UI.toast) G.UI.toast('⚡ Siêu tốc bắn: BẬT (x20)', 1500);
+        } else {
+          pl.cdMul = pl._origCdMul || 1;
+          if (G.UI && G.UI.toast) G.UI.toast('⚡ Siêu tốc bắn: TẮT', 1500);
+        }
       }
     }
     // Caído en grupo: Q / E cambian a quién miras.

@@ -280,6 +280,7 @@ G.I18n.add({
   'Jugar': 'Play', 'Entra en la mazmorra': 'Enter the dungeon', 'Pokémon': 'Pokémon', 'Tu colección': 'Your collection',
   'Mejoras': 'Upgrades', 'Haz más fuerte cada run': 'Make every run stronger', '9 regiones · Pokémon y shinies': '9 regions · Pokémon and shinies',
   'Misiones': 'Missions', 'Misiones, logros y perfil': 'Missions, achievements and profile', 'Amigos': 'Friends', 'Juega en grupo, hasta 4': 'Play in a group, up to 4',
+  'Multijugador': 'Multiplayer', 'Crear sala o unirse': 'Create room or join', 'Crear sala': 'Create room', 'En tu sala ({x})': 'In your room ({x})',
   'Ranking': 'Leaderboard', 'Quién aguanta más': 'Who survives longest', 'Ajustes': 'Settings', 'Sonido, gráficos, controles y cuenta': 'Sound, graphics, controls and account',
   '{x} premio por recoger': '{x} reward to claim', '{x} premios por recoger': '{x} rewards to claim', 'premio por recoger': 'reward to claim', 'premios por recoger': 'rewards to claim',
   'Volver a tu sala ({x})': 'Back to your room ({x})', '{x} en línea': '{x} online', 'en línea': 'online',
@@ -391,6 +392,10 @@ G.I18n.add({
   'No se pudo entrar en la sala.': 'Couldn\'t join the room.', 'La sala está llena (máximo {x}).': 'The room is full (max {x}).',
   '{x} te invita a jugar en su sala': '{x} invites you to play in their room', 'te invita a jugar en su sala': 'invites you to play in their room',
   'Unirme': 'Join', 'No, gracias': 'No, thanks', 'Ir a la sala': 'Go to the room',
+  'Apodo del anfitrión para unirte a su sala': 'Host nickname to join their room',
+  'Escribe el apodo del anfitrión': 'Type the host nickname', 'Escribe el apodo del anfitrión.': 'Type the host nickname.',
+  '¡Te has unido a la sala!': 'You joined the room!', 'Función sólo disponible online.': 'Feature only available online.',
+  'No se encontró ningún jugador con ese apodo.': 'No player found with that nickname.', 'Esa es tu propia sala.': 'That is your own room.',
 
   // ---------------- ranking ----------------
   'tiempo aguantado': 'survival time', '· tiempo aguantado': '· survival time', 'Diario': 'Daily', 'Semanal': 'Weekly', 'Mensual': 'Monthly', 'Anual': 'Yearly',
