@@ -704,7 +704,7 @@ G.Game = (() => {
         pl.setActive(i);
         if (pl.autoSwap && i >= 2) {
           pl.autoSwap = false;
-          if (G.UI && G.UI.toast) G.UI.toast('Auto đổi chiêu: TẮT', 1000);
+          if (G.UI && G.UI.toast) G.UI.toast('Cambio automático: DESACTIVADO', 1000);
         }
       }
     }
@@ -718,7 +718,7 @@ G.Game = (() => {
         matchTime += 60;
         realTime += 60 / st.timeScale;
         runReal -= 60000 / st.timeScale;
-        if (G.UI && G.UI.toast) G.UI.toast('⏩ Shift+T: +1 phút', 1500);
+        if (G.UI && G.UI.toast) G.UI.toast('⏩ Shift+T: +1 min', 1500);
       }
     }
     // Caído en grupo: Q / E cambian a quién miras.
