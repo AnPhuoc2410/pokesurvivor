@@ -80,6 +80,10 @@ G.Combat = (() => {
   }
 
   function run(pl, m) {
+    if (SIGNATURE_RUNNERS[m.id]) {
+      SIGNATURE_RUNNERS[m.id](pl, m);
+      return;
+    }
     switch (m.kind) {
       case 'projectile': fireProjectiles(pl, m); break;
       case 'melee':      melee(pl, m); break;
@@ -467,6 +471,407 @@ G.Combat = (() => {
     fields.push({ kind: 'stunzone', owner: pl, ghost, m, col, vis, x: tg.x, y: tg.y, t: 0, delay: 0.45, r: m.radius, dmg: m.dmg * pl.atkFor(m) });
   }
 
+  // ================= MOVIMIENTOS EXCLUSIVOS LEGENDARIOS (DISEÑO AUTÉNTICO) =================
+
+  function runElectroDrift(pl, m) {
+    const col = G.U.TYPE_COLOR[m.type], vis = G.VFX.forMove(m);
+    const ca = Math.cos(pl.aim), sa = Math.sin(pl.aim);
+    const sx = pl.x, sy = pl.y;
+    let len = 0;
+    const maxDist = m.radius || 150;
+    for (let d = 8; d <= maxDist; d += 8) {
+      if (!G.World.isFree(sx + ca * d, sy + sa * d, pl.r * 0.8, true)) break;
+      len = d;
+    }
+    for (let d = 0; d <= len; d += 16) {
+      const px = sx + ca * d, py = sy + sa * d;
+      G.FX.sp('bolt', 'electric', px, py - G.LIFT * 0.6, { life: 0.35, angle: pl.aim });
+      G.FX.spark(px, py - G.LIFT * 0.5, '#fbee44', ca, sa, 3);
+      if (d % 32 === 0) {
+        fields.push({
+          kind: 'patch', owner: pl, ghost, m, col: '#fbee44', vis,
+          x: px, y: py, t: 0, life: 2.8, r: 30, tick: 0.25,
+          dmg: m.dmg * 0.35 * pl.atkFor(m)
+        });
+      }
+    }
+    const ex = sx + ca * len, ey = sy + sa * len;
+    G.FX.ring(ex, ey, 10, 75, '#fbee44', 0.35, 4);
+    G.FX.burst(ex, ey - G.LIFT * 0.5, '#fff455', 16, 190);
+    G.Audio.sfx('break');
+    if (ghost) return;
+
+    pl.x = ex; pl.y = ey;
+    G.World.collide(pl);
+    pl.invuln = Math.max(pl.invuln || 0, 0.4);
+    pl.addBuff('spd', 0.35, 2.0, 3);
+
+    const w = m.width || 46;
+    const mx = sx + ca * len / 2, my = sy + sa * len / 2;
+    for (const e of G.EnemyMgr.queryCircle(mx, my, len / 2 + w)) {
+      if (segDist2(sx, sy, pl.x, pl.y, e.x, e.y) <= (w / 2 + e.r) ** 2) {
+        hit(pl, e, m.dmg * pl.atkFor(m), col, ca, sa, m.knock || 60, m);
+        if (e.applySlow) e.applySlow(0.4, 1.2);
+      }
+    }
+    for (const p of G.World.propsInCircle(mx, my, len / 2 + w)) {
+      if (segDist2(sx, sy, pl.x, pl.y, p.x, p.y) <= (w / 2 + p.r) ** 2) {
+        G.World.damageProp(p, m.dmg * pl.atkFor(m), col);
+      }
+    }
+    G.Camera.kick(0.18);
+  }
+
+  function runCollisionCourse(pl, m) {
+    const col = G.U.TYPE_COLOR[m.type];
+    const ca = Math.cos(pl.aim), sa = Math.sin(pl.aim);
+    const jumpDist = 95;
+    const tx = pl.x + ca * jumpDist, ty = pl.y + sa * jumpDist;
+    const destX = G.World.isFree(tx, ty, pl.r) ? tx : pl.x;
+    const destY = G.World.isFree(tx, ty, pl.r) ? ty : pl.y;
+
+    G.FX.ring(destX, destY, 15, 140, '#ff4422', 0.45, 6);
+    G.FX.ring(destX, destY, 30, 95, '#ffa044', 0.35, 4);
+    G.FX.burst(destX, destY - G.LIFT * 0.5, '#cc5522', 24, 240);
+    G.FX.burst(destX, destY - G.LIFT * 0.5, '#ffaa33', 16, 180);
+    G.Audio.sfx('break');
+    G.Camera.kick(0.35);
+
+    if (ghost) return;
+    pl.x = destX; pl.y = destY;
+    G.World.collide(pl);
+    pl.invuln = Math.max(pl.invuln || 0, 0.4);
+
+    const hitRadius = 140;
+    for (const e of G.EnemyMgr.queryCircle(destX, destY, hitRadius)) {
+      const d = G.U.dist(destX, destY, e.x, e.y);
+      const proximityMul = 1.0 + (1 - d / hitRadius) * 0.6;
+      const [nx, ny] = G.U.norm(e.x - destX, e.y - destY);
+      hit(pl, e, m.dmg * pl.atkFor(m) * proximityMul, col, nx, ny, (m.knock || 140) * 1.5, m);
+    }
+    for (const p of G.World.propsInCircle(destX, destY, hitRadius)) {
+      G.World.damageProp(p, m.dmg * pl.atkFor(m), col);
+    }
+  }
+
+  function runRoarOfTime(pl, m) {
+    const col = G.U.TYPE_COLOR[m.type], vis = G.VFX.forMove(m);
+    const ca = Math.cos(pl.aim), sa = Math.sin(pl.aim);
+
+    G.FX.ring(pl.x, pl.y, 20, 290, '#70b8ff', 0.65, 5);
+    G.FX.ring(pl.x, pl.y, 50, 190, '#d0e8ff', 0.45, 3);
+    G.FX.burst(pl.x, pl.y - G.LIFT * 0.5, '#80c0ff', 18, 160);
+    G.Audio.sfx('break');
+    G.Camera.kick(0.28);
+
+    const freezeRad = 290;
+    for (const e of G.EnemyMgr.queryCircle(pl.x, pl.y, freezeRad)) {
+      if (e.applySlow) e.applySlow(0.88, 2.2);
+      if (e.applySleep && !e.arceus) e.applySleep(1.4);
+    }
+
+    const w = 56, len = 350;
+    G.FX.beam(pl.x, pl.y - G.LIFT, pl.aim, len, w, '#70b8ff', vis);
+    if (ghost) return;
+
+    const mx = pl.x + ca * len / 2, my = pl.y + sa * len / 2;
+    const onBeam = (x, y, r) => {
+      const px = x - pl.x, py = y - pl.y;
+      const along = px * ca + py * sa;
+      if (along < -r || along > len + r) return false;
+      return Math.abs(-px * sa + py * ca) <= w / 2 + r;
+    };
+    for (const e of G.EnemyMgr.queryCircle(mx, my, len / 2 + w)) {
+      if (onBeam(e.x, e.y, e.r)) {
+        hit(pl, e, m.dmg * pl.atkFor(m) * 1.45, col, ca, sa, 80, m);
+      }
+    }
+    for (const p of G.World.propsInCircle(mx, my, len / 2 + w)) {
+      if (onBeam(p.x, p.y, p.r)) G.World.damageProp(p, m.dmg * pl.atkFor(m), col);
+    }
+  }
+
+  function runSpacialRend(pl, m) {
+    const col = G.U.TYPE_COLOR[m.type], vis = G.VFX.forMove(m);
+    const ca = Math.cos(pl.aim), sa = Math.sin(pl.aim);
+    const dist = 70;
+    const rx = pl.x + ca * dist, ry = pl.y + sa * dist;
+
+    G.FX.ring(rx, ry, 15, 115, '#cc44ff', 0.45, 4);
+    G.FX.slash(rx, ry - G.LIFT * 0.5, pl.aim, 100, 2.8, '#ff88ff', { pal: 'dragon', melee: 'claw' });
+    G.FX.slash(rx, ry - G.LIFT * 0.5, pl.aim + Math.PI / 2, 90, 2.8, '#aa22ff', { pal: 'dragon', melee: 'claw' });
+    G.Audio.sfx('hit');
+    G.Camera.kick(0.2);
+
+    fields.push({
+      kind: 'vortex', owner: pl, ghost, m, col: '#cc44ff', vis,
+      x: rx, y: ry, t: 0, life: 0.9, r: 125, pull: 280,
+      dmg: m.dmg * 0.6 * pl.atkFor(m)
+    });
+
+    if (ghost) return;
+    for (const e of G.EnemyMgr.queryCircle(rx, ry, 115)) {
+      hit(pl, e, m.dmg * pl.atkFor(m) * 1.35, col, ca, sa, 90, m);
+    }
+    for (const p of G.World.propsInCircle(rx, ry, 115)) {
+      G.World.damageProp(p, m.dmg * pl.atkFor(m), col);
+    }
+  }
+
+  function runOriginPulse(pl, m) {
+    const col = '#33aaff', vis = G.VFX.forMove(m);
+    const offsets = [-0.36, -0.18, 0, 0.18, 0.36];
+    const len = 330, w = 32;
+
+    G.Camera.kick(0.25);
+    G.Audio.sfx('break');
+    G.FX.ring(pl.x, pl.y, 10, 85, col, 0.3, 3);
+
+    for (const off of offsets) {
+      const a = pl.aim + off;
+      const ca = Math.cos(a), sa = Math.sin(a);
+      G.FX.beam(pl.x, pl.y - G.LIFT, a, len, w, col, vis);
+      G.FX.sp('drop', 'water', pl.x + ca * 50, pl.y + sa * 50 - G.LIFT, { life: 0.3, angle: a });
+
+      if (ghost) continue;
+
+      const mx = pl.x + ca * len / 2, my = pl.y + sa * len / 2;
+      const onBeam = (x, y, r) => {
+        const px = x - pl.x, py = y - pl.y;
+        const along = px * ca + py * sa;
+        if (along < -r || along > len + r) return false;
+        return Math.abs(-px * sa + py * ca) <= w / 2 + r;
+      };
+      for (const e of G.EnemyMgr.queryCircle(mx, my, len / 2 + w)) {
+        if (onBeam(e.x, e.y, e.r)) {
+          hit(pl, e, m.dmg * pl.atkFor(m), col, ca, sa, 60, m);
+        }
+      }
+      for (const p of G.World.propsInCircle(mx, my, len / 2 + w)) {
+        if (onBeam(p.x, p.y, p.r)) G.World.damageProp(p, m.dmg * pl.atkFor(m), col);
+      }
+    }
+  }
+
+  function runPrecipiceBlades(pl, m) {
+    const col = '#dd4411', vis = G.VFX.forMove(m);
+    const enemies = G.EnemyMgr.queryCircle(pl.x, pl.y, 360).filter(e => !e.dead);
+    G.U.shuffle ? G.U.shuffle(enemies) : enemies.sort(() => Math.random() - 0.5);
+
+    const count = 7;
+    for (let i = 0; i < count; i++) {
+      let x, y;
+      if (enemies[i]) {
+        x = enemies[i].x + G.U.rand(-12, 12);
+        y = enemies[i].y + G.U.rand(-12, 12);
+      } else {
+        const a = Math.random() * 6.2832, r = G.U.rand(60, 260);
+        x = pl.x + Math.cos(a) * r;
+        y = pl.y + Math.sin(a) * r;
+      }
+      G.FX.ring(x, y, 6, 36, '#ff3300', 0.28, 3);
+      fields.push({
+        kind: 'precipice_blade', owner: pl, ghost, m, col, vis,
+        x, y, t: -i * 0.08, delay: 0.22, r: 45, dmg: m.dmg * pl.atkFor(m) * 1.25
+      });
+    }
+    G.Camera.kick(0.28);
+    G.Audio.sfx('break');
+  }
+
+  function runJudgment(pl, m) {
+    const col = '#fff8e7', vis = G.VFX.forMove(m);
+    G.FX.ring(pl.x, pl.y, 15, 200, '#ffffff', 0.55, 4);
+    G.FX.twinkle(pl.x, pl.y - G.LIFT);
+    G.Camera.kick(0.22);
+    G.Audio.sfx('ding');
+
+    const totalPillars = 18;
+    const enemies = G.EnemyMgr.queryCircle(pl.x, pl.y, 420).filter(e => !e.dead);
+
+    for (let i = 0; i < totalPillars; i++) {
+      const targetEnemy = enemies[i % Math.max(1, enemies.length)];
+      const x = targetEnemy ? targetEnemy.x + G.U.rand(-18, 18) : pl.x + G.U.rand(-260, 260);
+      const y = targetEnemy ? targetEnemy.y + G.U.rand(-18, 18) : pl.y + G.U.rand(-200, 200);
+
+      fields.push({
+        kind: 'meteor', owner: pl, ghost, m, col, vis,
+        x, y, t: -i * 0.05, fall: 0.35, r: 52,
+        dmg: m.dmg * pl.atkFor(m) * 1.15
+      });
+    }
+  }
+
+  function runShadowForce(pl, m) {
+    const col = '#662288';
+    const ca = Math.cos(pl.aim), sa = Math.sin(pl.aim);
+
+    G.FX.burst(pl.x, pl.y - G.LIFT * 0.5, '#441166', 18, 140);
+    G.FX.ring(pl.x, pl.y, 10, 60, '#aa44cc', 0.3, 3);
+    G.Audio.sfx('hit');
+
+    const teleportDist = 125;
+    const destX = pl.x + ca * teleportDist, destY = pl.y + sa * teleportDist;
+    const tx = G.World.isFree(destX, destY, pl.r) ? destX : pl.x;
+    const ty = G.World.isFree(destX, destY, pl.r) ? destY : pl.y;
+
+    if (!ghost) {
+      pl.x = tx; pl.y = ty;
+      G.World.collide(pl);
+      pl.invuln = Math.max(pl.invuln || 0, 0.55);
+    }
+
+    G.FX.ring(tx, ty, 15, 150, '#220033', 0.45, 6);
+    G.FX.ring(tx, ty, 25, 110, '#aa22ee', 0.35, 4);
+    G.FX.burst(tx, ty - G.LIFT * 0.5, '#551177', 22, 220);
+    G.Camera.kick(0.3);
+
+    if (ghost) return;
+    const blastRadius = 150;
+    for (const e of G.EnemyMgr.queryCircle(tx, ty, blastRadius)) {
+      hit(pl, e, m.dmg * pl.atkFor(m) * 1.5, col, ca, sa, 110, m);
+    }
+    for (const p of G.World.propsInCircle(tx, ty, blastRadius)) {
+      G.World.damageProp(p, m.dmg * pl.atkFor(m), col);
+    }
+  }
+
+  function runPsystrike(pl, m) {
+    const col = '#d044ff', vis = G.VFX.forMove(m);
+    const ca = Math.cos(pl.aim), sa = Math.sin(pl.aim);
+
+    G.Audio.sfx('hit');
+    G.FX.ring(pl.x, pl.y, 10, 50, col, 0.25, 3);
+
+    const count = 2;
+    for (let i = 0; i < count; i++) {
+      const a = pl.aim + (i === 0 ? -0.16 : 0.16);
+      const vx = Math.cos(a) * 380, vy = Math.sin(a) * 380;
+      G.Projectiles.spawn(Object.assign({
+        x: pl.x + Math.cos(a) * 12, y: pl.y + Math.sin(a) * 12,
+        vx, vy, dmg: m.dmg * pl.atkFor(m), r: 9, life: 1.5,
+        pierce: 3, color: col, hits: new Set(), vis, ghost, owner: pl,
+        homing: 6
+      }, payload(m)));
+    }
+
+    const burstDist = 110;
+    const bx = pl.x + ca * burstDist, by = pl.y + sa * burstDist;
+    G.FX.ring(bx, by, 10, 115, '#ff77ff', 0.35, 5);
+    G.FX.burst(bx, by - G.LIFT * 0.5, '#cc44ff', 16, 170);
+    G.Camera.kick(0.18);
+
+    if (ghost) return;
+    for (const e of G.EnemyMgr.queryCircle(bx, by, 115)) {
+      hit(pl, e, m.dmg * pl.atkFor(m) * 0.9, col, ca, sa, 85, m);
+    }
+    for (const p of G.World.propsInCircle(bx, by, 115)) {
+      G.World.damageProp(p, m.dmg * pl.atkFor(m), col);
+    }
+  }
+
+  function runDragonAscent(pl, m) {
+    const col = '#11dd77', vis = G.VFX.forMove(m);
+    const enemies = G.EnemyMgr.queryCircle(pl.x, pl.y, 360).filter(e => !e.dead);
+    const target = enemies[0] || { x: pl.x + Math.cos(pl.aim) * 160, y: pl.y + Math.sin(pl.aim) * 160 };
+
+    G.Camera.kick(0.38);
+    G.Audio.sfx('break');
+
+    fields.push({
+      kind: 'meteor', owner: pl, ghost, m, col, vis,
+      x: target.x, y: target.y, t: 0, fall: 0.35, r: 150,
+      dmg: m.dmg * pl.atkFor(m) * 1.5,
+      knock: 180
+    });
+
+    G.FX.ring(pl.x, pl.y, 10, 95, '#22ee88', 0.4, 4);
+    G.FX.burst(pl.x, pl.y - G.LIFT * 0.5, '#00ff88', 16, 200);
+  }
+
+  function runAeroblast(pl, m) {
+    const col = '#b0e0ff', vis = G.VFX.forMove(m);
+    const ca = Math.cos(pl.aim), sa = Math.sin(pl.aim);
+    const len = 340, w = 46;
+
+    G.Camera.kick(0.24);
+    G.Audio.sfx('break');
+
+    G.FX.beam(pl.x, pl.y - G.LIFT, pl.aim, len, w, col, vis);
+    for (let d = 20; d <= len; d += 40) {
+      G.FX.sp('wind', 'flying', pl.x + ca * d, pl.y + sa * d - G.LIFT * 0.6, { life: 0.35, angle: pl.aim + d * 0.1 });
+    }
+
+    if (ghost) return;
+    const mx = pl.x + ca * len / 2, my = pl.y + sa * len / 2;
+    const onBeam = (x, y, r) => {
+      const px = x - pl.x, py = y - pl.y;
+      const along = px * ca + py * sa;
+      if (along < -r || along > len + r) return false;
+      return Math.abs(-px * sa + py * ca) <= w / 2 + r;
+    };
+
+    for (const e of G.EnemyMgr.queryCircle(mx, my, len / 2 + w)) {
+      if (onBeam(e.x, e.y, e.r)) {
+        hit(pl, e, m.dmg * pl.atkFor(m) * 1.45, col, ca, sa, 100, m);
+      }
+    }
+    for (const p of G.World.propsInCircle(mx, my, len / 2 + w)) {
+      if (onBeam(p.x, p.y, p.r)) G.World.damageProp(p, m.dmg * pl.atkFor(m), col);
+    }
+  }
+
+  function runSacredFire(pl, m) {
+    const col = '#ff5500';
+    G.FX.ring(pl.x, pl.y, 15, 160, '#ffaa00', 0.45, 5);
+    G.FX.ring(pl.x, pl.y, 30, 110, '#ff4400', 0.35, 3);
+    G.FX.burst(pl.x, pl.y - G.LIFT * 0.5, '#ffaa22', 20, 200);
+    G.Audio.sfx('hit');
+    G.Camera.kick(0.18);
+
+    const rays = 12;
+    for (let i = 0; i < rays; i++) {
+      const a = (i / rays) * Math.PI * 2;
+      G.FX.sp('fire', 'fire', pl.x + Math.cos(a) * 40, pl.y + Math.sin(a) * 40 - G.LIFT * 0.5, { life: 0.4, angle: a });
+    }
+
+    if (ghost) return;
+
+    let totalHits = 0;
+    const blastRad = 160;
+    for (const e of G.EnemyMgr.queryCircle(pl.x, pl.y, blastRad)) {
+      const [nx, ny] = G.U.norm(e.x - pl.x, e.y - pl.y);
+      hit(pl, e, m.dmg * pl.atkFor(m) * 1.3, col, nx, ny, 75, m);
+      if (e.applyBurn) e.applyBurn(3.0);
+      totalHits++;
+    }
+    for (const p of G.World.propsInCircle(pl.x, pl.y, blastRad)) {
+      G.World.damageProp(p, m.dmg * pl.atkFor(m), col);
+    }
+
+    if (totalHits > 0) {
+      const healAmount = Math.max(1, Math.round(pl.maxHp * 0.04));
+      pl.heal(healAmount);
+      G.Audio.sfx('heal');
+      G.FX.dmgText(pl.x, pl.y - pl.bodyH - 10, '+' + healAmount + ' HP', '#55ff77', true);
+    }
+  }
+
+  const SIGNATURE_RUNNERS = {
+    'electro-drift': runElectroDrift,
+    'collision-course': runCollisionCourse,
+    'roar-of-time': runRoarOfTime,
+    'spacial-rend': runSpacialRend,
+    'origin-pulse': runOriginPulse,
+    'precipice-blades': runPrecipiceBlades,
+    'judgment': runJudgment,
+    'shadow-force': runShadowForce,
+    'psystrike': runPsystrike,
+    'dragon-ascent': runDragonAscent,
+    'aeroblast': runAeroblast,
+    'sacred-fire': runSacredFire,
+  };
+
   /** Rebote: el proyectil sale hacia el enemigo más cercano que aún no ha tocado. → true si rebota. */
   function rebound(p, from) {
     if (!(p.bounce > 0)) return false;
@@ -594,6 +999,26 @@ G.Combat = (() => {
           blast(f, f.r, trig ? 1 : 0.5);
           fields.splice(i, 1);
         }
+      } else if (f.kind === 'precipice_blade') {
+        if (f.t >= f.delay) {
+          G.FX.ring(f.x, f.y, 8, f.r, f.col, 0.35, 4);
+          G.FX.burst(f.x, f.y - 6, f.col, 16, 200);
+          G.FX.sp('rock', 'ground', f.x, f.y - 12, { scale: 1.8, life: 0.4, vy: -80 });
+          if (G.Camera.sees(f.x, f.y, 40)) { G.Audio.sfx('break'); G.Camera.kick(0.18); }
+          blast(f, f.r);
+          fields.push({
+            kind: 'patch', owner: f.owner, ghost: f.ghost, m: f.m, col: '#ff5522', vis: f.vis,
+            x: f.x, y: f.y, t: 0, life: 2.0, r: 32, tick: 0.3, dmg: f.dmg * 0.25
+          });
+          fields.splice(i, 1);
+        }
+      } else if (f.kind === 'precipice_blade') {
+        const k = G.U.clamp(f.t / f.delay, 0, 1);
+        ctx.globalAlpha = 0.2 + 0.5 * k;
+        ctx.fillStyle = '#ff3300';
+        ctx.beginPath(); ctx.ellipse(f.x, f.y, f.r * (0.3 + k * 0.7), f.r * 0.5 * (0.3 + k * 0.7), 0, 0, 6.2832); ctx.fill();
+        ctx.strokeStyle = '#ffaa00'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.ellipse(f.x, f.y, f.r * 0.8, f.r * 0.5, 0, 0, 6.2832); ctx.stroke();
       } else if (f.kind === 'meteor') {
         if (f.t >= f.fall) {
           G.FX.ring(f.x, f.y, 4, f.r, f.col, 0.35, 4);
@@ -693,8 +1118,9 @@ G.Combat = (() => {
       if (!G.Camera.sees(f.x, f.y, 200)) continue;
       if (f.kind === 'meteor' && f.t > 0) {
         const k = G.U.clamp(f.t / f.fall, 0, 1);
+        const sc = f.m && f.m.id === 'dragon-ascent' ? 2.5 : 1.5;
         G.VFX.draw(ctx, f.vis.proj, f.vis.pal, f.x + (1 - k) * 40, f.y - (1 - k) * 170 - 6,
-                   { scale: 1.5, angle: Math.atan2(170, -40), frame: Math.floor(now * 12) });
+                   { scale: sc, angle: Math.atan2(170, -40), frame: Math.floor(now * 12) });
       } else if (f.kind === 'turret') {
         const fade = Math.min(1, (f.life - f.t) * 2, f.t * 5);
         const bob = Math.sin(now * 4 + f.x) * 2 - (f.kick > 0 ? 2 : 0);
