@@ -857,6 +857,191 @@ G.Combat = (() => {
     }
   }
 
+
+  function runWaterShuriken(pl, m) {
+    const col = '#2299ff', vis = G.VFX.forMove(m);
+    const count = 5;
+    G.Audio.sfx('hit');
+    for (let i = 0; i < count; i++) {
+      const spread = (i - (count - 1) / 2) * 0.12;
+      const a = pl.aim + spread;
+      const vx = Math.cos(a) * 460, vy = Math.sin(a) * 460;
+      G.Projectiles.spawn(Object.assign({
+        x: pl.x + Math.cos(a) * 12, y: pl.y + Math.sin(a) * 12,
+        vx, vy, dmg: m.dmg * pl.atkFor(m), r: 8, life: 1.1,
+        pierce: 2, color: col, hits: new Set(), vis, ghost, owner: pl
+      }, payload(m)));
+    }
+    G.FX.ring(pl.x, pl.y, 6, 40, col, 0.2, 2);
+  }
+
+  function runPyroBall(pl, m) {
+    const col = '#ff4400', vis = G.VFX.forMove(m);
+    const enemies = G.EnemyMgr.queryCircle(pl.x, pl.y, 320).filter(e => !e.dead);
+    const target = enemies[0] || { x: pl.x + Math.cos(pl.aim) * 150, y: pl.y + Math.sin(pl.aim) * 150 };
+    G.Camera.kick(0.24);
+    G.Audio.sfx('break');
+    fields.push({
+      kind: 'meteor', owner: pl, ghost, m, col, vis,
+      x: target.x, y: target.y, t: 0, fall: 0.35, r: 110,
+      dmg: m.dmg * pl.atkFor(m), knock: 100
+    });
+    G.FX.burst(pl.x, pl.y - G.LIFT * 0.5, '#ffaa22', 12, 160);
+  }
+
+  function runSpiritShackle(pl, m) {
+    const col = '#8833aa', vis = G.VFX.forMove(m);
+    G.Audio.sfx('hit');
+    const count = 3;
+    for (let i = 0; i < count; i++) {
+      const a = pl.aim + (i - 1) * 0.15;
+      const vx = Math.cos(a) * 380, vy = Math.sin(a) * 380;
+      G.Projectiles.spawn(Object.assign({
+        x: pl.x + Math.cos(a) * 10, y: pl.y + Math.sin(a) * 10,
+        vx, vy, dmg: m.dmg * pl.atkFor(m), r: 9, life: 1.5,
+        pierce: 1, color: col, hits: new Set(), vis, ghost, owner: pl,
+        homing: 5, slow: 0.8
+      }, payload(m)));
+    }
+  }
+
+  function runDarkestLariat(pl, m) {
+    const col = '#ff3300', vis = G.VFX.forMove(m);
+    G.Audio.sfx('break');
+    G.Camera.kick(0.2);
+    G.FX.ring(pl.x, pl.y, 10, m.radius, col, 0.35, 4);
+    G.FX.slash(pl.x, pl.y - G.LIFT * 0.5, pl.aim, m.radius, 3.6, col, vis);
+    if (ghost) return;
+    for (const e of G.EnemyMgr.queryCircle(pl.x, pl.y, m.radius)) {
+      hit(pl, e, m.dmg * pl.atkFor(m) * 1.35, col, e.x - pl.x, e.y - pl.y, 140, m);
+    }
+    for (const p of G.World.propsInCircle(pl.x, pl.y, m.radius)) {
+      G.World.damageProp(p, m.dmg * pl.atkFor(m), col);
+    }
+  }
+
+  function runDrumBeating(pl, m) {
+    const col = '#22aa33', vis = G.VFX.forMove(m);
+    quake(pl, m);
+    for (const e of G.EnemyMgr.queryCircle(pl.x, pl.y, 220)) {
+      if (e.applySlow) e.applySlow(0.75, 2.0);
+    }
+  }
+
+  function runFlowerTrick(pl, m) {
+    const col = '#ff44aa', vis = G.VFX.forMove(m);
+    G.Audio.sfx('hit');
+    const count = 3;
+    for (let i = 0; i < count; i++) {
+      const a = pl.aim + (i - 1) * 0.18;
+      const vx = Math.cos(a) * 370, vy = Math.sin(a) * 370;
+      G.Projectiles.spawn(Object.assign({
+        x: pl.x + Math.cos(a) * 10, y: pl.y + Math.sin(a) * 10,
+        vx, vy, dmg: m.dmg * pl.atkFor(m) * 1.5, r: 9, life: 1.4,
+        pierce: 1, color: col, hits: new Set(), vis, ghost, owner: pl,
+        homing: 6
+      }, payload(m)));
+    }
+  }
+
+  function runTorchSong(pl, m) {
+    const col = '#ff6600', vis = G.VFX.forMove(m);
+    beam(pl, m);
+    if (!ghost) pl.addBuff('atk', 0.25, 2.5, 3);
+    G.FX.burst(pl.x, pl.y - G.LIFT * 0.5, '#ffaa00', 14, 160);
+  }
+
+  function runAquaStep(pl, m) {
+    const col = '#33aaff', vis = G.VFX.forMove(m);
+    melee(pl, m);
+    if (!ghost) pl.addBuff('spd', 0.35, 2.0, 3);
+    G.FX.ring(pl.x, pl.y, 8, 60, col, 0.25, 3);
+  }
+
+  function runGigatonHammer(pl, m) {
+    const col = '#8899aa', vis = G.VFX.forMove(m);
+    const ca = Math.cos(pl.aim), sa = Math.sin(pl.aim);
+    const hx = pl.x + ca * 65, hy = pl.y + sa * 65;
+    G.Camera.kick(0.38);
+    G.Audio.sfx('break');
+    G.FX.ring(hx, hy, 15, 140, col, 0.45, 6);
+    G.FX.burst(hx, hy - G.LIFT * 0.5, '#556677', 22, 220);
+    if (ghost) return;
+    for (const e of G.EnemyMgr.queryCircle(hx, hy, 140)) {
+      hit(pl, e, m.dmg * pl.atkFor(m) * 1.5, col, ca, sa, 180, m);
+    }
+    for (const p of G.World.propsInCircle(hx, hy, 140)) {
+      G.World.damageProp(p, m.dmg * pl.atkFor(m), col);
+    }
+  }
+
+  function runBitterBlade(pl, m) {
+    const col = '#ff3344', vis = G.VFX.forMove(m);
+    melee(pl, m);
+    if (!ghost) {
+      const heal = Math.max(1, Math.round(pl.maxHp * 0.04));
+      pl.heal(heal);
+      G.Audio.sfx('heal');
+      G.FX.dmgText(pl.x, pl.y - pl.bodyH - 8, '+' + heal + ' HP', '#55ff77', true);
+    }
+  }
+
+  function runGeomancy(pl, m) {
+    const col = '#ff77dd', vis = G.VFX.forMove(m);
+    G.FX.ring(pl.x, pl.y, 15, 170, col, 0.5, 4);
+    G.FX.burst(pl.x, pl.y - G.LIFT * 0.5, '#ffaaff', 18, 170);
+    G.Audio.sfx('heal');
+    if (!ghost) {
+      pl.addBuff('atk', 0.35, 4.0, 3);
+      pl.addBuff('def', 0.35, 4.0, 3);
+      pl.addBuff('spd', 0.25, 4.0, 3);
+      pl.heal(Math.round(pl.maxHp * 0.05));
+    }
+  }
+
+  function runOblivionWing(pl, m) {
+    const col = '#dd1144', vis = G.VFX.forMove(m);
+    beam(pl, m);
+    if (!ghost) {
+      const heal = Math.max(1, Math.round(pl.maxHp * 0.04));
+      pl.heal(heal);
+      G.Audio.sfx('heal');
+    }
+  }
+
+  function runDarkVoid(pl, m) {
+    const col = '#110022', vis = G.VFX.forMove(m);
+    const ca = Math.cos(pl.aim), sa = Math.sin(pl.aim);
+    const vx = pl.x + ca * 90, vy = pl.y + sa * 90;
+    G.FX.ring(vx, vy, 15, 140, '#661188', 0.6, 5);
+    G.Camera.kick(0.22);
+    fields.push({
+      kind: 'vortex', owner: pl, ghost, m, col: '#330055', vis,
+      x: vx, y: vy, t: 0, life: 2.2, r: 140, pull: 260,
+      dmg: m.dmg * 0.5 * pl.atkFor(m)
+    });
+    for (const e of G.EnemyMgr.queryCircle(vx, vy, 140)) {
+      if (e.applySleep && !e.arceus) e.applySleep(1.8);
+    }
+  }
+
+  function runVCreate(pl, m) {
+    const col = '#ff2200', vis = G.VFX.forMove(m);
+    dash(pl, m);
+    G.Camera.kick(0.35);
+    G.Audio.sfx('break');
+    G.FX.ring(pl.x, pl.y, 20, 150, '#ffcc00', 0.45, 6);
+    G.FX.burst(pl.x, pl.y - G.LIFT * 0.5, '#ff3300', 24, 250);
+  }
+
+  function runGlaciate(pl, m) {
+    const col = '#99eeff', vis = G.VFX.forMove(m);
+    nova(pl, m);
+    for (const e of G.EnemyMgr.queryCircle(pl.x, pl.y, 280)) {
+      if (e.applySlow) e.applySlow(0.85, 2.0);
+    }
+  }
+
   const SIGNATURE_RUNNERS = {
     'electro-drift': runElectroDrift,
     'collision-course': runCollisionCourse,
@@ -870,6 +1055,21 @@ G.Combat = (() => {
     'dragon-ascent': runDragonAscent,
     'aeroblast': runAeroblast,
     'sacred-fire': runSacredFire,
+    'water-shuriken': runWaterShuriken,
+    'pyro-ball': runPyroBall,
+    'spirit-shackle': runSpiritShackle,
+    'darkest-lariat': runDarkestLariat,
+    'drum-beating': runDrumBeating,
+    'flower-trick': runFlowerTrick,
+    'torch-song': runTorchSong,
+    'aqua-step': runAquaStep,
+    'gigaton-hammer': runGigatonHammer,
+    'bitter-blade': runBitterBlade,
+    'geomancy': runGeomancy,
+    'oblivion-wing': runOblivionWing,
+    'dark-void': runDarkVoid,
+    'v-create': runVCreate,
+    'glaciate': runGlaciate,
   };
 
   /** Rebote: el proyectil sale hacia el enemigo más cercano que aún no ha tocado. → true si rebota. */
