@@ -249,6 +249,7 @@ G.Coop = (() => {
       p, e: enemyList(viewOf(m)), ev
     };
     if (Number.isFinite(st.matchTime)) f.mt = r2(st.matchTime);
+    if (typeof st.hurry === 'boolean') f.hy = st.hurry;
     const ja = G.Judgment.netState();       // Arceus en la Sentencia
     if (ja) f.ja = ja;
     // Siempre: quién está eligiendo y, si hay cartas de nivel, cuáles (ver arriba).
@@ -480,7 +481,7 @@ G.Coop = (() => {
       else if (!msg.lu && showing) api.resume();
     }
     api.syncTeam({
-      time: msg.t, matchTime: msg.mt, level: msg.lv, xp: msg.xp, xpNext: msg.xn, kills: msg.ki, bosses: msg.bo, coins: msg.co,
+      time: msg.t, matchTime: msg.mt, hurry: msg.hy, level: msg.lv, xp: msg.xp, xpNext: msg.xn, kills: msg.ki, bosses: msg.bo, coins: msg.co,
       t1: (msg.tk || [])[0], t10: (msg.tk || [])[1], cn: num((msg.tk || [])[2], 0, 0, 1e6)
     });
     for (const u in msg.p || {}) {

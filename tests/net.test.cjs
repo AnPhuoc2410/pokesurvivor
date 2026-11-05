@@ -149,11 +149,14 @@ test('real Coop.tick frames pass through the codec without changing gameplay fie
     const local = { x: 0, y: 0, moveAngle: 1.234, walking: true, hp: 234, maxHp: 300,
       magnet: 78, aim: -1.43, xpMul: 1.2, reviveT: 0, activeGroup: () => [{ id: 'thundershock', lvl: 3 }] };
     G.Coop.begin({ host: 'host', members: [{ uid: 'host', name: 'Aarón', dex: 25 }, { uid: 'guest', name: '皮卡丘', dex: 25 }] }, local,
-      { team: () => ({ time: 145.12, level: 7, xp: 123.45, xpNext: 300, kills: 52, bosses: 2, coins: 40, t1: 1, t10: 0 }), choosing: () => false });
+      { team: () => ({ time: 145.12, matchTime: 290.24, hurry: true, level: 7, xp: 123.45, xpNext: 300, kills: 52, bosses: 2, coins: 40, t1: 1, t10: 0 }), choosing: () => false });
     G.Coop.tick(1 / 15);
     assert.equal(sent.length, 1);
     assert.deepEqual(C.decode(C.encode(sent[0])), sent[0]);
-    if (host) { assert.deepEqual(sent[0].e, [[123, 50, -10, 126, 1, 3, 1]]); assert.ok('ho' in sent[0]); }
+    if (host) {
+      assert.deepEqual(sent[0].e, [[123, 50, -10, 126, 1, 3, 1]]); assert.ok('ho' in sent[0]);
+      assert.equal(sent[0].hy, true); assert.equal(sent[0].mt, 290.24);
+    }
     else { assert.equal(sent[0].p.length, 17); assert.equal(sent[0].p[15], ''); assert.equal(sent[0].p[16], 1); }   // 16.º: a quién mira estando caído; 17.º: zoom (Luminosfera)
   }
 });
@@ -404,7 +407,7 @@ function coopSums(host, mySum) {
   G.Projectiles = { clearOrbs() {} }; G.Spawner = { say() {} }; G.Social = { me: { name: 'yo' }, dropMember() {} };
   new Function('G', 'document', 'setTimeout', 'clearTimeout', source('js/net/coop.js'))(G, { addEventListener() {} }, () => 0, () => {});
   G.Coop.begin({ host: 'host', members: [{ uid: 'host', name: 'Ana', dex: 25 }, { uid: 'guest', name: 'Bea', dex: 7 }] }, { x: 0, y: 0 },
-    { mySum: () => mySum, over: d => { got.over = d; }, syncTeam() {}, hold() {}, away() {}, lost() {}, mateLeft() {}, waiting() {} });
+    { mySum: () => mySum, over: d => { got.over = d; }, syncTeam: t => { got.team = t; }, hold() {}, away() {}, lost() {}, mateLeft() {}, waiting() {} });
   return { G, got, from: (u, msg) => msgFn(u, msg) };
 }
 
@@ -425,6 +428,15 @@ test('co-op run summary: each player sees everyone, and what arrives is cleaned'
   assert.deepEqual(Object.keys(all).sort(), ['guest', 'host']);
   assert.deepEqual(all.host, { ...mine, sk: '' });
   assert.equal(all.guest.it, 'leftovers');
+});
+
+test('co-op guests receive the host mode and both clocks, including Standard and older hosts', () => {
+  const g = coopSums(false, null);
+  g.from('host', { k: 'f', t: 300, mt: 600, hy: true, lv: 12, xp: 50, xn: 100 });
+  assert.equal(g.got.team.hurry, true); assert.equal(g.got.team.matchTime, 600);
+  g.from('host', { k: 'f', t: 301, mt: 601, hy: false });
+  assert.equal(g.got.team.hurry, false);
+  g.from('host', { k: 'f', t: 302 }); assert.equal(g.got.team.hurry, undefined);
 });
 
 test('co-op: a lost "I have picked" or "I am done choosing" message no longer freezes the run for everyone', () => {

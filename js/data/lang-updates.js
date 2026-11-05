@@ -8,6 +8,10 @@
 (() => {
   const languages = ['fr', 'it', 'pt-BR', 'zh-Hans', 'zh-Hant'];
   const rows = [
+    ['Modo de partida', 'Mode de jeu', 'Modalità di gioco', 'Modo de jogo', '游戏模式', '遊戲模式'],
+    ['Estándar (30:00)', 'Standard (30:00)', 'Standard (30:00)', 'Padrão (30:00)', '标准（30:00）', '標準（30:00）'],
+    ['Hurry (15:00)', 'Express (15:00)', 'Rapida (15:00)', 'Rápido (15:00)', '快速（15:00）', '快速（15:00）'],
+    ['Arceus a los 15 min de combate: menos cartas y mejoras más potentes. Las elecciones y la Sentencia añaden tiempo.', 'Arceus après 15 minutes de combat : moins de cartes, des améliorations plus puissantes. Les choix et le Jugement ajoutent du temps.', 'Arceus dopo 15 minuti di combattimento: meno carte e miglioramenti più potenti. Le scelte e il Giudizio aggiungono tempo.', 'Arceus após 15 minutos de combate: menos cartas e melhorias mais fortes. As escolhas e o Julgamento acrescentam tempo.', '战斗15分钟后阿尔宙斯登场：选牌次数更少，升级效果更强。选牌和审判阶段另计时间。', '戰鬥15分鐘後阿爾宙斯登場：選牌次數更少，升級效果更強。選牌和審判階段另計時間。'],
     ["Tipo", "Type", "Tipo", "Tipo", "属性", "屬性"],
     ["Nuevo", "Nouveau", "Novità", "Novidades", "新增", "新增"],
     ["Cambios", "Modifications", "Modifiche", "Alterações", "变更", "變更"],

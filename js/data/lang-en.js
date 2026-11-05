@@ -4,6 +4,10 @@
  * son los oficiales en inglés.
  */
 G.I18n.add({
+  'Modo de partida': 'Game mode',
+  'Estándar (30:00)': 'Standard (30:00)',
+  'Hurry (15:00)': 'Hurry (15:00)',
+  'Arceus a los 15 min de combate: menos cartas y mejoras más potentes. Las elecciones y la Sentencia añaden tiempo.': 'Arceus after 15 minutes of combat: fewer cards, stronger upgrades. Choices and Judgment add extra time.',
   // ---------------- tipos y regiones ----------------
   'Acero': 'Steel', 'Agua': 'Water', 'Bicho': 'Bug', 'Dragón': 'Dragon', 'Eléctrico': 'Electric', 'Fantasma': 'Ghost',
   'Fuego': 'Fire', 'Hada': 'Fairy', 'Hielo': 'Ice', 'Lucha': 'Fighting', 'Planta': 'Grass', 'Psíquico': 'Psychic',

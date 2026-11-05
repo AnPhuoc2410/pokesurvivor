@@ -42,8 +42,9 @@ G.Events = (() => {
     if (lost) lostTick(dt, players);
     if (!authority() || G.Rift.inArena || G.Judgment.active) return;
 
+    const scheduleDt = dt * G.Game.timeScale;
     if (thieves < 2) {
-      thiefT -= dt;
+      thiefT -= scheduleDt;
       if (thiefT <= 0) {
         if (G.EnemyMgr.bossAlive()) thiefT = 8;
         else { spawnThief(players, time); thieves++; thiefT = G.U.rand(THIEF_NEXT[0], THIEF_NEXT[1]); }
@@ -51,7 +52,7 @@ G.Events = (() => {
     }
 
     if (cur) return;
-    nextT -= dt;
+    nextT -= scheduleDt;
     if (nextT > 0) return;
     if (G.EnemyMgr.bossAlive()) { nextT = 10; return; }
     nextT = G.U.rand(EVERY[0], EVERY[1]);
