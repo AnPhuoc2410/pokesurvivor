@@ -14,13 +14,9 @@ if (i < 0 || j < 0) throw new Error('dev.html thieu the ' + BEGIN + ' / ' + END)
 
 const block = dev.slice(i, j + END.length);
 const files = [...block.matchAll(/<script[^>]*src="(js\/[^"]+\.js)"/g)].map(m => m[1])
-  .filter(f => f !== 'js/core/firebase-config.js' || fs.existsSync(path.join(ROOT, f)));
+  .filter(f => f !== 'js/core/firebase-config.js');
 
-if (!files.includes('js/core/firebase-config.js')) {
-  console.warn('[CANH BAO] Khong tim thay firebase-config.js, build khong co Firebase!');
-} else {
-  console.log('[OK] Da tich hop firebase-config.js vao app.min.js.');
-}
+console.log('[INFO] Loai bo firebase-config.js khoi app.min.js de tranh lo secret key len GitHub.');
 
 // Gộp các file
 let joined = files.map(f => `/* ${f} */\n` + fs.readFileSync(path.join(ROOT, f), 'utf8')).join('\n;\n');
@@ -42,8 +38,8 @@ const hash = crypto.createHash('sha1').update(min).update(css).digest('hex').sli
 // Cap nhat version.json
 fs.writeFileSync(path.join(ROOT, 'version.json'), JSON.stringify({ v: hash, at: new Date().toISOString() }) + '\n');
 
-// Cap nhat index.html
-let html = dev.slice(0, i) + `<script defer src="js/app.min.js?v=${hash}"></script>` + dev.slice(j + END.length);
+// Cap nhat index.html (nap firebase-config.js rieng, khong bundle vao app.min.js)
+let html = dev.slice(0, i) + `<script defer src="js/core/firebase-config.js"></script>\n<script defer src="js/app.min.js?v=${hash}"></script>` + dev.slice(j + END.length);
 const LOC = '<script src="js/core/locales.js"></script>';
 if (dev.includes(LOC)) {
   const locHash = crypto.createHash('sha1').update(fs.readFileSync(path.join(ROOT, 'js', 'core', 'locales.js'))).digest('hex').slice(0, 10);
@@ -65,6 +61,9 @@ const enPath = path.join(ROOT, 'en', 'index.html');
 if (fs.existsSync(enPath)) {
   let en = fs.readFileSync(enPath, 'utf8');
   en = en.replace(/js\/app\.min\.js\?v=[a-f0-9]+/, 'js/app.min.js?v=' + hash);
+  if (!en.includes('js/core/firebase-config.js')) {
+    en = en.replace('<script defer src="js/app.min.js', '<script defer src="js/core/firebase-config.js"></script>\n<script defer src="js/app.min.js');
+  }
   fs.writeFileSync(enPath, en);
 }
 
