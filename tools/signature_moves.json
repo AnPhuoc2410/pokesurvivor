@@ -1,0 +1,134 @@
+{
+  "electro-drift": {
+    "name_es": "Electroderrape",
+    "name_en": "Electro Drift",
+    "type": "electric",
+    "power": 100,
+    "damage_class": "special",
+    "accuracy": 100,
+    "pp": 5,
+    "desc_es": "",
+    "desc_en": "The user races forward at ultrafast speeds, piercing its target with futuristic electricity. This move's power is boosted more than usual if it's a supereffective hit."
+  },
+  "collision-course": {
+    "name_es": "Nitrochoque",
+    "name_en": "Collision Course",
+    "type": "fighting",
+    "power": 100,
+    "damage_class": "physical",
+    "accuracy": 100,
+    "pp": 5,
+    "desc_es": "",
+    "desc_en": "The user transforms and crashes to the ground, causing a massive prehistoric explosion. This move's power is boosted more than usual if it’s a supereffective hit."
+  },
+  "psystrike": {
+    "name_es": "Onda Mental",
+    "name_en": "Psystrike",
+    "type": "psychic",
+    "power": 100,
+    "damage_class": "special",
+    "accuracy": 100,
+    "pp": 10,
+    "desc_es": "Crea una onda psíquica que causa daño físico al objetivo.",
+    "desc_en": "The user materializes an odd psychic wave to attack the target. This attack does physical damage."
+  },
+  "dragon-ascent": {
+    "name_es": "Ascenso Draco",
+    "name_en": "Dragon Ascent",
+    "type": "flying",
+    "power": 120,
+    "damage_class": "physical",
+    "accuracy": 100,
+    "pp": 5,
+    "desc_es": "El usuario se precipita desde el cielo a una velocidad de vértigo para atacar al objetivo, pero hace que bajen la Defensa y la Defensa Especial del usuario.",
+    "desc_en": "After soaring upward, the user attacks its target by dropping out of the sky at high speeds, although it lowers its own Defense and Sp. Def in the process."
+  },
+  "origin-pulse": {
+    "name_es": "Pulso Primigenio",
+    "name_en": "Origin Pulse",
+    "type": "water",
+    "power": 110,
+    "damage_class": "special",
+    "accuracy": 85,
+    "pp": 10,
+    "desc_es": "Ataca al objetivo con una infinidad de rayos de luz azulada.",
+    "desc_en": "The user attacks opposing Pokémon with countless beams of light that glow a deep and brilliant blue."
+  },
+  "precipice-blades": {
+    "name_es": "Filo del Abismo",
+    "name_en": "Precipice Blades",
+    "type": "ground",
+    "power": 120,
+    "damage_class": "physical",
+    "accuracy": 85,
+    "pp": 10,
+    "desc_es": "Hace que el poder latente de la tierra se manifieste en forma de hojas afiladas y ataca al objetivo con ellas.",
+    "desc_en": "The user attacks opposing Pokémon by manifesting the power of the land in fearsome blades of stone."
+  },
+  "judgment": {
+    "name_es": "Sentencia",
+    "name_en": "Judgment",
+    "type": "normal",
+    "power": 100,
+    "damage_class": "special",
+    "accuracy": 100,
+    "pp": 10,
+    "desc_es": "Emite incontables haces de luz. Varía según el tipo de tabla que lleve el usuario.",
+    "desc_en": "The user releases countless shots of light. Its type varies with the kind of Plate the user is holding."
+  },
+  "aeroblast": {
+    "name_es": "Aerochorro",
+    "name_en": "Aeroblast",
+    "type": "flying",
+    "power": 100,
+    "damage_class": "special",
+    "accuracy": 95,
+    "pp": 5,
+    "desc_es": "Lanza un chorro de aire que suele dar un golpe crítico.",
+    "desc_en": "Has a high criti­ cal hit ratio."
+  },
+  "sacred-fire": {
+    "name_es": "Fuego Sagrado",
+    "name_en": "Sacred Fire",
+    "type": "fire",
+    "power": 100,
+    "damage_class": "physical",
+    "accuracy": 95,
+    "pp": 5,
+    "desc_es": "Fuego místico de gran intensidad que puede causar quemaduras.",
+    "desc_en": "An attack that may inflict a burn."
+  },
+  "roar-of-time": {
+    "name_es": "Distorsión",
+    "name_en": "Roar of Time",
+    "type": "dragon",
+    "power": 150,
+    "damage_class": "special",
+    "accuracy": 90,
+    "pp": 5,
+    "desc_es": "Ataca al objetivo usando tal energía que el tiempo se distorsiona. El usuario descansa el siguiente turno.",
+    "desc_en": "The user blasts the foe with power that distorts even time. The user must rest on the next turn."
+  },
+  "spacial-rend": {
+    "name_es": "Corte Vacío",
+    "name_en": "Spacial Rend",
+    "type": "dragon",
+    "power": 100,
+    "damage_class": "special",
+    "accuracy": 95,
+    "pp": 5,
+    "desc_es": "Desgarra al objetivo y el espacio a su alrededor. Suele ser crítico.",
+    "desc_en": "The user tears the foe along with the space around it. This move has a high critical-hit ratio."
+  },
+  "shadow-force": {
+    "name_es": "Golpe Umbrío",
+    "name_en": "Shadow Force",
+    "type": "ghost",
+    "power": 120,
+    "damage_class": "physical",
+    "accuracy": 100,
+    "pp": 5,
+    "desc_es": "En el primer turno, desaparece. En el segundo, golpea al objetivo aunque se esté protegiendo.",
+    "desc_en": "The user disappears, then strikes the foe on the second turn. It hits even if the foe used Protect."
+  }
+}

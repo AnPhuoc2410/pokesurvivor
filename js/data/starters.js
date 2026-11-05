@@ -34,7 +34,7 @@ G.STARTERS = [
   { dex: 912, start: 'water-gun',     traits: ['orgulloso', 'prudente'] },
   { dex: 54,  start: 'confusion',     traits: ['caótico', 'tímido'] },
   { dex: 79,  start: 'confusion',     traits: ['tranquilo', 'paciente'] },
-  { dex: 1008, start: 'thunder-shock', traits: ['valiente', 'astuto'] }
+  { dex: 1008, start: 'electro-drift', traits: ['valiente', 'astuto'] }
 ];
 
 G.STARTER_BY = {};

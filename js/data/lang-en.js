@@ -13,6 +13,30 @@ G.I18n.add({
   'Fuego': 'Fire', 'Hada': 'Fairy', 'Hielo': 'Ice', 'Lucha': 'Fighting', 'Planta': 'Grass', 'Psíquico': 'Psychic',
   'Roca': 'Rock', 'Siniestro': 'Dark', 'Tierra': 'Ground', 'Veneno': 'Poison', 'Volador': 'Flying',
   'Teselia': 'Unova',
+  // ---------------- movimientos exclusivos legendarios (PokeAPI) ----------------
+  'Electroderrape': 'Electro Drift',
+  'Nitrochoque': 'Collision Course',
+  'Onda Mental': 'Psystrike',
+  'Ascenso Draco': 'Dragon Ascent',
+  'Pulso Primigenio': 'Origin Pulse',
+  'Filo del Abismo': 'Precipice Blades',
+  'Sentencia': 'Judgment',
+  'Aerochorro': 'Aeroblast',
+  'Corte Vacío': 'Spacial Rend',
+
+  'Embiste a velocidad futurista perforando a todos los enemigos con electricidad.': 'Dashes forward at futuristic speed, piercing all enemies with electricity.',
+  'Causa una gran explosión prehistórica que sacude el suelo en línea recta.': 'Triggers a massive prehistoric explosion, tearing up the ground in a straight line.',
+  'Materializa ondas psíquicas teledirigidas que impactan con fuerza implacable.': 'Materializes homing psychic waves that strike with relentless force.',
+  'Se precipita desde el firmamento cayendo a velocidad vertiginosa sobre los enemigos.': 'Drops from the heavens at blistering speed, crashing down upon foes.',
+  'Dispara colosales haces de luz azulada que barren todo a su paso.': 'Fires colossal beams of deep blue light that sweep away everything in their path.',
+  'Manifiesta el poder de la tierra en temibles hojas de roca afiladas.': 'Manifests the power of the earth in fearsome blades of sharp stone.',
+  'Libera incontables destellos de juicio celestial en todas las direcciones.': 'Releases countless bursts of celestial judgment in all directions.',
+  'Lanza un vórtice de aire huracanado con alta probabilidad de golpe crítico.': 'Fires a hurricane vortex with a high critical-hit ratio.',
+  'Fuego místico de gran intensidad que purifica y calcina a los adversarios.': 'Intense mystical flames that purify and scorch adversaries.',
+  'Distorsiona el flujo del tiempo y desata un rayo devastador que arrasa el campo.': 'Distorts the flow of time and unleashes a devastating beam that tears through the field.',
+  'Desgarra el tejido del espacio circundante provocando cortes desgarradores.': 'Rips the fabric of surrounding space, inflicting tearing dimensional slashes.',
+  'Desaparece en el Mundo Distorsión y reaparece arremetiendo contra el enemigo.': 'Disappears into the Distortion World and strikes outward at the enemy.',
+
 
   // ---------------- movimientos ----------------
   'Ascuas': 'Ember', 'Lanzallamas': 'Flamethrower', 'Giro Fuego': 'Fire Spin', 'Onda Ígnea': 'Heat Wave', 'Llamarada': 'Fire Blast',

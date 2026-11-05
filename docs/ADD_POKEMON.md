@@ -235,3 +235,37 @@ $$\text{atk} = \max(\text{pa}, \text{sa})$$
 - **Nguyên nhân:** Trình duyệt lưu cache file cũ.
 - **Khắc phục:** Nhấn tổ hợp phím **`Ctrl + F5`** (hoặc `Ctrl + Shift + R`) để ép trình duyệt tải lại file bundle mới.
 
+
+
+---
+
+## 8. HƯỚNG DẪN THÊM CHIÊU THỨC ĐỘC QUYỀN (SIGNATURE MOVES) TỪ POKEAPI
+
+Nếu Pokémon có chiêu thức độc quyền (ví dụ Miraidon với *Electro Drift*, Mewtwo với *Psystrike*, Arceus với *Judgment*...):
+
+### Bước 1: Lấy thông tin đòn đánh từ PokeAPI
+Chạy script lấy dữ liệu đòn đánh:
+```powershell
+python tools/fetch_signature_moves.py <tên-chiêu-pokeapi>
+# Ví dụ:
+python tools/fetch_signature_moves.py electro-drift collision-course
+```
+Script sẽ lưu thông tin tên tiếng Anh/Tây Ban Nha, loại đòn (physical/special), sát thương và mô tả vào `tools/signature_moves.json`.
+
+### Bước 2: Khai báo chiêu thức trong `js/data/moves.js`
+Thêm chiêu thức vào mảng `RAW` trong [js/data/moves.js](file:///d:/VS%20Studio/pokesurvivor/js/data/moves.js):
+```javascript
+{ id: 'electro-drift', name: 'Electroderrape', type: 'electric', kind: 'dash', sig: 1008,
+  desc: 'Embiste a velocidad futurista perforando a todos los enemigos con electricidad.',
+  cd: 0.72, dmg: 24, radius: 135, width: 42, knock: 50 },
+```
+> [!TIP]
+> Thuộc tính `sig: <dex>` (ví dụ `sig: 1008`) đánh dấu đây là chiêu độc quyền. Chiêu thức này sẽ **không** rơi ngẫu nhiên cho các Pokémon cùng hệ khác, mà chỉ mở khóa riêng cho chính Pokémon đó!
+
+Đồng thời:
+- Nếu là đòn vật lý, thêm id vào `PHYSICAL`.
+- Khai báo điều kiện nâng cấp tiến hóa `+` trong `EVO` (ví dụ `'electro-drift': 'spd'`).
+- Khai báo hiệu ứng hạt trong `js/entities/vfx.js`.
+- Thêm tên và mô tả tiếng Anh trong `js/data/lang-en.js`.
+
+Sau đó chạy `node tools/quick_build.js` để hoàn tất!

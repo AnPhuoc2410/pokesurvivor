@@ -418,7 +418,20 @@ G.VFX = (() => {
     'mirror-shot':   { proj: 'shard', trail: 'spark' },
     'gyro-ball':     { melee: 'impact' },
     'sucker-punch':  { proj: 'crescent' },
-    'night-slash':   { melee: 'claw' }
+    'night-slash':   { melee: 'claw' },
+    // exclusivos de legendarios
+    'electro-drift':   { proj: 'bolt', trail: 'spark' },
+    'collision-course':{ proj: 'ball', pal: 'fighting' },
+    'psystrike':       { proj: 'ring', trail: 'wisp' },
+    'dragon-ascent':   { proj: 'wind', trail: 'spark' },
+    'origin-pulse':    { beam: 'drop', proj: 'bubble' },
+    'precipice-blades':{ proj: 'rock', trail: 'dirt' },
+    'judgment':        { proj: 'star', trail: 'spark' },
+    'aeroblast':       { beam: 'wind', proj: 'wind' },
+    'sacred-fire':     { proj: 'fire', trail: 'ember' },
+    'roar-of-time':    { beam: 'star', proj: 'fire' },
+    'spacial-rend':    { melee: 'claw' },
+    'shadow-force':    { proj: 'shadow', trail: 'wisp' }
   };
 
   const TYPE_SHAPE = {
