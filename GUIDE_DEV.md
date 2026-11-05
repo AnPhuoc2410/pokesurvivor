@@ -165,6 +165,10 @@ js/
 > `index.html` là file sinh tự động. Nếu bạn sửa tay vào `index.html`, lần sau khi ai đó chạy lệnh build, những gì bạn sửa ở `index.html` sẽ bị ghi đè hoàn toàn. Hãy luôn sửa thẻ HTML ở [dev.html](file:///d:/VS%20Studio/pokesurvivor/dev.html).
 
 > [!TIP]
+> **Hướng dẫn thêm Pokémon mới:**
+> Chi tiết toàn bộ quy trình tải sprite, khai báo chỉ số và kỹ năng cho Pokémon mới có tại [docs/ADD_POKEMON.md](file:///d:/VS%20Studio/pokesurvivor/docs/ADD_POKEMON.md).
+
+> [!TIP]
 > **Bộ kiểm thử tự động (Unit Tests):**
 > Trong thư mục `tests/` có sẵn các bài test bảo đảm tính toàn vẹn logic:
 > - `node tests/hurry.test.cjs`: Kiểm tra thuật toán gộp thẻ, EXP, và đường cong quái của chế độ Hurry (12 tests).
