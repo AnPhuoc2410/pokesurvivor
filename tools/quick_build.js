@@ -38,8 +38,9 @@ const hash = crypto.createHash('sha1').update(min).update(css).digest('hex').sli
 // Cap nhat version.json
 fs.writeFileSync(path.join(ROOT, 'version.json'), JSON.stringify({ v: hash, at: new Date().toISOString() }) + '\n');
 
-// Cap nhat index.html (nap firebase-config.js rieng, khong bundle vao app.min.js)
-let html = dev.slice(0, i) + `<script defer src="js/core/firebase-config.js"></script>\n<script defer src="js/app.min.js?v=${hash}"></script>` + dev.slice(j + END.length);
+// Cap nhat index.html (nap firebase-config.js rieng neu ton tai)
+const hasFb = fs.existsSync(path.join(ROOT, 'js/core/firebase-config.js'));
+let html = dev.slice(0, i) + (hasFb ? '<script defer src="js/core/firebase-config.js"></script>\n' : '') + `<script defer src="js/app.min.js?v=${hash}"></script>` + dev.slice(j + END.length);
 const LOC = '<script src="js/core/locales.js"></script>';
 if (dev.includes(LOC)) {
   const locHash = crypto.createHash('sha1').update(fs.readFileSync(path.join(ROOT, 'js', 'core', 'locales.js'))).digest('hex').slice(0, 10);

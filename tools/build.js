@@ -70,7 +70,8 @@ const locHash = crypto.createHash('sha1').update(fs.readFileSync(path.join(ROOT,
 for (const f of fs.readdirSync(path.join(ROOT, 'js', 'lang')).sort()) locHash.update(fs.readFileSync(path.join(ROOT, 'js', 'lang', f)));
 if (!dev.includes(LOC)) throw new Error('dev.html no carga ' + LOC + ' como se esperaba: revisa build.js');
 
-let html = dev.slice(0, i) + `<script defer src="js/core/firebase-config.js"></script>\n<script defer src="js/app.min.js?v=${hash}"></script>` + dev.slice(j + END.length);
+const hasFb = fs.existsSync(path.join(ROOT, 'js/core/firebase-config.js'));
+let html = dev.slice(0, i) + (hasFb ? '<script defer src="js/core/firebase-config.js"></script>\n' : '') + `<script defer src="js/app.min.js?v=${hash}"></script>` + dev.slice(j + END.length);
 html = html.replace(LOC, `<script src="js/core/locales.js?v=${locHash.digest('hex').slice(0, 10)}"></script>`);
 // La hoja de estilos también con huella: si no, el navegador puede juntar la página nueva
 // con el style.css viejo que tiene guardado.
