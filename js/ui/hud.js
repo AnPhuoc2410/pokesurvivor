@@ -156,12 +156,14 @@ G.HUD = (() => {
     const selectedBoss = G.Rift.inArena && G.EnemyMgr.get(G.Rift.targetBossId);
     const boss = selectedBoss && !selectedBoss.dead ? selectedBoss : G.EnemyMgr.all().find(e => e.boss && !e.dead);
     if (boss) {
+      const shared = G.StoryEncounters?.hasSharedHealth(boss) ? G.StoryEncounters.sharedHealthBar() : null;
+      const hp = shared || boss;
       const bw = Math.min(420, w - 80);
-      bar(ctx, (w - bw) / 2, 70, bw, 12, boss.hp / boss.maxHp, '#ffcb3d');
+      bar(ctx, (w - bw) / 2, 70, bw, 12, hp.hp / hp.maxHp, '#ffcb3d');
       ctx.font = F(800, 10);
       ctx.fillStyle = '#20160a';
       const phaseLabel = boss.challengeBoss ? ' · PHASE ' + boss.storyPhase + '/2' : '';
-      ctx.fillText(boss.name.toUpperCase() + phaseLabel, w / 2, 80);
+      ctx.fillText((shared ? shared.name : boss.name).toUpperCase() + phaseLabel, w / 2, 80);
     }
 
     // ---------- aviso ----------

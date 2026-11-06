@@ -124,6 +124,22 @@ uso **no comercial** y con atribución a sus artistas.
 | YoukaiMinori | <@91001329228464128> | 252, 253 |
 | ◥θ┴θ◤ | DC:<@215638650434617345> | 157, 445, 501, 504, 505, 566, 577, 595, 627, 650, 651, 658, 661, 676, 684, 707, 724, 726, 728, 729, 730, 761, 763, 790, 823, 872, 907, 991 |
 
+## Additional boss forms
+
+Downloaded from [SpriteCollab](https://github.com/PMDCollab/SpriteCollab):
+
+| Form | Artists | Source |
+|---|---|---|
+| Zygarde 10% | baronessfaron, NikolaP | [Credits](https://github.com/PMDCollab/SpriteCollab/blob/master/sprite/0718/0001/credits.txt) |
+| Zygarde Complete | baronessfaron | [Credits](https://github.com/PMDCollab/SpriteCollab/blob/master/sprite/0718/0002/credits.txt) |
+| Hoopa Unbound | Emboarger | [Credits](https://github.com/PMDCollab/SpriteCollab/blob/master/sprite/0720/0001/credits.txt) |
+| Terapagos Terastal | G〜, JFain | [Credits](https://github.com/PMDCollab/SpriteCollab/blob/master/sprite/1024/0001/credits.txt) |
+
+Terapagos Stellar uses the animated sprite from the Smogon / Pokémon Showdown!
+[sprite collection](https://play.pokemonshowdown.com/sprites/gen5ani/terapagos-stellar.gif).
+Its original frames and timing are packed into a single-direction PNG sheet by
+`tools/fetch_story_forms.py`; the source animation is reused for the engine's action slots.
+
 ## Datos
 
 Stats base y nombres en español: [PokeAPI](https://pokeapi.co/),

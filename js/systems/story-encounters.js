@@ -11,7 +11,7 @@ G.StoryEncounters = (() => {
     swords: { waves: [[638, 639, 640, 647]], description: 'Bốn góc ngoài đấu trường; đạn bay rải ngẫu nhiên theo từng nhịp. Hạ cả bốn.' },
     tapu: { waves: [[785, 786, 787, 788]], description: 'Bốn vùng địa hình: điện trì hoãn dash, cỏ trói chân, sương cấm hồi máu, tâm linh cấm dash. Hạ chủ vùng để giải phóng vùng đó.' },
     ruin: { waves: [[1001, 1002, 1003, 1004]], description: 'Đủ bốn boss sẽ giảm 50% sát thương và tốc độ. Hạ một boss phá aura; hạ cả đội để thắng.' },
-    regi: { waves: [[377, 378, 379, 894, 895], [486]], description: 'Hạ năm trụ Regi để gọi Regigigas. Sau Slow Start 10 giây, nó lao quét arena.' },
+    regi: { waves: [[377, 378, 379, 894, 895], [486]], description: 'Năm trụ Regi dùng chung máu. Regigigas thức tỉnh sau 10 giây: giậm đất, lao xuyên sân rồi giải phóng năm luồng nguyên tố; tìm hành lang trống.' },
     eon: { waves: [[380, 381]], description: 'Latias hồi máu và cấp khiên cho Latios. Hạ Latias trước khiến Latios tăng gấp đôi tốc độ và sát thương.' },
     moon: { waves: [[488, 491]], description: 'Cresselia lóe sáng và bắn trăng khuyết nhỏ; Darkrai che tối màn hình 0,5 giây khi tung chiêu.' },
     tower: { waves: [[249, 250]], description: 'Tro lửa của Ho-Oh tồn tại 5 giây; gió Lugia đẩy bạn về vùng lửa. Hạ cả hai.' },
@@ -37,13 +37,13 @@ G.StoryEncounters = (() => {
     787: ['Rễ cây thức tỉnh', 'Rễ trói ngắn; rời vùng cỏ.'], 788: ['Sương mù hộ thần', 'Sương chặn hồi máu.'],
     377: ['Mưa đá cổ đại', 'Né đá rơi; các trụ chắn đường bắn.'], 378: ['Băng giá cổ đại', 'Né băng rơi và nền trơn.'],
     379: ['Pháo thép cổ đại', 'Né loạt đạn thép từ trụ.'], 894: ['Lưới điện cổ đại', 'Né đạn điện tăng tốc.'],
-    895: ['Long phá cổ đại', 'Né quạt đạn rồng.'], 486: ['Càn quét lục địa', 'Né các đường quét lớn; sức mạnh mở sau 10 giây.'],
+    895: ['Long phá cổ đại', 'Né quạt đạn rồng.'], 486: ['Phán quyết Ngũ Trụ', 'Né địa chấn, tránh cú lao rồi tìm hành lang trống giữa năm luồng nguyên tố.'],
     380: ['Tấm màn Eon', 'Latias hồi máu và cấp khiên cho Latios.'], 381: ['Long khí Eon', 'Né đạn rồng; Latios cuồng nộ khi Latias bị hạ.'],
     488: ['Trăng khuyết', 'Ánh trăng lóe sáng; né các lưỡi trăng nhỏ.'], 491: ['Ác mộng', 'Màn hình tối trong 0,5 giây; nhớ hướng di chuyển.'],
     249: ['Bão cuốn', 'Dải gió có mũi tên sẽ đẩy bạn; tránh tro lửa.'], 250: ['Tro tàn', 'Tro lửa tồn tại trong 5 giây; tránh các vùng đang cháy.'],
     888: ['Kiếm bóng ảnh', 'Né ngang khỏi đường húc đã đánh dấu.'], 889: ['Thành lũy vương giả', 'Né cú húc khiên; vòng ra sau hoặc dùng đạn xuyên.']
   };
-  let arena = null, fields = [], volleyQueue = [], clock = 0, nextField = 1;
+  let arena = null, fields = [], volleyQueue = [], clock = 0, nextField = 1, sharedHealth = null;
   let statuses = new WeakMap();
   const host = () => !G.Coop.active || G.Coop.isHost;
   const tile = () => G.Tiles.T * G.Sprites.PX;
@@ -55,9 +55,26 @@ G.StoryEncounters = (() => {
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
   const emit = (op, data) => { if (G.Coop.isHost) G.Coop.broadcast(['enc', op, data]); };
 
-  function reset() { arena = null; fields = []; volleyQueue = []; clock = 0; nextField = 1; statuses = new WeakMap(); }
+  function reset() { arena = null; fields = []; volleyQueue = []; clock = 0; nextField = 1; sharedHealth = null; statuses = new WeakMap(); }
   function begin(a) { reset(); if (a.challenge && STAGES[a.challengeId]) arena = a; }
   function controls(e) { return !!arena && !!e && e.storyBoss && STAGES[arena.challengeId].waves.flat().concat(arena.challengeId === 'weather' ? [384] : []).includes(e.dex); }
+  function beginSharedHealth(ids) {
+    if (!arena || arena.challengeId !== 'regi' || arena.storyIndex !== 0) return;
+    const bosses = ids.map(id => G.EnemyMgr.get(id)).filter(Boolean);
+    const max = bosses.reduce((sum, boss) => sum + boss.maxHp, 0);
+    sharedHealth = max > 0 ? { ids: bosses.map(boss => boss.id), max, hp: max } : null;
+  }
+  function hasSharedHealth(e) { return !!sharedHealth && sharedHealth.ids.includes(e.id); }
+  function damageSharedHealth(e, damage) {
+    if (!hasSharedHealth(e) || !host()) return false;
+    sharedHealth.hp = Math.max(0, sharedHealth.hp - damage);
+    const bosses = sharedHealth.ids.map(id => G.EnemyMgr.get(id)).filter(boss => boss && !boss.dead);
+    if (sharedHealth.hp <= 0) for (const boss of bosses) boss.die();
+    return true;
+  }
+  function sharedHealthBar() {
+    return sharedHealth ? { hp: sharedHealth.hp, maxHp: sharedHealth.max, name: 'Đội hình Regi' } : null;
+  }
   function status(p) {
     if (!statuses.has(p)) statuses.set(p, { confuse: 0, confuseReady: 0, dark: 0, darkReady: 0, root: 0, rootReady: 0, slow: 0, slide: 0, noHeal: 0, noDash: 0, moonFlashReady: 0 });
     return statuses.get(p);
@@ -216,10 +233,10 @@ G.StoryEncounters = (() => {
     }
     const formMove = G.BossForms?.move(e, dt, p, spd);
     if (formMove) return formMove;
+    if (e.dex === 486) return regigigasMove(e, p, spd);
     const dist = Math.hypot(p.x - e.x, p.y - e.y), a = s.facing;
     let speed = dist > 230 ? spd * 0.65 : dist < 130 ? -spd * 0.4 : 0;
     if ([638,639,640,647,377,378,379,894,895].includes(e.dex)) speed = 0;
-    if (e.dex === 486 && s.age < 10) speed = spd * 0.15;
     if ([480,481,482].includes(e.dex) && s.cooldown <= 0) {
       const dest = pointNear(p, 150 + Math.random() * 70);
       G.FX.ring(e.x, e.y, 8, 45, '#caa0ff', 0.35, 3);
@@ -230,10 +247,10 @@ G.StoryEncounters = (() => {
       s.cooldown = 3.8;
       e.anim.play('Charge');
       return [0, 0, 'Charge'];
-    } else if ([243,244,245,144,145,146,487,888,486].includes(e.dex) && s.cooldown <= 0 && !(e.dex === 486 && s.age < 10)) {
+    } else if ([243,244,245,144,145,146,487,888].includes(e.dex) && s.cooldown <= 0) {
       const type = ({243:'electric',244:'fire',245:'ice',144:'ice',145:'electric',146:'fire'})[e.dex] || e.atkType;
       const beasts = [243,244,245].includes(e.dex);
-      startDash(e, p, { across: [243,244,245,144,145,146,486].includes(e.dex), trail: [144,145,146].includes(e.dex), type,
+      startDash(e, p, { across: [243,244,245,144,145,146].includes(e.dex), trail: [144,145,146].includes(e.dex), type,
         wind: beasts ? 0.55 : undefined, duration: beasts ? 0.5 : undefined, hide: e.dex === 487 || e.dex === 888 });
       return [0, 0, 'Charge'];
     } else if (s.cooldown <= 0) {
@@ -268,6 +285,51 @@ G.StoryEncounters = (() => {
       return d > 2 ? [(x - e.x) / d * speed, (y - e.y) / d * speed, 'Walk'] : [0, 0, 'Idle'];
     }
     return [Math.cos(a) * speed, Math.sin(a) * speed, 'Walk'];
+  }
+  function regigigasMove(e, p, spd) {
+    const s = e.encounter, angle = Math.atan2(p.y-e.y,p.x-e.x);
+    if (s.age < 10) return [Math.cos(angle)*spd*0.15,Math.sin(angle)*spd*0.15,'Walk'];
+    if (!s.awakened) {
+      s.awakened = true;
+      s.cooldown = 0;
+      s.attackTurn = 0;
+      G.Spawner.say('Regigigas thức tỉnh! Sức mạnh của năm trụ đã hội tụ.',3,true);
+      G.FX.ring(e.x,e.y,e.r,radius(),'#ffe4a1',0.8,10);
+      G.Camera.kick(0.8);
+    }
+    if (s.cooldown <= 0) {
+      if (s.attackTurn++ % 2 === 0) startDash(e,p,{across:true,wind:0.9,duration:0.5,type:'normal'});
+      else {
+        regigigasQuake(e,p,false);
+        s.cooldown = 3.2;
+      }
+      return [0,0,'Charge'];
+    }
+    return [Math.cos(angle)*spd*0.5,Math.sin(angle)*spd*0.5,'Walk'];
+  }
+  function regigigasQuake(e, p, special) {
+    const safeAngle = Math.atan2(p.y-e.y,p.x-e.x) + 0.55;
+    const count = special ? 28 : 18;
+    for (let i = 0; i < count; i++) {
+      const angle = i * TAU / count;
+      const delta = Math.atan2(Math.sin(angle-safeAngle),Math.cos(angle-safeAngle));
+      if (Math.abs(delta) > 0.42) shot(e,angle,{type:'rock',speed:145,r:7,life:special?2.3:3.5,enc:{shape:'shard'}});
+    }
+    G.Hazards.add({kind:'zone',x:p.x,y:p.y,r:special?65:48,delay:0.95,end:0.25,
+      dmg:e.dmg*0.8,type:'ground',color:'#dcb477',cat:e.cat,enc:true});
+  }
+  function regigigasFinale(e, p) {
+    const R = attackRadius(), types = ['rock','ice','steel','electric','dragon'];
+    const angle = e.encounter.facing, dx = Math.cos(angle), dy = Math.sin(angle), step = R / 3;
+    const playerOffset = -(p.x-arena.x)*dy+(p.y-arena.y)*dx;
+    const gap = clamp(Math.floor((playerOffset+R)/step),1,4);
+    let element = 0;
+    for (let i = 0; i < 6; i++) {
+      if (i === gap) continue;
+      const offset = -R+(i+0.5)*step;
+      beam(e,{x:arena.x-dx*R-dy*offset,y:arena.y-dy*R+dx*offset},
+        {x:arena.x+dx*R-dy*offset,y:arena.y+dy*R+dx*offset},step*0.6,0.85,types[element++]);
+    }
   }
   function normalAttack(e, p) {
     switch (e.dex) {
@@ -364,7 +426,11 @@ G.StoryEncounters = (() => {
       }
       case 1001: case 1002: case 1003: case 1004: fan(e,p,11,2.4,{type:'dark',speed:145}); break;
       case 377: case 378: case 379: case 894: case 895: staggeredVolley(e,p,10,e.atkType,1.15,3.3); break;
-      case 486: { const a=wave*Math.PI/3; beam(e,{x:arena.x-Math.cos(a)*R,y:arena.y-Math.sin(a)*R},{x:arena.x+Math.cos(a)*R,y:arena.y+Math.sin(a)*R},95,1,'normal'); break; }
+      case 486:
+        if (wave === 0) regigigasQuake(e,p,true);
+        else if (wave === 1) startDash(e,p,{across:true,special:true,wind:0.7,duration:0.45,type:'normal'});
+        else regigigasFinale(e,p);
+        break;
       case 380: case 381: fan(e,p,e.dex===381?23:17,3.2,{type:e.dex===381?'dragon':'psychic',speed:185}); break;
       case 488: {
         const angle = Math.atan2(p.y - e.y, p.x - e.x) + (wave - 1) * 0.2;
@@ -448,6 +514,7 @@ G.StoryEncounters = (() => {
     for(const e of living()) {
       configure(e);
       if(e.remote && !G.Rift.specialLock) e.encounter.age += dt;
+      if (host()) G.BossForms?.updateArena(e, dt);
       if (!G.Rift.specialLock && host()) G.BossForms?.update(e, dt);
     }
     const p=G.Game.player, s=status(p);
@@ -510,7 +577,9 @@ G.StoryEncounters = (() => {
     if (G.EnemyMgr.get(p.enc?.owner)?.dex === 488) applyStatus(player,'moonFlash');
   }
   function intercept(p) {
-    if(!active() || !p.friendly || p.orb || p.pierce>0) return false;
+    if(!active() || !p.friendly || p.orb) return false;
+    if (G.BossForms?.intercept(p)) return true;
+    if (p.pierce>0) return false;
     const defense=living().find(e=>G.BossForms?.blocksProjectile(e,p));
     if(defense && Math.hypot(p.x-defense.x,p.y-defense.y)<defense.r+65) return true;
     const guard=living().find(e=>e.dex===889);
@@ -534,8 +603,18 @@ G.StoryEncounters = (() => {
   }
   function drawGround(ctx) {
     if(!arena) return;
+    for (const e of living()) G.BossForms?.drawGround(ctx,e);
     for(const f of fields) {
       const age=clock-f.born, ready=age>=f.delay;
+      if (f.shape === 'hoopaGate') {
+        ctx.save();ctx.translate(f.x,f.y);
+        ctx.globalAlpha=Math.min(1,age/0.2)*0.9;
+        ctx.fillStyle='#251238';ctx.strokeStyle='#ffd760';ctx.lineWidth=5;
+        ctx.beginPath();ctx.ellipse(0,0,f.radius,f.radius*0.7,0,0,TAU);ctx.fill();ctx.stroke();
+        ctx.strokeStyle='#d695ff';ctx.lineWidth=3;
+        ctx.beginPath();ctx.ellipse(0,0,f.radius*0.65,f.radius*0.45,age*2,0,TAU);ctx.stroke();
+        ctx.restore();continue;
+      }
       ctx.save(); ctx.strokeStyle=f.color; ctx.fillStyle=f.color;
       ctx.globalAlpha=ready?0.24:0.12; ctx.lineWidth=ready?3:2;
       if(!ready) ctx.setLineDash([7,5]);
@@ -589,6 +668,10 @@ G.StoryEncounters = (() => {
   function drawOverlay(ctx,w,h) {
     if(!active()) return;
     const fx=effects(G.Game.player), labels=[];
+    for (const e of living()) {
+      const label=G.BossForms?.statusLabel(e);
+      if (label) labels.push(label);
+    }
     if(fx.dark) {
       ctx.save();ctx.fillStyle='rgba(5,2,16,.97)';ctx.fillRect(0,0,w,h);ctx.restore();
       labels.push('Ác mộng · 0,5 giây');
@@ -606,7 +689,11 @@ G.StoryEncounters = (() => {
     const shape=p.enc?.shape;
     if(!shape) return false;
     ctx.save();ctx.translate(p.x,p.y-G.LIFT);ctx.rotate(Math.atan2(p.vy,p.vx));ctx.strokeStyle=p.color;ctx.fillStyle=p.color;ctx.lineWidth=2;
-    if(shape==='crescent') {ctx.strokeStyle='#fff0ad';ctx.lineWidth=3;ctx.beginPath();ctx.arc(-p.r*0.4,0,p.r,-Math.PI/2,Math.PI/2);ctx.stroke();}
+    if(shape==='portal') {
+      ctx.strokeStyle='#ffd760';ctx.lineWidth=5;ctx.beginPath();ctx.ellipse(0,0,p.r,p.r*0.65,0,0,TAU);ctx.stroke();
+      ctx.strokeStyle='#c87aff';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(0,0,p.r*0.65,p.r*0.4,0,0,TAU);ctx.stroke();
+    }
+    else if(shape==='crescent') {ctx.strokeStyle='#fff0ad';ctx.lineWidth=3;ctx.beginPath();ctx.arc(-p.r*0.4,0,p.r,-Math.PI/2,Math.PI/2);ctx.stroke();}
     else if(shape==='bubble') {ctx.globalAlpha=0.35;ctx.beginPath();ctx.arc(0,0,p.r,0,TAU);ctx.fill();ctx.globalAlpha=1;ctx.stroke();ctx.strokeStyle='#ecfbff';ctx.beginPath();ctx.arc(-2,-2,p.r*0.65,Math.PI,Math.PI*1.5);ctx.stroke();}
     else if(shape==='note') {ctx.rotate(-Math.atan2(p.vy,p.vx));ctx.beginPath();ctx.ellipse(-3,4,5,3,-0.4,0,TAU);ctx.fill();ctx.beginPath();ctx.moveTo(1,4);ctx.lineTo(1,-10);ctx.lineTo(8,-5);ctx.stroke();}
     else if(shape==='saw') {ctx.rotate(p.t*9);ctx.beginPath();for(let i=0;i<24;i++){const a=i*TAU/24,r=p.r*(i%2?0.65:1);i?ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r):ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r);}ctx.closePath();ctx.fill();ctx.strokeStyle='#e6ffb4';ctx.stroke();}
@@ -620,7 +707,7 @@ G.StoryEncounters = (() => {
     if(ev[1]==='state') {const e=G.EnemyMgr.get(ev[2].id);if(e) {configure(e);if(e.encounter)e.encounter.hidden=!!ev[2].hidden;}}
     if(ev[1]==='cancel') {fields=fields.filter(f=>f.permanent||f.terrain);for(const f of fields)f.special=false;for(const e of living()) if(e.encounter) {e.encounter.dash=null;e.encounter.teleportCast=null;e.encounter.hidden=false;}}
   }
-  return { STAGES, begin, reset, controls, configure, move, update, updateProjectile, projectileHit, intercept, blocksDamage, effects, specialWave, progress, cancelCasts,
+  return { STAGES, begin, reset, controls, configure, move, update, updateProjectile, projectileHit, intercept, blocksDamage, effects, specialWave, progress, cancelCasts, beginSharedHealth, hasSharedHealth, damageSharedHealth, sharedHealthBar,
     drawGround, drawOverlay, drawProjectile, onEvent,
     get active() { return active(); }, get fields() { return fields; },
     defeated(e) { if (controls(e)) { arena.lastDefeated = e.dex; e.encDeathNoted = true; } },
