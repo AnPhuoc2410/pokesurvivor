@@ -200,6 +200,7 @@
       if (this.phaseInvuln > 0) return;
       if (G.StoryEncounters?.hidden(this)) return;
       amount *= G.BossForms?.damageTaken(this) ?? 1;
+      if (amount <= 0) return;
       const d = Math.max(1, Math.round(amount));
       // Arceus en la Sentencia: no cae nunca; el golpe suma a su cuenta de daño
       // (la lleva quien manda: el invitado se lo manda al anfitrión).
@@ -225,6 +226,12 @@
         if (a >= d) { G.FX.dmgText(this.x, this.y - this.bodyH - 4, d, '#9fd8ff'); this.flash = 0.05; return; }
         amount = d - a;
       }
+      if (G.StoryEncounters?.damageSharedHealth(this, amount)) {
+        G.Judgment.noteDmg(amount, this);
+        this.showHurt(d, color, dirX, dirY, eff);
+        if (G.Coop.isHost) G.Coop.hurtShown(this, d, color);
+        return;
+      }
       this.hp -= Math.max(1, Math.round(amount));
       G.Judgment.noteDmg(amount, this);
       this.showHurt(d, color, dirX, dirY, eff);
@@ -234,6 +241,7 @@
         this.ky += ny * knock;
       }
       if (G.Coop.isHost) G.Coop.hurtShown(this, d, color);
+      if (G.BossForms?.onDamage(this)) return;
       if (this.hp <= 0 && this.challengeBoss && !this.challengePhase2) {
         this.challengePhase2 = true;
         this.storyPhase = 2;
@@ -954,7 +962,7 @@
       const SUP = { healer: 'heart', shielder: 'shield', summoner: 'friends' };
       if (SUP[this.behavior]) G.Icons.draw(ctx, SUP[this.behavior], Math.round(this.x - 6), Math.round(this.y - this.bodyH - (this.hp < this.maxHp ? 26 : 18)), 12);
 
-      if (this.boss || this.hp < this.maxHp) {
+      if (!G.StoryEncounters?.hasSharedHealth(this) && (this.boss || this.hp < this.maxHp)) {
         const w = this.boss ? 90 : Math.max(22, this.r * 2);
         const y = this.y - this.bodyH - 10;
         ctx.fillStyle = 'rgba(0,0,0,.6)';

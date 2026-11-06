@@ -9,14 +9,15 @@ function setup() {
   const G = {}, enemies = [], shots = [], hazards = [], messages = [], events = [];
   new Function('window', 'G', source('js/core/util.js'))({ G }, G);
   const noop = () => {};
-  G.Sprites = { PX: 2, bodyRadius: (dex,scale) => 14*scale, bodyHeight: (dex,scale) => 50*scale, hasShiny: () => false,
-    Animator: class { update() {} } };
+  G.Sprites = { PX: 2, bodyRadius: (dex,scale) => 14*scale, bodyHeight: (dex,scale) => 50*scale, hasShiny: () => false };
+  G.Sprites.Animator = class { constructor(dex,scale) { this.dex=dex; this.scale=scale; } update() {} };
   G.Tiles = { T: 16, ARENA_THEMES: {}, arenaBiome: () => 0 };
   G.Coop = { active: false, isHost: false, scaleHp: () => 1, broadcast: e => events.push(e), enemyShot: noop };
   G.Game = { player: {x:0,y:100,r:12,hp:100,maxHp:100,dead:false,autoSwap:false, hurt(d){this.hp-=d;}}, st:{matchTime:0}, flash:noop, exitBossChallenge:noop };
   G.Game.everyone = () => [G.Game.player];
   G.EnemyMgr = { all:()=>enemies, get:id=>enemies.find(e=>e.id===id), add:e=>enemies.push(e), stash:()=>{enemies.length=0;}, clearRemote:noop, restore:noop };
   G.Projectiles = { spawn:o=>{ const p=Object.assign({t:0,life:3,friendly:false},o); shots.push(p);return p;}, clear:()=>{shots.length=0;}, clearHostile:()=>{shots.length=0;} };
+  G.Projectiles.all = () => shots;
   G.Hazards = {add:o=>{hazards.push(o);return o;},clear:()=>{hazards.length=0;}};
   G.VFX = {forType:()=>({proj:'ball',pal:'normal'})}; G.FX = {ring:noop,burst:noop};
   G.World = {biome:0,collide:noop,setBiome:noop,setArena:noop,isFree:()=>true};
@@ -145,6 +146,193 @@ test('Coop host sends the finale queue and guests wait for the next host arena',
   assert.deepEqual(guest.G.Rift.arena.finaleStages, cfg.finaleStages);
   guest.G.Rift.onEvent(['aw']); guest.G.Rift.update(5, guest.G.Game.player, 1800);
   assert.equal(guest.G.Rift.inArena, false);
+});
+
+function realDamage(t, enemy) {
+  const manager=t.G.EnemyMgr;
+  load(t.G,'js/entities/enemy.js');
+  const hurt=t.G.Enemy.prototype.hurt;
+  t.G.EnemyMgr=manager;t.G.Judgment.noteDmg=()=>{};
+  enemy.showHurt=()=>{};enemy.die=()=>{enemy.dead=true;};
+  return damage=>hurt.call(enemy,damage);
+}
+
+function takeTeraEnergy(t,e,type) {
+  const crystal=e.encounter.crystals.find(c=>c.type===type && !c.collected);
+  assert.ok(crystal,'requested energy is available');
+  Object.assign(t.G.Game.player,{x:crystal.x,y:crystal.y});
+  t.G.BossForms.updateArena(e,0.01);
+}
+
+test('arena reset clears both Regi shared HP and a pending Palkia teleport', () => {
+  const t = setup(), S = t.G.StoryEncounters;
+  t.start('regi');
+  assert.ok(S.sharedHealthBar());
+  t.G.Rift.reset(); t.start('creation');
+  assert.equal(S.sharedHealthBar(), null);
+  S.update(7);
+  t.G.Rift.reset(); t.start('creation');
+  const p = t.G.Game.player, position = { x: p.x, y: p.y };
+  S.update(1);
+  assert.equal(p.x, position.x); assert.equal(p.y, position.y);
+});
+
+test('Terapagos: actual damage visits Normal, Terastal, and Stellar without adding a third HP bar',()=>{
+  const t=setup();t.start('terapagos');const e=t.enemies[0],hit=realDamage(t,e);
+  assert.equal(e.spriteForm,'');hit(e.maxHp*2);
+  assert.equal(e.spriteForm,'0001');assert.equal(e.hp,e.maxHp*0.6);assert.equal(e.dead,false);
+  e.transformT=0;takeTeraEnergy(t,e,'water');hit(e.maxHp*2);
+  assert.equal(e.spriteForm,'0002');assert.equal(e.storyPhase,2);assert.equal(e.hp,e.maxHp);
+  e.transformT=0;takeTeraEnergy(t,e,'grass');hit(e.maxHp*2);
+  assert.equal(e.dead,true);
+});
+
+test('Terapagos: shield blocks real damage, requires the right crystal, and rotates after eight open seconds',()=>{
+  const t=setup();t.start('terapagos');const e=t.enemies[0],hit=realDamage(t,e),F=t.G.BossForms;
+  hit(e.maxHp);e.transformT=0;const hp=e.hp;
+  hit(100);assert.equal(e.hp,hp,'closed shield does not leak minimum-one damage');
+  takeTeraEnergy(t,e,'fire');hit(100);assert.equal(e.hp,hp,'wrong element cannot break the shield');
+  takeTeraEnergy(t,e,'water');hit(100);assert.equal(e.hp,hp-100);assert.equal(e.encounter.shellOpen,8);
+  const s=e.encounter;assert.equal(s.shellActive,false);assert.equal(s.energyType,null);assert.equal(s.crystals.length,0);
+  F.updateArena(e,8);assert.equal(s.shellIndex,1);assert.equal(s.shellActive,true);assert.equal(s.crystals.length,3);
+  takeTeraEnergy(t,e,'grass');hit(1);F.updateArena(e,8);assert.equal(s.shellIndex,2);
+  takeTeraEnergy(t,e,'fire');hit(1);F.updateArena(e,8);assert.equal(s.shellIndex,0);
+});
+
+test('Terapagos: evade permits crystal collection and preserves both the charge and earned damage window',()=>{
+  const t=setup(),a=t.start('terapagos'),e=t.enemies[0],hit=realDamage(t,e),F=t.G.BossForms;
+  hit(e.maxHp);e.transformT=0;a.evading=4;
+  takeTeraEnergy(t,e,'water');const hp=e.hp;hit(100);
+  assert.equal(e.hp,hp);assert.equal(e.encounter.energyType,'water');
+  assert.match(F.statusLabel(e),/Né xong/);
+  a.evading=0;hit(100);assert.equal(e.encounter.shellOpen,8);
+  a.evading=4;F.updateArena(e,4);assert.equal(e.encounter.shellOpen,8);
+  a.evading=0;F.updateArena(e,2);assert.equal(e.encounter.shellOpen,6);
+});
+
+test('Terapagos: three forms have distinct specials; Stellar hazards finish before the evade reward',()=>{
+  const t=setup();t.start('terapagos');const e=t.enemies[0],hit=realDamage(t,e),S=t.G.StoryEncounters;
+  S.specialWave(e,0);assert.ok(t.shots.length>10);assert.equal(t.hazards.length,0);
+  hit(e.maxHp);e.transformT=0;t.shots.length=0;S.specialWave(e,0);
+  assert.equal(t.hazards.length,4);assert.ok(t.hazards.every(h=>h.type==='fire' && h.kind==='beam'));
+  takeTeraEnergy(t,e,'water');hit(e.maxHp*2);e.transformT=0;
+  t.hazards.length=0;t.shots.length=0;
+  for(let wave=0;wave<3;wave++) {
+    const before=t.hazards.length;S.specialWave(e,wave);
+    for(const h of t.hazards.slice(before)) assert.ok(wave*4/3+h.delay+(h.end||0.45)<4);
+  }
+  assert.equal(t.hazards.filter(h=>h.vis==='teraCrystal').length,7);
+  assert.equal(t.hazards.filter(h=>h.kind==='beam').length,4);
+  assert.ok(t.shots.length>20 && t.shots.every(p=>p.life<=1.2));
+  assert.equal(S.skill(1024)[0],'Tera Starstorm');
+  S.reset();assert.equal(t.G.BossForms.damageTaken(e),1,'shield never leaks into another arena');
+});
+
+test('Zygarde: actual damage triggers both thresholds, heals once, and cannot skip Complete',()=>{
+  const t=setup();t.start('zygarde');const e=t.enemies[0],hit=realDamage(t,e);
+  assert.equal(e.spriteForm,'0001');assert.equal(e.challengeBoss,false);
+  hit(e.maxHp*2);
+  assert.equal(e.spriteForm,'');assert.equal(e.encounter.formIndex,1);assert.equal(e.hp,e.maxHp*0.5);assert.equal(e.dead,false);
+  e.transformT=0;hit(Math.ceil(e.maxHp*0.41));
+  assert.equal(e.spriteForm,'0002');assert.equal(e.encounter.formIndex,2);
+  assert.ok(e.hp>=e.maxHp*0.58 && e.hp<=e.maxHp*0.6);
+  e.transformT=0;const hp=e.hp;t.G.BossForms.update(e,1);assert.equal(e.hp,hp);
+  hit(e.maxHp*2);assert.equal(e.dead,true);
+});
+
+test('Zygarde: each form has distinct attacks and Complete sweeps with staggered full-arena warnings',()=>{
+  const t=setup(),a=t.start('zygarde'),e=t.enemies[0],S=t.G.StoryEncounters;
+  e.encounter.cooldown=0;S.move(e,0.1,t.G.Game.player,100);
+  assert.ok(e.encounter.dash);assert.ok(t.shots.every(p=>p.r===4));
+  e.hp=e.maxHp*0.49;t.G.BossForms.onDamage(e);e.transformT=0;
+  S.specialWave(e,0);assert.ok(S.fields.some(f=>f.type==='poison' && f.damage>0 && f.delay>=0.8));
+  e.hp=e.maxHp*0.09;t.G.BossForms.onDamage(e);e.transformT=0;t.hazards.length=0;
+  S.specialWave(e,0);assert.equal(t.hazards.length,5);
+  const r=(a.r-1.4)*32;
+  assert.ok(t.hazards.every(h=>h.kind==='beam' && Math.abs(h.len-2*r)<0.01));
+  assert.ok(t.hazards.every((h,i)=>i===0 || h.delay>t.hazards[i-1].delay));
+});
+
+test('Hoopa: portals reflect crossing player shots through actual combat resolution',()=>{
+  const t=setup();t.start('hoopa');const e=t.enemies[0],G=t.G;
+  e.encounter.cooldown=0;G.StoryEncounters.move(e,0.1,G.Game.player,100);
+  assert.equal(t.shots.filter(p=>p.enc?.portal).length,3);
+  const ring=t.shots[0];
+  const bullet=G.Projectiles.spawn({friendly:true,x:ring.x+60,y:ring.y,px:ring.x-60,py:ring.y,vx:400,vy:0,r:5,dmg:99999,pierce:3});
+  G.EnemyMgr.queryCircle=()=>[];
+  load(G,'js/systems/combat.js');G.Combat.resolve(0.016,G.Game.player,0);
+  assert.ok(!t.shots.includes(bullet));
+  const reflected=t.shots.find(p=>p.enc?.reflected);
+  assert.ok(reflected && !reflected.friendly && reflected.vx<0);
+  assert.ok(reflected.dmg<=e.dmg && Math.hypot(reflected.vx,reflected.vy)<=220.01);
+});
+
+test('Hoopa: Confined special uses six stationary gates and snapshots aim for each pair',()=>{
+  const t=setup(),a=t.start('hoopa'),e=t.enemies[0],G=t.G,p=G.Game.player;
+  a.evading=4;
+  for(let wave=0;wave<3;wave++) {
+    p.x=a.x+wave*60;p.y=a.y+80-wave*50;
+    G.StoryEncounters.specialWave(e,wave);
+    const pair=t.hazards.slice(-2);
+    assert.equal(pair.length,2);
+    for(const h of pair) {
+      assert.equal(h.vis,'hoopaBeam');assert.equal(h.kind,'beam');
+      const cross=(p.x-h.x)*Math.sin(h.angle)-(p.y-h.y)*Math.cos(h.angle);
+      assert.ok(Math.abs(cross)<1e-7,'beam points at the position sampled for this wave');
+      assert.ok(wave*4/3+h.delay+h.end<4,'beam ends before the stun reward');
+    }
+    const angles=pair.map(h=>h.angle);p.x+=80;
+    assert.deepEqual(pair.map(h=>h.angle),angles,'warnings do not track after locking');
+  }
+  const gates=G.StoryEncounters.fields.filter(f=>f.shape==='hoopaGate');
+  assert.equal(gates.length,6);assert.ok(gates.every(f=>f.damage===0 && f.special && f.duration===4));
+  assert.equal(new Set(t.hazards.map(h=>`${h.x},${h.y}`)).size,6);
+  assert.equal(t.shots.length,0,'special needs no player projectile to work');
+  assert.ok(G.Rift.evading);
+});
+
+test('Hoopa: portal beams hurt after warning with firing disabled, and sidestepping avoids them',()=>{
+  for(const sidestep of [false,true]) {
+    const t=setup();t.start('hoopa');const G=t.G,p=G.Game.player;
+    load(G,'js/systems/hazards.js');G.Camera.sees=()=>false;G.FX.beam=()=>{};G.LIFT=0;
+    G.Rift.update(12,p,0);G.Rift.cineTick(1);
+    assert.ok(G.Rift.evading);assert.equal(G.Hazards.all.length,2);
+    const beam=G.Hazards.all[0],hp=p.hp;
+    G.Hazards.update(0.5);assert.equal(p.hp,hp,'no damage during the warning');
+    if(sidestep) {p.x-=Math.sin(beam.angle)*90;p.y+=Math.cos(beam.angle)*90;}
+    G.Hazards.update(0.2);
+    assert.equal(p.hp<hp,!sidestep);
+  }
+});
+
+test('Hoopa: Unbound uses installed art and telegraphed falling orbs instead of portals',()=>{
+  const t=setup();t.start('hoopa');const e=t.enemies[0],hit=realDamage(t,e);
+  hit(e.maxHp*2);assert.equal(e.spriteForm,'0001');assert.equal(e.encounter.formIndex,1);assert.equal(e.hp,e.maxHp);
+  e.transformT=0;t.G.StoryEncounters.specialWave(e,0);
+  assert.equal(t.hazards.length,7);assert.equal(t.shots.length,0);
+  assert.ok(t.hazards.every(h=>h.vis==='hoopaOrb' && h.r>=46 && h.delay>=0.85));
+  hit(e.maxHp*2);assert.equal(e.dead,true);
+});
+
+test('Regigigas finale: Slow Start, physical charge, and five elements with an open corridor',()=>{
+  const t=setup(),a=t.start('regi');t.enemies.forEach(e=>e.dead=true);t.step();
+  const e=t.enemies.at(-1),S=t.G.StoryEncounters,p=t.G.Game.player;
+  const v=S.move(e,9.9,p,100);assert.ok(Math.hypot(...v.slice(0,2))<=15.01);assert.equal(e.encounter.dash,null);
+  S.move(e,0.2,p,100);assert.ok(e.encounter.awakened && e.encounter.dash);
+  S.cancelCasts();t.hazards.length=0;S.specialWave(e,0);
+  assert.ok(t.shots.length>10 && t.shots.every(p=>p.life<8/3));
+  assert.ok(t.hazards.some(h=>h.kind==='zone' && h.delay>=0.8));
+  S.specialWave(e,1);a.activeEvadeBossId=e.id;
+  const x=e.x,y=e.y;
+  for(let i=0;i<24;i++)S.specialMove(e,0.05);
+  assert.ok(Math.hypot(e.x-x,e.y-y)>100);
+  t.hazards.length=0;S.specialWave(e,2);
+  assert.deepEqual(t.hazards.map(h=>h.type),['rock','ice','steel','electric','dragon']);
+  load(t.G,'js/systems/hazards.js');
+  const r=S.attacks.radius(),dx=Math.cos(e.encounter.facing),dy=Math.sin(e.encounter.facing),step=r/3;
+  const gaps=Array.from({length:6},(_,i)=>-r+(i+0.5)*step).filter(offset=>
+    t.hazards.every(h=>!t.G.Hazards.inside(h,a.x-dy*offset,a.y+dx*offset,p.r)));
+  assert.ok(gaps.length>=1);
 });
 
 test('weather: first defeat summons Rayquaza once, retaining the surviving weather boss',()=>{
