@@ -307,6 +307,8 @@ label { display: block; font-size: 14px; color: var(--muted); margin: 8px 0 4px;
 .menu-right > :last-child { margin-bottom: auto; }
 .boss-select-box { width: min(980px, 100%); max-height: calc(100dvh - 92px); }
 .boss-stage-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; }
+.boss-stage-heading { grid-column: 1 / -1; margin: 14px 0 0; color: var(--gold); }
+.boss-stage-heading small { font-size: 13px; color: #b7d4ff; }
 .boss-stage {
   display: flex; flex-direction: column; align-items: flex-start; gap: 5px; min-height: 128px;
   padding: 12px; text-align: left; cursor: pointer; border: 2px solid rgba(244,248,255,.2); border-radius: 9px;

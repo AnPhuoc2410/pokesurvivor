@@ -25,6 +25,13 @@ G.Rift = (() => {
   const CHECK = 30, CHANCE = 0.2, TTL = 45;
   const ARENA_R = 11, ARENA_TIME = 120, STORY_TIME = 300, FROM = 75;
   const STORY_BOSSES = [382, 383, 384]; // Kyogre, Groudon, Rayquaza
+  const DIFFICULTIES = {
+    easy: { name: 'Dễ', hp: 0.8, damage: 0.85, stages: ['darmanitan', 'wishiwashi', 'aegislash', 'lake', 'birds'] },
+    medium: { name: 'Trung bình', hp: 1, damage: 1, stages: ['zygarde', 'rotom', 'meloetta', 'hoopa', 'beasts', 'swords', 'eon', 'moon', 'tower'] },
+    hard: { name: 'Khó', hp: 1.25, damage: 1.15, stages: ['necrozma', 'deoxys', 'terapagos', 'weather', 'creation', 'tao', 'tapu', 'ruin', 'regi', 'heroes'] }
+  };
+  const partySize = count => Math.max(1, Math.min(10, Math.floor(Number(count) || 1)));
+  const arenaRadius = (count, base = ARENA_R) => Math.ceil(base * (1 + 0.2 * (partySize(count) - 1)));
   const CHALLENGES = [
     ['zygarde','Zygarde · Núcleo cambiante','forms',[718],[[718]]], ['darmanitan','Darmanitan · Modo Zen','forms',[555],[[555]]],
     ['wishiwashi','Wishiwashi · Banco de peces','forms',[746],[[746]]], ['necrozma','Necrozma · Alas del amanecer','forms',[800],[[800]]],
@@ -81,6 +88,9 @@ G.Rift = (() => {
   // ---------------- grieta en el mapa ----------------
 
   function update(dt, pl, time) {
+    if (!arena && authority() && G.Game.hurryMode && !G.Game.bossChallengeMode && time >= G.Judgment.AT) {
+      startHurryFinale();
+    }
     if (!arena && authority() && time >= 10 * 60 && !storyDone()) {
       if (!rift || !rift.story) {
         rift = null;
@@ -165,7 +175,7 @@ G.Rift = (() => {
     while (mi < pool.length - 1 && (r -= ws[mi]) > 0) mi++;
     const mon = pool[mi];
     const cfg = {
-      tx: 5000 + Math.floor(Math.random() * 3000), ty: 5000 + Math.floor(Math.random() * 3000), r: ARENA_R,
+      tx: 5000 + Math.floor(Math.random() * 3000), ty: 5000 + Math.floor(Math.random() * 3000), r: arenaRadius(G.Game.everyone().length),
       dex: mon.dex, shiny: G.Sprites.hasShiny(mon.dex) && Math.random() < 1 / 512,
       // La arena es la de uno de sus tipos, al azar.
       type: forceType || G.U.pick(mon.types)
@@ -183,23 +193,38 @@ G.Rift = (() => {
     rift = null;
     const cfg = {
       tx: 5000 + Math.floor(Math.random() * 3000), ty: 5000 + Math.floor(Math.random() * 3000),
-      r: ARENA_R, type: 'fire', story: true, bosses: STORY_BOSSES
+      r: arenaRadius(G.Game.everyone().length), type: 'fire', story: true, bosses: STORY_BOSSES
     };
     if (G.Coop.isHost) G.Coop.broadcast(['arena', cfg]);
     begin(cfg);
   }
 
   function challengeStages() {
+    const tiers = Object.keys(DIFFICULTIES);
     return CHALLENGES.map(stage => Object.assign({}, stage, G.StoryEncounters?.STAGES[stage.id] || {},
-      { reason: stage.id === 'ruin' ? 'Chưa mở: thiếu sprite Wo-Chien (#1001) và Chien-Pao (#1002).' : '' }));
+      { difficulty: tiers.find(tier => DIFFICULTIES[tier].stages.includes(stage.id)),
+        reason: stage.id === 'ruin' ? 'Chưa mở: thiếu sprite Wo-Chien (#1001) và Chien-Pao (#1002).' : '' }))
+      .sort((a, b) => tiers.indexOf(a.difficulty) - tiers.indexOf(b.difficulty));
   }
 
-  function startChallenge(stageId) {
+  function startHurryFinale() {
+    if (arena) return false;
+    const available = challengeStages().filter(stage => stage.available && stage.dexes.every(dex => G.DEX_BY[dex] && G.SPRITE_META[dex]));
+    const pools = Object.keys(DIFFICULTIES).map(tier => available.filter(stage => stage.difficulty === tier));
+    if (pools.some(pool => !pool.length)) return false;
+    const stages = pools.map(pool => G.U.pick(pool).id);
+    return startChallenge(stages[0], stages);
+  }
+
+  function startChallenge(stageId, finaleStages = null, testPlayers = 0) {
     if (arena) return false;
     const stage = challengeStages().find(item => item.id === stageId);
     if (!stage || !stage.available || stage.dexes.some(dex => !G.DEX_BY[dex] || !G.SPRITE_META[dex])) return false;
-    const cfg = { tx: 5000 + Math.floor(Math.random() * 3000), ty: 5000 + Math.floor(Math.random() * 3000), r: ARENA_R,
-      type: 'dragon', story: true, challenge: true, challengeId: stage.id, challengeKind: stage.kind, challengeWaves: stage.waves, challengeTitle: stage.title };
+    const players = partySize(testPlayers || G.Game.everyone().length);
+    const cfg = { tx: 5000 + Math.floor(Math.random() * 3000), ty: 5000 + Math.floor(Math.random() * 3000), r: arenaRadius(players),
+      partySize: players, difficulty: stage.difficulty,
+      type: 'dragon', story: true, challenge: true, challengeId: stage.id, challengeKind: stage.kind, challengeWaves: stage.waves,
+      challengeTitle: finaleStages ? 'Hurry · ' + DIFFICULTIES[stage.difficulty].name + ' · ' + stage.title : stage.title, finaleStages };
     begin(cfg);
     if (G.Coop.isHost) G.Coop.broadcast(['arena', cfg]);
     return true;
@@ -246,15 +271,16 @@ G.Rift = (() => {
   function spawnLegend(dex = arena.dex, storyBoss = false, x = arena.x, y = arena.y - TS() * 3.5) {
     const mon = G.DEX_BY[dex];
     const t = G.Game.st.matchTime;
-    const n = G.Game.everyone().length;
+    const n = arena.partySize || G.Game.everyone().length;
+    const difficulty = DIFFICULTIES[arena.difficulty];
     const ts = TS();
     const def = {
       dex: mon.dex, name: mon.name,
-      hp: Math.round((3200 + t * 9) * G.Coop.scaleHp(n) * (n > 1 ? 1.4 : 1)),
+      hp: Math.round((3200 + t * 9) * G.Coop.scaleHp(n) * (n > 1 ? 1.4 : 1) * (difficulty?.hp || 1)),
       spd: Math.round(G.U.clamp(48 + (mon.spd - 78) * 0.6, 48, 105)),
-      dmg: Math.round(36 + t / 20), xp: Math.round(500 + t * 1.2),
+      dmg: Math.round((36 + t / 20) * (difficulty?.damage || 1)), xp: Math.round(500 + t * 1.2),
       behavior: mon.types.some(x => ['psychic', 'electric', 'ghost', 'fairy', 'fire', 'water', 'ice', 'dragon'].includes(x)) ? 'ranged' : 'charger',
-      shotDmg: Math.round(18 + t / 40), shotCd: 0.9, range: 300
+      shotDmg: Math.round((18 + t / 40) * (difficulty?.damage || 1)), shotCd: 0.9, range: 300
     };
     const e = new G.Enemy(def, x, y, G.Enemies.hurryScale(t, true), true);
     e.legend = true;
@@ -665,7 +691,7 @@ G.Rift = (() => {
     arena.phase = 'won'; arena.endT = 5;
     if (!arena.challenge) G.Progress.event('rift', { type: arena.type });
     G.Pickups.pullAll();
-    G.Spawner.say('¡Has vencido a ' + G.DEX_BY[arena.dex].name + '! Recoge el premio…', 3.4, true);
+    G.Spawner.say(arena.challenge ? 'Đã vượt qua ' + arena.challengeTitle + '!' : '¡Has vencido a ' + G.DEX_BY[arena.dex].name + '! Recoge el premio…', 3.4, true);
     G.Audio.sfx('legend');
     const pl = G.Game.player;
     if (arena.story && !arena.challenge) {
@@ -692,6 +718,16 @@ G.Rift = (() => {
     const a = arena;
     arena = null;
     G.StoryEncounters?.reset();
+    if (a.finaleStages) {
+      if (!authority()) return;
+      const remaining = a.finaleStages.slice(1);
+      if (a.phase === 'won' && remaining.length) {
+        G.Weather.clear();
+        if (startChallenge(remaining[0], remaining)) return;
+      }
+      G.Game.finishHurryFinale(a.phase === 'won' && !remaining.length);
+      return;
+    }
     if (a.challenge) { G.Game.exitBossChallenge(); return; }
     G.World.setBiome(a.biome, true);
     G.Weather.clear();
@@ -878,7 +914,8 @@ G.Rift = (() => {
     get cinematic() { return !!(arena && arena.story && arena.cine); },
     cineTick,
     drawOverlay,
-    challengeStages, startChallenge,
+    DIFFICULTIES, arenaRadius, challengeStages, startChallenge, startHurryFinale,
+    get hurryFinale() { return !!arena?.finaleStages; },
     get timeLeft() { return arena ? (arena.challenge ? Infinity : Math.max(0, (arena.story ? STORY_TIME : ARENA_TIME) - arena.t)) : 0; },
     debugOpen() { open(); },
     debugStory() { if (!arena) startStory(); },

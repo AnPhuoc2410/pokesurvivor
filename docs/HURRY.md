@@ -1,8 +1,18 @@
-# Hurry (15 minutes until Arceus)
+# Hurry (15 minutes until the boss finale)
 
 Select the mode in the main menu or lobby. The host chooses the team's mode.
-Hurry reaches Judgment after 15 minutes of combat; card choices, pauses, and
-Judgment add extra time. Standard retains its existing balance values.
+After 15 minutes of combat, Hurry enters exactly three boss stages: one random
+Easy stage, then one random Medium stage, then one random Hard stage. Each
+available stage within its tier has equal probability. The host chooses the
+whole queue once and shares it with clients. The player keeps their Pokémon,
+HP, and upgrades. Winning all three stages wins the run; losing ends it.
+Locked stages and stages with missing assets are excluded. The finale only
+starts if all three tiers have a playable stage. Standard still uses Arceus.
+Card choices, pauses, and story arenas add time to the outer run.
+
+Use **Test sau 15′ · Hurry** in the main menu to jump straight to the finale
+with your selected Pokémon at level 43 and fully upgraded starting moves.
+The test starts with toggleable invincibility and does not save run rewards.
 
 ## Progression
 
@@ -25,7 +35,7 @@ Judgment add extra time. Standard retains its existing balance values.
 
 ## Enemies and timing
 
-Before Judgment, `matchTime` advances at twice the rate of combat time. It drives
+Before the finale, `matchTime` advances at twice the rate of combat time. It drives
 waves, reinforcements, bosses, and Rift legendary strength. Surge intervals,
 events, and weather opportunities are also compressed; physics, attack warnings,
 and combat time limits remain unchanged.
@@ -40,8 +50,8 @@ The following multipliers apply on top of the existing curves, with
 
 These multipliers add no movement speed, enemies, or XP. They do not depend on
 the player's level, damage, or cards. They apply when an enemy spawns and do not
-heal existing enemies. Judgment retains its own mechanics, including its initial
-DPS-based adjustment.
+heal existing enemies. Finale stages use the boss selection mechanics and run
+at normal speed, with the outer match clock paused during each arena.
 
 ## Verification
 

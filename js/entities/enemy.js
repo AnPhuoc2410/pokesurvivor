@@ -321,7 +321,7 @@
         return;
       }
       // (Los legendarios de la Sentencia de Arceus sólo dan experiencia.)
-      if (G.Game.bossChallengeMode) { G.StoryEncounters?.defeated(this); G.Audio.sfx('bossDown'); return; }
+      if (G.Game.bossChallengeMode || G.Rift?.hurryFinale) { G.StoryEncounters?.defeated(this); G.Audio.sfx('bossDown'); return; }
       if (this.boss && !this.judge && !this.storyBoss) {
         G.Camera.kick(0.9);
         for (let i = 0; i < 10; i++) G.Pickups.drop('coin', this.x + G.U.rand(-40, 40), this.y + G.U.rand(-30, 30), 5);

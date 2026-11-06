@@ -30,7 +30,7 @@ G.Game = (() => {
     get time() { return realTime; },
     get matchTime() { return matchTime; },
     get hurryMode() { return hurryMode; },
-    get timeScale() { return (hurryMode && (!G.Judgment || !G.Judgment.active)) ? 2 : 1; }
+    get timeScale() { return (hurryMode && !G.Rift?.hurryFinale && (!G.Judgment || !G.Judgment.active)) ? 2 : 1; }
   };
 
   // ---------------- arranque ----------------
@@ -250,12 +250,13 @@ G.Game = (() => {
     endRun(false);
   }
 
-  function startBossChallenge(stageId) {
+  function startBossChallenge(stageId, testPlayers = 1, invincible = false) {
     if (state !== 'ui' || !G.DB.save.partner || G.Coop.active) return;
     startRun(null, { bossChallenge: true });
     document.getElementById('boss-immortal')?.classList.remove('hidden');
     tampered = true;
-    if (!G.Rift.startChallenge(stageId)) exitBossChallenge();
+    if (!G.Rift.startChallenge(stageId, null, testPlayers)) { exitBossChallenge(); return; }
+    if (invincible) toggleBossChallengeInvincibility();
   }
 
   function exitBossChallenge() {
@@ -890,7 +891,7 @@ G.Game = (() => {
       return;
     }
     realTime += dt;
-    // Hurry mode: TIME_SCALE = 2 trước khi Arceus giáng thế; khi vào Judgment thì TIME_SCALE = 1
+    // Hurry: đồng hồ chạy gấp đôi trước chuỗi boss cuối, rồi trở về tốc độ thường.
     const timeScale = st.timeScale;
     // Story Rift time is separate from the outer run clock and Judgment timer.
     if (!G.Rift.pauseRunClock) matchTime += dt * timeScale;
@@ -936,7 +937,7 @@ G.Game = (() => {
     G.Hazards.update(dt);
     G.Interact.update(dt, pl);
     G.Rift.update(dt, pl, matchTime);
-    if (state === 'ui') return;
+    if (state !== 'playing') return;
     G.Judgment.update(dt, pl, matchTime);
     G.Events.update(dt, all, matchTime);
     G.Weather.update(dt, matchTime, pl);
@@ -1176,6 +1177,22 @@ G.Game = (() => {
       if (bossChallengeMode) { storyTestMode = true; if (!bossChallengeInvincible) toggleBossChallengeInvincibility(); }
     },
     startBossChallenge, exitBossChallenge,
+    startHurryFinaleTest() {
+      if (state !== 'ui' || !G.DB.save.partner || G.Coop.active) return;
+      startRun(null, { bossChallenge: true });
+      hurryMode = true; storyTestMode = true; tampered = true;
+      matchTime = G.Judgment.AT; realTime = matchTime / 2;
+      pl.level = 43; pl.xp = 0; pl.xpNext = G.Player.xpFor(pl.level, true);
+      for (const m of pl.moves) G.Moves.levelUp(m, m.def.maxLvl - m.lvl);
+      document.getElementById('boss-immortal')?.classList.remove('hidden');
+      toggleBossChallengeInvincibility();
+      if (!G.Rift.startHurryFinale()) exitBossChallenge();
+    },
+    finishHurryFinale(won) {
+      if (bossChallengeMode) { exitBossChallenge(); return; }
+      endRun(!won);
+      if (won) G.UI.$('over-title').textContent = 'Đã vượt qua 3 màn boss Hurry!';
+    },
     get bossChallengeMode() { return bossChallengeMode; },
     get bossChallengeInvincible() { return bossChallengeMode && bossChallengeInvincible; },
     get storyTestMode() { return storyTestMode; },
@@ -1268,7 +1285,7 @@ G.Flow = {
   },
   play() { G.Game.startRun(); },
   storyTest() { G.Game.startStoryTest(); },
-  bossChallenge(stageId) { G.Game.startBossChallenge(stageId); },
+  bossChallenge(stageId, testPlayers, invincible) { G.Game.startBossChallenge(stageId, testPlayers, invincible); },
   /** Empieza la partida en grupo (el anfitrión la manda a todos). */
   startCoop(cfg) {
     if (G.Game.state !== 'ui' || !G.Social.room) return;

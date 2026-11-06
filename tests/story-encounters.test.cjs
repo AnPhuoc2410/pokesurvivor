@@ -34,7 +34,7 @@ function setup() {
     startStoryTransformation(f){this.transformT=2;this.transformForm=f;this.setStoryForm(f);}
   };
   load(G,'js/systems/rift.js');load(G,'js/systems/story-encounters.js');load(G,'js/systems/boss-forms.js');
-  for(const dex of Object.values(G.StoryEncounters.STAGES).flatMap(s=>s.waves.flat()).concat(384)) {
+  for(const dex of G.Rift.challengeStages().flatMap(s=>s.dexes).concat(384)) {
     G.DEX_BY[dex]={dex,name:String(dex),spd:90,types:['psychic']};G.SPRITE_META[dex]={};
   }
   function start(stage) {
@@ -45,6 +45,108 @@ function setup() {
   function step(dt=0.05) {G.StoryEncounters.update(dt);G.Rift.update(dt,G.Game.player,0);}
   return {G,enemies,shots,hazards,messages,events,start,step};
 }
+
+test('Hurry enters the finale at 15 combat minutes, retaining the player build', () => {
+  const { G } = setup();
+  G.Game.hurryMode = true;
+  const player = G.Game.player;
+  Object.assign(player, { hp: 73, level: 43, atkMul: 2, moves: [{ id: 'ember', lvl: 5 }] });
+  G.Rift.update(0, player, 1799);
+  assert.equal(G.Rift.hurryFinale, false);
+  G.Rift.update(0, player, 1800);
+  assert.equal(G.Rift.hurryFinale, true);
+  assert.equal(G.Rift.arena.difficulty, 'easy');
+  assert.equal(G.Game.player, player);
+  assert.equal(player.hp, 73); assert.equal(player.level, 43); assert.equal(player.atkMul, 2);
+  assert.deepEqual(player.moves, [{ id: 'ember', lvl: 5 }]);
+});
+
+test('Hurry visits exactly one randomly selected stage per tier and ends after three wins', () => {
+  const { G } = setup(), visited = [], results = [];
+  G.Game.finishHurryFinale = won => results.push(won);
+  assert.equal(G.Rift.startHurryFinale(), true);
+  const expected = G.Rift.arena.finaleStages.slice();
+  assert.equal(expected.length, 3);
+  assert.deepEqual(expected.map(id => G.Rift.challengeStages().find(s => s.id === id).difficulty), ['easy', 'medium', 'hard']);
+  assert.equal(G.Rift.startHurryFinale(), false, 'cannot restart an active arena');
+  for (const id of expected) {
+    assert.equal(G.Rift.arena.challengeId, id);
+    visited.push(id);
+    G.Rift.update(4, G.Game.player, 1800);
+    G.Rift.onEvent(['aw']);
+    G.Rift.update(5, G.Game.player, 1800);
+  }
+  assert.deepEqual(visited, expected); assert.ok(!visited.includes('ruin'));
+  assert.deepEqual(results, [true]); assert.equal(G.Rift.inArena, false);
+});
+
+test('Hurry draws from each full playable tier and can choose different stages on a new run', () => {
+  const queues = [];
+  for (const chooseLast of [false, true]) {
+    const { G } = setup(), pools = [];
+    delete G.SPRITE_META[555];
+    G.U.pick = pool => { pools.push(pool.map(s => s.id)); return chooseLast ? pool[pool.length - 1] : pool[0]; };
+    assert.equal(G.Rift.startHurryFinale(), true);
+    assert.equal(pools.length, 3);
+    for (const [index, tier] of ['easy', 'medium', 'hard'].entries()) {
+      const candidates = G.Rift.challengeStages().filter(s => s.available && s.difficulty === tier && s.dexes.every(d => G.SPRITE_META[d]));
+      assert.deepEqual(pools[index], candidates.map(s => s.id));
+    }
+    const queue = G.Rift.arena.finaleStages;
+    assert.ok(!queue.includes('ruin')); assert.ok(!queue.includes('darmanitan'));
+    queues.push(queue);
+  }
+  assert.notDeepEqual(queues[0], queues[1]);
+});
+
+test('Hurry does not start an incomplete queue when a difficulty has no playable stage', () => {
+  const { G } = setup();
+  for (const stage of G.Rift.challengeStages().filter(s => s.difficulty === 'medium')) {
+    for (const dex of stage.dexes) delete G.SPRITE_META[dex];
+  }
+  assert.equal(G.Rift.startHurryFinale(), false);
+  assert.equal(G.Rift.inArena, false);
+});
+
+test('Hurry defeat ends the run instead of entering the next boss stage', () => {
+  const { G } = setup(), results = [];
+  G.Game.finishHurryFinale = won => results.push(won);
+  G.Rift.startHurryFinale(); G.Rift.update(4, G.Game.player, 1800);
+  G.Rift.onEvent(['al']); G.Rift.update(2, G.Game.player, 1800);
+  assert.deepEqual(results, [false]); assert.equal(G.Rift.inArena, false);
+});
+
+test('real enemy death runs boss-stage cleanup during the Hurry finale', () => {
+  const { G } = setup(); G.Rift.startHurryFinale();
+  let defeated = 0;
+  G.StoryEncounters.defeated = () => defeated++;
+  G.Pickups.drop = G.Pickups.dropXp = () => assert.fail('stage bosses must not drop survival loot');
+  load(G, 'js/entities/enemy.js');
+  const boss = { dead: false, boss: true, remote: false, x: 0, y: 0, r: 16, bodyH: 40, anim: { play() {} } };
+  G.Enemy.prototype.die.call(boss);
+  assert.equal(boss.dead, true); assert.equal(defeated, 1);
+});
+
+test('Standard and standalone boss practice do not automatically enter the Hurry finale', () => {
+  for (const [hurryMode, bossChallengeMode] of [[false, false], [true, true]]) {
+    const { G } = setup(); Object.assign(G.Game, { hurryMode, bossChallengeMode });
+    G.Rift.update(0, G.Game.player, 1800);
+    assert.equal(G.Rift.hurryFinale, false);
+  }
+});
+
+test('Coop host sends the finale queue and guests wait for the next host arena', () => {
+  const host = setup(); Object.assign(host.G.Coop, { active: true, isHost: true });
+  host.G.Rift.startHurryFinale();
+  const cfg = host.events.find(e => e[0] === 'arena')[1];
+  assert.equal(cfg.finaleStages.length, 3);
+  const guest = setup(); Object.assign(guest.G.Coop, { active: true, isHost: false });
+  guest.G.Game.finishHurryFinale = () => assert.fail('guest must not advance the host queue');
+  guest.G.Rift.onEvent(['arena', cfg]); guest.G.Rift.update(4, guest.G.Game.player, 1800);
+  assert.deepEqual(guest.G.Rift.arena.finaleStages, cfg.finaleStages);
+  guest.G.Rift.onEvent(['aw']); guest.G.Rift.update(5, guest.G.Game.player, 1800);
+  assert.equal(guest.G.Rift.inArena, false);
+});
 
 function realDamage(t, enemy) {
   const manager=t.G.EnemyMgr;
@@ -61,6 +163,19 @@ function takeTeraEnergy(t,e,type) {
   Object.assign(t.G.Game.player,{x:crystal.x,y:crystal.y});
   t.G.BossForms.updateArena(e,0.01);
 }
+
+test('arena reset clears both Regi shared HP and a pending Palkia teleport', () => {
+  const t = setup(), S = t.G.StoryEncounters;
+  t.start('regi');
+  assert.ok(S.sharedHealthBar());
+  t.G.Rift.reset(); t.start('creation');
+  assert.equal(S.sharedHealthBar(), null);
+  S.update(7);
+  t.G.Rift.reset(); t.start('creation');
+  const p = t.G.Game.player, position = { x: p.x, y: p.y };
+  S.update(1);
+  assert.equal(p.x, position.x); assert.equal(p.y, position.y);
+});
 
 test('Terapagos: actual damage visits Normal, Terastal, and Stellar without adding a third HP bar',()=>{
   const t=setup();t.start('terapagos');const e=t.enemies[0],hit=realDamage(t,e);
@@ -273,13 +388,103 @@ test('water slows, lava hurts repeatedly, and spell lock pauses older environmen
   const a=t.G.Rift.arena;a.evading=4;const before=t.G.Game.player.hp;S.update(1);assert.equal(t.G.Game.player.hp,before);
 });
 
-test('Dialga changes speed without compounding it; Palkia curves projectiles; defeat releases the effects',()=>{
+test('Dialga slows movement and projectiles without compounding; Palkia no longer curves them',()=>{
   const t=setup();t.start('creation');const S=t.G.StoryEncounters,p={friendly:true,vx:200,vy:0};
-  assert.ok(Math.abs(S.effects(t.G.Game.player).speed-0.72*1.1)<1e-8);
-  S.update(0.2);S.updateProjectile(p,0.1);const speed=Math.hypot(p.vx,p.vy);assert.ok(Math.abs(speed-110)<1e-6);assert.notEqual(p.vy,0);
+  assert.equal(S.effects(t.G.Game.player).speed,0.72);
+  S.update(0.2);S.updateProjectile(p,0.1);const speed=Math.hypot(p.vx,p.vy);assert.ok(Math.abs(speed-110)<1e-6);assert.equal(p.vy,0);
   S.updateProjectile(p,0.1);assert.ok(Math.abs(Math.hypot(p.vx,p.vy)-speed)<1e-6);
-  const before=S.effects(t.G.Game.player).speed;S.update(1);assert.notEqual(S.effects(t.G.Game.player).speed,before);
+  const before=S.effects(t.G.Game.player).speed;S.update(1);assert.equal(S.effects(t.G.Game.player).speed,before);
   t.enemies[0].dead=true;t.enemies[1].dead=true;S.updateProjectile(p,0.1);assert.ok(Math.abs(Math.hypot(p.vx,p.vy)-200)<1e-6);assert.equal(S.effects(t.G.Game.player).speed,1);
+});
+
+test('boss stages have exactly one difficulty, are grouped by tier, and use their HP and damage multipliers', () => {
+  const { G } = setup(), tiers = G.Rift.DIFFICULTIES, stages = G.Rift.challengeStages();
+  assert.equal(stages.length, 24);
+  const order = stages.map(s => Object.keys(tiers).indexOf(s.difficulty));
+  assert.deepEqual(order, [...order].sort((a, b) => a - b));
+  for (const stage of stages) assert.equal(Object.values(tiers).filter(t => t.stages.includes(stage.id)).length, 1, stage.id);
+  for (const [id, hp, damage] of [['lake', 2560, 31], ['eon', 3200, 36], ['creation', 4000, 41]]) {
+    const t = setup(); t.start(id);
+    assert.equal(t.enemies[0].hp, hp); assert.equal(t.enemies[0].dmg, damage);
+  }
+});
+
+test('boss maps grow with the real party; solo practice reproduces the same map and HP for 1–10 players', () => {
+  const radii = [11, 14, 16, 18, 20, 22, 25, 27, 29, 31];
+  for (let n = 1; n <= 10; n++) {
+    const coop = setup(), practice = setup();
+    const players = Array.from({ length: n }, (_, i) => ({ ...coop.G.Game.player, uid: String(i) }));
+    coop.G.Game.everyone = () => players;
+    Object.assign(coop.G.Coop, { active: true, isHost: true, scaleHp: n => 1 + 0.25 * (n - 1) });
+    practice.G.Coop.scaleHp = coop.G.Coop.scaleHp;
+    coop.G.Rift.startChallenge('creation');
+    practice.G.Rift.startChallenge('creation', null, n);
+    assert.equal(coop.G.Rift.arena.r, radii[n - 1]);
+    assert.equal(practice.G.Rift.arena.r, radii[n - 1]);
+    assert.equal(coop.events.find(e => e[0] === 'arena')[1].r, radii[n - 1]);
+    for (const t of [coop, practice]) t.G.Rift.update(4, t.G.Game.player, 0);
+    assert.equal(coop.enemies[0].hp, practice.enemies[0].hp);
+    assert.equal(coop.enemies[0].dmg, practice.enemies[0].dmg);
+    assert.equal(coop.G.Rift.arenaRadius(n, 24), Math.ceil(24 * (1 + 0.2 * (n - 1))));
+  }
+  const { G } = setup();
+  assert.equal(G.Rift.arenaRadius(-10), 11); assert.equal(G.Rift.arenaRadius(99), 31);
+});
+
+test('Palkia warns before teleport, lands inside the arena away from bosses, and stops on defeat', () => {
+  const t = setup(); t.start('creation');
+  const S = t.G.StoryEncounters, p = t.G.Game.player, before = { x: p.x, y: p.y };
+  S.update(7); assert.equal(p.x, before.x); assert.equal(p.y, before.y);
+  S.update(0.9); assert.equal(p.x, before.x); assert.equal(p.y, before.y);
+  S.update(0.11);
+  assert.ok(Math.hypot(p.x - before.x, p.y - before.y) >= 64);
+  const a = t.G.Rift.arena;
+  assert.ok(Math.hypot(p.x - a.x, p.y - a.y) < (a.r - 1.4) * 32 - p.r);
+  assert.ok(t.enemies.every(e => Math.hypot(p.x - e.x, p.y - e.y) >= e.r + p.r + 24));
+  assert.ok(p.invuln >= 0.75);
+  const landed = { x: p.x, y: p.y };
+  t.enemies.find(e => e.dex === 484).dead = true;
+  S.update(20); assert.equal(p.x, landed.x); assert.equal(p.y, landed.y);
+});
+
+test('Palkia cancels a warned teleport if defeated and never places players into blocked terrain', () => {
+  for (const killed of [false, true]) {
+    const t = setup(); t.start('creation');
+    const p = t.G.Game.player, before = { x: p.x, y: p.y };
+    t.G.World.isFree = () => false;
+    t.G.StoryEncounters.update(7);
+    if (killed) t.enemies.find(e => e.dex === 484).dead = true;
+    t.G.StoryEncounters.update(1);
+    assert.equal(p.x, before.x); assert.equal(p.y, before.y);
+  }
+});
+
+test('Palkia teleports every living coop player and clients use host destinations', () => {
+  const t = setup();
+  const p = t.G.Game.player; p.uid = 'host';
+  const other = { ...p, uid: 'guest' }, dead = { ...p, uid: 'dead', dead: true };
+  t.G.Game.everyone = () => [p, other, dead];
+  Object.assign(t.G.Coop, { active: true, isHost: true });
+  t.start('creation');
+  t.G.StoryEncounters.update(7); t.G.StoryEncounters.update(1);
+  const event = t.events.find(e => e[0] === 'enc' && e[1] === 'warp');
+  assert.ok(t.events.some(e => e[0] === 'enc' && e[1] === 'warpWarning'));
+  assert.deepEqual(event[2].map(t => t.uid), ['host', 'guest']);
+  assert.ok(Math.hypot(p.x - other.x, p.y - other.y) >= p.r + other.r + 16);
+  const client = setup();
+  client.G.Rift.onEvent(t.events.find(e => e[0] === 'arena'));
+  client.G.Rift.update(4, client.G.Game.player, 0);
+  const local = client.G.Game.player; local.uid = 'guest';
+  const remote = { ...local, uid: 'host' };
+  client.G.Game.everyone = () => [local, remote];
+  Object.assign(client.G.Coop, { active: true, isHost: false });
+  client.G.StoryEncounters.onEvent(event);
+  assert.equal(local.x, other.x); assert.equal(local.y, other.y);
+  assert.equal(remote.x, p.x); assert.equal(remote.y, p.y);
+  client.G.StoryEncounters.update(20);
+  assert.equal(local.x, other.x); assert.equal(local.y, other.y);
+  client.G.StoryEncounters.onEvent(['enc', 'warp', [{ uid: 'guest', x: Infinity, y: 0 }]]);
+  assert.equal(local.x, other.x);
 });
 
 test('lake confusion lasts three seconds; Darkrai darkness lasts half a second',()=>{
