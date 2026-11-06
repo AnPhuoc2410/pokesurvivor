@@ -410,6 +410,7 @@ G.Coop = (() => {
           else if (ev[2] === 't') e.applyStun(ev[3]);
           break;
         }
+        case 'st': G.Rift.setStoryTarget(ev[1]); break;
         case 'c':
           G.Combat.ghostCast(m.pl, ev[1], ev[2], ev[3], ev[4]);
           emit(['c', from, ev[1], ev[2], ev[3], ev[4]], from);
@@ -507,15 +508,16 @@ G.Coop = (() => {
   function applyHostEvent(ev) {
     switch (ev[0]) {
       case 'ne':
-        G.EnemyMgr.addRemote({ id: ev[1], dex: ev[2], x: ev[3], y: ev[4], boss: !!ev[5], shiny: !!ev[6], hp: ev[7], dmg: ev[8], beh: ev[9] });
+        { const e = G.EnemyMgr.addRemote({ id: ev[1], dex: ev[2], x: ev[3], y: ev[4], boss: !!ev[5], shiny: !!ev[6], hp: ev[7], dmg: ev[8], beh: ev[9] }); e.storyBoss = !!ev[10]; }
         break;
       case 'ed': G.EnemyMgr.removeRemote(ev[1], true); break;
       case 'eg': G.EnemyMgr.removeRemote(ev[1], false); break;
       case 'hn': { const e = G.EnemyMgr.get(ev[1]); if (e && !e.dead) e.showHurt(ev[2], ev[3]); break; }
+      case 'bp': { const e = G.EnemyMgr.get(ev[1]); if (e && e.remote) { e.storyPhase = ev[2]; e.hp = e.maxHp; e.storyFury = true; e.spd *= 1.25; if (ev[2] === 2) e.startStoryTransformation('0001'); } break; }
       case 'es':
         G.Projectiles.spawn({
           x: ev[1], y: ev[2], vx: ev[3], vy: ev[4], dmg: ev[5], r: ev[6], life: ev[7],
-          friendly: false, color: '#ff7a9e', vis: G.VFX.forType(ev[8]), mtype: ev[8], cat: ev[9]
+          friendly: false, color: '#ff7a9e', vis: G.VFX.forType(ev[8]), mtype: ev[8], cat: ev[9], enc: ev[10] || null
         });
         break;
       case 'c': { const m = mates.get(ev[1]); if (m) G.Combat.ghostCast(m.pl, ev[2], ev[3], ev[4], ev[5]); break; }
@@ -541,11 +543,12 @@ G.Coop = (() => {
       case 'sh': api.shiny(ev[1]); break;
       case 'ov': { const cb = api.over; const d = ev[1]; if (d) takeSums(d.sums); end(); cb(d); break; }
       case 'sms': takeSums(ev[1]); break;
-      case 'rift': case 'riftx': case 'arena': case 'aw': case 'al': G.Rift.onEvent(ev); break;
+      case 'rift': case 'riftx': case 'arena': case 'aw': case 'al': case 'se': case 'sc': case 'st': G.Rift.onEvent(ev); break;
       case 'jd': case 'jk': case 'jb': G.Judgment.onEvent(ev); break;
       case 'wx': G.Weather.onEvent(ev); break;
       case 'ev': G.Events.onNet(ev); break;
       case 'hz': G.Hazards.add(ev[1], true); break;
+      case 'enc': G.StoryEncounters?.onEvent(ev); break;
       case 'fxr':
         if (typeof ev[4] === 'string') G.FX.ring(num(ev[1], 0, -1e6, 1e6), num(ev[2], 0, -1e6, 1e6), 8, num(ev[3], 8, 0, 2000), ev[4], 0.5, 3);
         break;
@@ -567,11 +570,17 @@ G.Coop = (() => {
 
   // anfitrión
   function hurtShown(e, d, color) { emitNear(['hn', e.id, d, color], e.x, e.y, hitFrom); }
+  function bossPhase(e, phase) { emit(['bp', e.id, phase]); }
+  function targetBoss(id) {
+    if (!active) return;
+    if (host) G.Rift.setStoryTarget(id);
+    else outEv.push(['st', id]);
+  }
   function enemyAdded(e) {
-    emit(['ne', e.id, e.dex, r1(e.x), r1(e.y), e.boss ? 1 : 0, e.shiny ? 1 : 0, Math.ceil(e.maxHp), r2(e.dmg), e.behavior]);
+    emit(['ne', e.id, e.dex, r1(e.x), r1(e.y), e.boss ? 1 : 0, e.shiny ? 1 : 0, Math.ceil(e.maxHp), r2(e.dmg), e.behavior, e.storyBoss ? 1 : 0]);
   }
   function enemyGone(e, died) { emit([died ? 'ed' : 'eg', e.id]); }
-  function enemyShot(p, type) { emit(['es', r1(p.x), r1(p.y), r1(p.vx), r1(p.vy), r2(p.dmg), p.r, p.life, type, p.cat]); }
+  function enemyShot(p, type) { emit(['es', r1(p.x), r1(p.y), r1(p.vx), r1(p.vy), r2(p.dmg), p.r, p.life, type, p.cat, p.enc || null]); }
   function pickupAdded(o) { emit(['pk', o.id, o.kind, r1(o.x), r1(o.y), o.value]); }
   function pickupGone(id) { emit(['pc', id]); }
   function say(text, secs) { emit(['say', text, secs]); }
@@ -669,7 +678,7 @@ G.Coop = (() => {
 
   return {
     ANIMS, COLORS, begin, end, leave, keeps, tick, players, puppets, xpFactor, scaleRate, scaleHp,
-    cast, hit, status, hurtShown, enemyAdded, enemyGone, enemyShot, pickupAdded, pickupGone, say,
+    cast, hit, status, hurtShown, bossPhase, targetBoss, enemyAdded, enemyGone, enemyShot, pickupAdded, pickupGone, say,
     propBroken, collected, shinyCaught, orbUsed, levelStart, localPicked, over, holdStart, holdEnd,
     /** Anfitrión: evento para todos. Invitado: evento para el anfitrión. */
     broadcast(ev) { emit(ev); },

@@ -10,7 +10,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>PokéSurvivor – Juego Pokémon gratis online estilo Survivor.io</title>
 <meta name="description" content="Sobrevive a hordas de Pokémon con tu compañero en este fan game gratis para navegador y móvil: 966 Pokémon, shinies, legendarios y cooperativo con amigos. Sin descargas ni anuncios.">
-
 <link rel="canonical" href="https://pokesurvivor.com/">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <meta name="theme-color" content="#0a1430">
@@ -31,7 +30,6 @@
 <meta name="twitter:description" content="Fan game gratis para navegador y móvil, con cooperativo hasta 4. Sin descargas ni anuncios.">
 <meta name="twitter:image" content="https://pokesurvivor.com/assets/og-image.jpg">
 <meta name="ps-pages" content="1">
-
 <link rel="manifest" href="manifest.webmanifest">
 <!-- Google sólo enseña en los resultados iconos de 48 px o múltiplos -->
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -46,7 +44,6 @@
 <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
 <link rel="preload" href="assets/fonts/PixelifyPS-400.ttf" as="font" type="font/ttf" crossorigin>
 <link rel="preload" href="assets/fonts/PixelifyPS-700.ttf" as="font" type="font/ttf" crossorigin>
-
 <!-- Datos estructurados para Google (tipo de página: videojuego gratuito) -->
 <script type="application/ld+json">
 {
@@ -80,14 +77,14 @@
   ]
 }
 </script>
-
-<link rel="stylesheet" href="css/style.css?v=892f5756ea">
+<link rel="stylesheet" href="css/style.css?v=649e0027c4">
 <script src="js/core/locales.js?v=6ffb0e101d"></script>
 <script src="js/noframe.js"></script>
 </head>
 <body>
 
 <canvas id="game"></canvas>
+<button id="boss-immortal" class="boss-immortal hidden" type="button" aria-pressed="false">Bất tử: Tắt</button>
 <!-- En móvil se juega en horizontal -->
 <div id="rotate" class="hidden"><div class="box center"><div id="rotate-ico"></div><h2>Gira el móvil</h2><p class="sub">PokéSurvivor se juega en horizontal.</p></div></div>
 
@@ -192,6 +189,7 @@
       <p id="menu-mode-hint" class="sub">Arceus a los 15 min de combate: menos cartas y mejoras más potentes. Las elecciones y la Sentencia añaden tiempo.</p>
       <div class="menu-list">
         <button class="menu-item play" data-go="play">Jugar<small>Entra en la mazmorra</small></button>
+        <button class="menu-item" data-go="boss-select">Chọn màn đấu<small>Các trận đấu trùm và dạng Pokémon</small></button>
         <button class="menu-item coop" data-go="coop">Multijugador<small id="menu-coop-sub">Crear sala o unirse</small></button>
         <button class="menu-item" data-go="dex">Pokémon<small id="menu-dex-count">Tu colección</small></button>
         <button class="menu-item" data-go="upgrades">Mejoras<small>Haz más fuerte cada run</small></button>
@@ -207,6 +205,17 @@
     <div class="box" style="padding:14px 18px">
       <div id="menu-stats" style="font-size:14px;color:var(--muted)"></div>
     </div>
+  </div>
+</section>
+
+<!-- ====== Desafíos de jefes (modo separado de supervivencia) ====== -->
+<section id="scr-boss-select" class="scr dim hidden">
+  <div class="box boss-select-box">
+    <div class="row between">
+      <div><h2>Chọn màn đấu</h2><p class="sub">Chế độ riềng · không ảnh hưởng lượt chơi hay tiến trình Arceus</p></div>
+      <button class="btn small ghost" data-back>Quay lại</button>
+    </div>
+    <div id="boss-stage-list" class="boss-stage-list"></div>
   </div>
 </section>
 
@@ -346,8 +355,7 @@
       <h1>PokéSurvivor</h1>
       <p>PokéSurvivor necesita JavaScript para funcionar. Actívalo para jugar.</p>
       <p>Fan game gratuito de supervivencia con 966 Pokémon de las 9 regiones: elige tu compañero, sobrevive a las hordas, evoluciona tus ataques, enfréntate a legendarios y juega en cooperativo con hasta 4 amigos.</p>
-      <p><a href="guia/">Guía del juego</a> · <a href="pokedex/">Pokédex: todos los Pokémon jugables</a></p>
-    </div>
+      <p><a href="guia/">Guía del juego</a> · <a href="pokedex/">Pokédex: todos los Pokémon jugables</a></p>    </div>
   </div>
 </noscript>
 
@@ -370,7 +378,7 @@
 <section id="scr-friends" class="scr dim hidden">
   <div class="box wide">
     <div class="row between"><h2>Amigos</h2>
-      <div class="row"><button id="fr-create-room" class="btn small gold">Crear sala</button><button id="fr-room" class="btn small gold hidden">Ir a la sala</button><button class="btn small ghost" data-back>Volver</button></div></div>
+      <div class="row"><button id="fr-create-room" class="btn small gold">Crear sala</button><button id="fr-room" class="btn small gold hidden">Ir a la sala</button><button class="btn small ghost" data-back>Quay lại</button></div></div>
     <p class="sub" id="fr-me"></p>
     <form id="fr-add" class="row" autocomplete="off">
       <input id="fr-name" class="field grow" maxlength="16" spellcheck="false" placeholder="Apodo de tu amigo">
@@ -418,7 +426,7 @@
 <!-- ====== Ranking ====== -->
 <section id="scr-rank" class="scr dim hidden">
   <div class="box wide">
-    <div class="row between"><h2>Ranking</h2><span class="row" style="gap:6px"><button id="rk-mod" class="btn small ghost hidden">Moderación</button><button class="btn small ghost" data-back>Volver</button></span></div>
+    <div class="row between"><h2>Ranking</h2><span class="row" style="gap:6px"><button id="rk-mod" class="btn small ghost hidden">Moderación</button><button class="btn small ghost" data-back>Quay lại</button></span></div>
     <div class="gen-tabs" id="rk-mode"></div>
     <div class="filters" id="rk-period"></div>
     <div class="row rk-tools">
@@ -449,7 +457,7 @@
 <!-- ====== Misiones, logros y perfil ====== -->
 <section id="scr-goals" class="scr dim hidden">
   <div class="box wide">
-    <div class="row between"><h2>Misiones</h2><button class="btn small ghost" data-back>Volver</button></div>
+    <div class="row between"><h2>Misiones</h2><button class="btn small ghost" data-back>Quay lại</button></div>
     <div class="tabs" id="goals-tabs">
       <div class="tab on" data-tab="missions">Misiones</div>
       <div class="tab" data-tab="ach">Logros</div>
@@ -479,7 +487,7 @@
 <!-- ====== Colección ====== -->
 <section id="scr-dex" class="scr dim hidden">
   <div class="box wide">
-    <div class="row between"><h2>Pokémon <span id="dex-total" class="sub" style="font-size:15px"></span></h2><button class="btn small ghost" data-back>Volver</button></div>
+    <div class="row between"><h2>Pokémon <span id="dex-total" class="sub" style="font-size:15px"></span></h2><button class="btn small ghost" data-back>Quay lại</button></div>
     <div class="gen-tabs" id="dex-gens"></div>
     <div class="split" style="margin-top:8px">
       <div>
@@ -512,7 +520,7 @@
     <div class="shop-inner">
       <div class="row between">
         <h2 style="margin:0">Tienda Kecleon</h2>
-        <button class="btn small ghost" data-back>Volver</button>
+        <button class="btn small ghost" data-back>Quay lại</button>
       </div>
       <p class="sub" style="margin:8px 0 0" id="shop-hello">¡Bienvenido! Mentas, Cápsulas y MT. Lo que compres va a tu Mochila (en el menú principal); úsalo desde la ficha de cada Pokémon en la colección.</p>
       <div id="shop-body"></div>
@@ -523,7 +531,7 @@
 <!-- ====== Mochila (desde el menú principal, sin entrar en la tienda) ====== -->
 <section id="scr-bag" class="scr dim hidden">
   <div class="box wide">
-    <div class="row between"><h2>Mochila</h2><button class="btn small ghost" data-back>Volver</button></div>
+    <div class="row between"><h2>Mochila</h2><button class="btn small ghost" data-back>Quay lại</button></div>
     <div id="bag-body"></div>
   </div>
 </section>
@@ -531,7 +539,7 @@
 <!-- ====== Mejoras ====== -->
 <section id="scr-upgrades" class="scr dim hidden">
   <div class="box wide">
-    <div class="row between"><h2>Mejoras</h2><button class="btn small ghost" data-back>Volver</button></div>
+    <div class="row between"><h2>Mejoras</h2><button class="btn small ghost" data-back>Quay lại</button></div>
     <div class="upg-head">
       <canvas id="upg-stage" class="stage" width="120" height="96"></canvas>
       <div class="grow">
@@ -549,7 +557,7 @@
 <!-- ====== Gacha ====== -->
 <section id="scr-gacha" class="scr dim hidden">
   <div class="box wide">
-    <div class="row between"><h2>Gacha</h2><button class="btn small ghost" data-back>Volver</button></div>
+    <div class="row between"><h2>Gacha</h2><button class="btn small ghost" data-back>Quay lại</button></div>
     <div class="gen-tabs" id="gacha-gens"></div>
     <div class="split" style="margin-top:8px">
       <div>
@@ -634,7 +642,6 @@
 </section>
 
 <!-- datos generados -->
-<script defer src="js/core/firebase-config.js"></script>
-<script defer src="js/app.min.js?v=3cf10a467f"></script>
+<script defer src="js/app.min.js?v=d6f13805cc"></script>
 </body>
 </html>

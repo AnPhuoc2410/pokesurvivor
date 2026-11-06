@@ -13,6 +13,7 @@ G.Projectiles = (() => {
   let nextId = 1;
 
   function clear() { list = []; }
+  function clearHostile() { list = list.filter(p => p.friendly || p.orb); }
   function all() { return list; }
 
   /** Proyectil del jugador. */
@@ -24,6 +25,8 @@ G.Projectiles = (() => {
       color: '#fff', homing: 0, slow: 0, burn: 0, poison: 0, knock: 0,
       orb: false, rehit: 0.34, hitLog: null, phits: null
     }, o);
+    // Story practice boosts friendly projectile damage without changing saved stats.
+    if (p.friendly && !p.ghost && G.Game && G.Game.storyTestMode) p.dmg *= 1.5;
     if (p.friendly && !p.orb && !p.phits) p.phits = new Set();
     list.push(p);
     return p;
@@ -53,6 +56,8 @@ G.Projectiles = (() => {
         continue;
       }
 
+      if (p.t >= p.life) { list.splice(i, 1); continue; }
+      G.StoryEncounters?.updateProjectile(p, dt);
       if (p.t >= p.life) { list.splice(i, 1); continue; }
 
       // Bumerán: a los `boom` segundos se da la vuelta (y puede volver a
@@ -88,7 +93,7 @@ G.Projectiles = (() => {
       p.y += p.vy * dt;
 
       // Fuera de la vista con margen generoso -> se descarta.
-      if (!G.Camera.sees(p.x, p.y, 260)) { list.splice(i, 1); continue; }
+      if (!(p.enc && G.StoryEncounters?.active) && !G.Camera.sees(p.x, p.y, 260)) { list.splice(i, 1); continue; }
     }
   }
 
@@ -123,6 +128,7 @@ G.Projectiles = (() => {
     }
     for (const p of list) {
       const v = p.vis || G.VFX.forType('normal');
+      if (G.StoryEncounters?.drawProjectile(ctx, p)) continue;
       const shape = v.proj;
       const a = p.orb ? 1 : Math.min(1, (p.life - p.t) * 4);
       let angle = 0;
@@ -135,6 +141,6 @@ G.Projectiles = (() => {
     }
   }
 
-  return { clear, all, spawn, spawnOrb, clearOrbs, update, remove, draw, nearest,
+  return { clear, clearHostile, all, spawn, spawnOrb, clearOrbs, update, remove, draw, nearest,
            get count() { return list.length; } };
 })();

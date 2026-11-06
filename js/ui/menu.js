@@ -14,13 +14,15 @@ G.MenuUI = (() => {
       localStorage.setItem('ps.hurryMode', $('menu-mode').value);
       $('menu-mode-hint').classList.toggle('hidden', $('menu-mode').value !== '1');
     };
-    const ICON = { play: 'ball', coop: 'friends', dex: 'book', upgrades: 'up', shop: 'shop', bag: 'bag', gacha: 'ball4', goals: 'medal3', friends: 'friends', rank: 'trophy', settings: 'gear' };
+    const ICON = { play: 'ball', 'boss-select': 'swords', story: 'star', coop: 'friends', dex: 'book', upgrades: 'up', shop: 'shop', bag: 'bag', gacha: 'ball4', goals: 'medal3', friends: 'friends', rank: 'trophy', settings: 'gear' };
     document.querySelectorAll('#scr-menu [data-go]').forEach(b => {
       b.insertAdjacentHTML('afterbegin', `<span class="mi-ico">${G.Icons.html(ICON[b.dataset.go], 26)}</span>`);
-      b.dataset.sfx = b.dataset.go === 'play' || b.dataset.go === 'coop' ? 'confirm' : 'click';
+      b.dataset.sfx = ['play', 'story', 'coop', 'boss-select'].includes(b.dataset.go) ? 'confirm' : 'click';
       b.onclick = () => {
         const go = b.dataset.go;
         if (go === 'play') { if (G.Social.room) G.LobbyUI.open(); else G.Flow.play(); }
+        else if (go === 'boss-select') openBossStages();
+        else if (go === 'story') G.Flow.storyTest();
         else if (go === 'coop') G.LobbyUI.openOrCreate();
         else if (go === 'dex') openDex();
         else if (go === 'upgrades') openUpgrades();
@@ -40,6 +42,39 @@ G.MenuUI = (() => {
       G.Audio.music(null);
       G.DB.logout().then(() => G.Flow.toLogin());
     };
+  }
+
+  function openBossStages() {
+    const list = $('boss-stage-list');
+    const stages = G.Rift.challengeStages();
+    const viLabels = { forms: 'ĐỔI DẠNG', duo: 'BỘ ĐÔI', trio: 'BỘ BA', squad: 'ĐỘI / NHIỀU ĐỢT' };
+    list.innerHTML = stages.map(stage => {
+      const names = stage.dexes.map(dex => G.DEX_BY[dex]?.name || `#${dex}`).join(' · ');
+      const missing = stage.dexes.filter(dex => !G.SPRITE_META[dex]);
+      const disabled = !stage.available || missing.length > 0;
+      const note = disabled ? (stage.reason || 'Thiếu sprite cần thiết') : stage.description;
+      return `<button class="boss-stage ${disabled ? 'disabled' : ''}" data-stage="${stage.id}" ${disabled ? 'disabled' : ''}>
+        <span class="boss-stage-kind">${viLabels[stage.kind] || 'MÀN ĐẤU'}</span>
+        <b>${stage.title}</b><small>${names}</small><span class="sub">${note}</span>
+      </button>`;
+    }).join('');
+    stages.forEach(stage => {
+      const card = list.querySelector('[data-stage="' + stage.id + '"]');
+      if (!card) return;
+      const roster = document.createElement('span');
+      roster.className = 'boss-stage-roster';
+      const forms = stage.previewForms || stage.dexes.map(dex => G.DEX_BY[dex]?.name || '#' + dex);
+      forms.forEach((name, i) => {
+        const mon = document.createElement('span'); mon.className = 'boss-stage-mon';
+        mon.appendChild(G.UI.spriteCanvas(stage.dexes[stage.previewForms ? 0 : i], 52, 48, { scale: 1.3 }));
+        const caption = document.createElement('em'); caption.textContent = name; mon.appendChild(caption); roster.appendChild(mon);
+      });
+      card.querySelector('b').after(roster);
+    });
+    list.querySelectorAll('[data-stage]:not(:disabled)').forEach(button => {
+      button.onclick = () => G.Flow.bossChallenge(button.dataset.stage);
+    });
+    G.UI.show('scr-boss-select', true);
   }
 
   // ---------------- menú principal ----------------
@@ -721,5 +756,5 @@ G.MenuUI = (() => {
     return el;
   }
 
-  return { init, open, openDex, GEN_NAMES };
+  return { init, open, openDex, openBossStages, GEN_NAMES };
 })();

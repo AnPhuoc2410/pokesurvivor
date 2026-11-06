@@ -5,6 +5,7 @@ Baja una sola vez los datos de PokeAPI y los deja en js/data/pokedex.js.
 A partir de ahi el juego no toca internet: todo es local.
 
     python tools/fetch_pokedex.py
+    python tools/fetch_pokedex.py --dexes 837,870,878
 
 Trae nombre en espanol, tipos, stats base y altura, y de ahi deriva los stats
 del juego y la rareza para el gacha.
@@ -12,6 +13,8 @@ del juego y la rareza para el gacha.
 import io
 import json
 import os
+import re
+import sys
 import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
@@ -34,12 +37,20 @@ def gen_of(dex):
 
 
 def dexes_with_sprites():
-    """Sólo los que tienen sprite de Mundo Misterioso (según SpriteCollab)."""
+    """Return species with required sprites at the root or in a subgroup."""
     url = 'https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/tracker.json'
     req = urllib.request.Request(url, headers={'User-Agent': 'pokesurvivor/1.0'})
     t = json.load(urllib.request.urlopen(req, timeout=120))
     need = {'Idle', 'Walk', 'Attack'}
-    return [d for d in range(1, 1026) if need <= set(t.get(f'{d:04d}', {}).get('sprite_files', {}))]
+    dexes = []
+    for d in range(1, 1026):
+        entry = t.get(f'{d:04d}', {})
+        has_root = need <= set(entry.get('sprite_files', {}))
+        has_subgroup = any(need <= set(group.get('sprite_files', {}))
+                           for group in entry.get('subgroups', {}).values())
+        if has_root or has_subgroup:
+            dexes.append(d)
+    return dexes
 
 
 def get(url, retries=3):
@@ -114,7 +125,8 @@ def one(dex):
 
 
 def main():
-    DEXES = dexes_with_sprites()
+    targeted = len(sys.argv) > 2 and sys.argv[1] == '--dexes'
+    DEXES = sorted({int(value) for value in sys.argv[2].split(',') if value.strip()}) if targeted else dexes_with_sprites()
     print(f'Bajando {len(DEXES)} Pokemon de PokeAPI...')
     rows = []
     with ThreadPoolExecutor(max_workers=10) as ex:
@@ -125,6 +137,17 @@ def main():
                 print(f'  {i}/{len(DEXES)}')
 
     rows.sort(key=lambda r: r['dex'])
+
+    if targeted and os.path.exists(OUT):
+        existing = {}
+        with io.open(OUT, 'r', encoding='utf-8') as f:
+            for line in f:
+                match = re.match(r'\s*(\{.*\}),?\s*$', line)
+                if match:
+                    row = json.loads(match.group(1))
+                    existing[row['dex']] = row
+        existing.update({row['dex']: row for row in rows})
+        rows = [existing[dex] for dex in sorted(existing)]
 
     lines = [
         '/* ============ pokedex.js — GENERADO, no editar a mano ============',
@@ -146,7 +169,7 @@ def main():
             'rarity': r['rarity'], 'bst': r['bst'],
             'starter': r['starter'], 'gen': r['gen'],
         }
-        if r['leg']:
+        if r.get('leg'):
             o['leg'] = True
         lines.append('  ' + json.dumps(o, ensure_ascii=False, separators=(',', ':')) + ',')
     lines += [

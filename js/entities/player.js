@@ -120,7 +120,7 @@ G.Player = class Player {
    */
   atkFor(m) {
     const cat = m && m.cat, b = cat === 'physical' ? this.buffs.patk : cat === 'special' ? this.buffs.satk : null;
-    return this.atk * G.Stats.fit(this.mon, cat) * (b ? 1 + b.n * b.amount : 1) * (m && this.monoType(m.type) ? Player.MONO_K : 1);
+    return this.atk * G.Stats.fit(this.mon, cat) * (b ? 1 + b.n * b.amount : 1) * (m && this.monoType(m.type) ? Player.MONO_K : 1) * (G.StoryEncounters?.effects(this).damage ?? 1);
   }
   /** Monotipo (19-10-2026): los de un solo tipo pegan un +20 % con los ataques de su tipo (tienen menos variedad). */
   static get MONO_K() { return 1.2; }
@@ -131,7 +131,7 @@ G.Player = class Player {
     const s = this.baseSpd * this.spdMul * (1 + this.buffs.spd.n * this.buffs.spd.amount) * (stuck ? 0.5 : 1) * (ab.speed ? ab.speed(this) : 1);
     const w = G.Weather.speedFor(this.mon.types);
     const slow = this.inLiquid && !ab.steady ? G.World.liquidEffect(this.mon.types).slow || 1 : 1;
-    return G.Judgment && G.Judgment.active ? G.Judgment.capSpd(s * slow * w) : s * slow * w;
+    return (G.Judgment && G.Judgment.active ? G.Judgment.capSpd(s * slow * w) : s * slow * w) * (G.StoryEncounters?.effects(this).speed ?? 1);
   }
   get reduction() { return Math.min(0.8, this.dmgReduce + this.itemReduce + this.buffs.def.n * this.buffs.def.amount); }
   get regen() { return this.regenFlat + this.buffs.regen.n * this.buffs.regen.amount; }
@@ -284,6 +284,7 @@ G.Player = class Player {
    */
   /** @param cat  'physical' | 'special': con qué defensa tuya se para (la del enemigo que pega). */
   hurt(amount, type = null, pure = false, cat = null) {
+    if (G.Game && ((G.Game.storyTestMode && !G.Game.bossChallengeMode) || G.Game.bossChallengeInvincible)) return;
     if (this.invuln > 0 || this.dead) return;
     // Habilidad (data/ability-fx.js): absorber un tipo, esquivar o recibir menos.
     const ab = this.abil, cls = cat === 'physical' ? 'p' : cat === 'special' ? 's' : '';
@@ -343,6 +344,7 @@ G.Player = class Player {
   }
 
   heal(amount) {
+    if (G.StoryEncounters?.effects(this).noHeal) return;
     if (this.abil && this.abil.healMul) amount *= this.abil.healMul;     // Gula, Recogida
     const before = this.hp;
     this.hp = Math.min(this.maxHp, this.hp + amount);
@@ -405,6 +407,7 @@ G.Player = class Player {
   update(dt) {
     this.anim.update(dt);
     if (this.dead) return;
+    const encounterFx = G.StoryEncounters?.effects(this) || {};
     if (this.invuln > 0) this.invuln -= dt;
     if (this.flash > 0) this.flash -= dt;
     if (this.attackFace > 0) this.attackFace -= dt;
@@ -414,9 +417,9 @@ G.Player = class Player {
       if (b.n > 0) { b.t -= dt; if (b.t <= 0) b.n = 0; }
     }
     if (this.slowT > 0) this.slowT -= dt;
-    if (this.bellHeal > 0) { const h = Math.min(this.bellHeal, 4 * dt); this.hp = Math.min(this.maxHp, this.hp + h); this.bellHeal -= h; }
+    if (this.bellHeal > 0 && !encounterFx.noHeal) { const h = Math.min(this.bellHeal, 4 * dt); this.hp = Math.min(this.maxHp, this.hp + h); this.bellHeal -= h; }
     if (this.power && (this.power.t -= dt) <= 0) { this.power.def.off(this); this.power = null; }
-    if (this.regen > 0) this.hp = Math.min(this.maxHp, this.hp + this.regen * dt);
+    if (this.regen > 0 && !encounterFx.noHeal) this.hp = Math.min(this.maxHp, this.hp + this.regen * dt);
     if (this.abil && this.abil.tick) this.abil.tick(this, dt);
     // Sequía, Llovizna...: su clima al empezar y cada 3 min, si no hay otro. En
     // grupo lo pone el anfitrión, que es quien manda el clima a todos: el de un
@@ -431,11 +434,12 @@ G.Player = class Player {
 
     // --- movimiento con colisiones ---
     // (En cooperativo la pausa no para el juego: sólo te quedas quieto.)
-    const [ax, ay] = this.frozen ? [0, 0] : G.Input.axis();
+    let [ax, ay] = this.frozen ? [0, 0] : G.Input.axis();
+    if (encounterFx.confused) { ax = -ax; ay = -ay; }
     this.walking = ax !== 0 || ay !== 0;
     const s = this.spd;
     // Hielo: resbalas (la velocidad cambia despacio).
-    const slide = this.inLiquid && G.World.liquidEffect(this.mon.types).slide;
+    const slide = encounterFx.slide || (this.inLiquid && G.World.liquidEffect(this.mon.types).slide);
     this.svx = slide ? G.U.damp(this.svx || 0, ax * s * 1.15, 1.6, dt) : ax * s;
     this.svy = slide ? G.U.damp(this.svy || 0, ay * s * 1.15, 1.6, dt) : ay * s;
     this.x += this.svx * dt;

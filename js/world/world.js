@@ -662,6 +662,7 @@ G.World = (() => {
       arena = a;
       if (!a) return;
       a.th = G.Tiles.ARENA_THEMES[a.type] || G.Tiles.ARENA_THEMES.normal;
+      if (a.clearFloor) a.th = Object.assign({}, a.th, { pillars: 0, pools: 0, props: {} });
       // Olvida los chunks de esa zona (si se hubieran generado antes).
       const R = a.r + 9;
       for (const k of [...data.keys(), ...images.keys()]) {

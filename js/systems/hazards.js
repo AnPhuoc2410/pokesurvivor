@@ -17,11 +17,11 @@ G.Hazards = (() => {
   /** h: { kind, x, y, r | angle, len, w, delay, dmg, type, color, pct?, pure?, vis? } */
   function add(h, fromNet = false) {
     const o = Object.assign({ t: 0, hit: false, end: 0.3 }, h);
-    list.push(o);
+      list.push(o);
     if (!fromNet && G.Coop.isHost) {
       G.Coop.broadcast(['hz', { kind: o.kind, x: Math.round(o.x), y: Math.round(o.y), r: o.r, angle: o.angle, len: o.len, w: o.w,
                                 delay: o.delay, dmg: Math.round(o.dmg), type: o.type, color: o.color, pct: o.pct, pure: o.pure, vis: o.vis, cat: o.cat,
-                                boom: o.boom ? 1 : 0 }]);
+                                boom: o.boom ? 1 : 0, telegraph: o.telegraph !== false, enc: !!o.enc, end: o.end }]);
     }
     return o;
   }
@@ -66,9 +66,19 @@ G.Hazards = (() => {
     } else if (h.kind === 'zone') {
       G.FX.ring(h.x, h.y, 4, h.r, h.color, 0.35, 5);
       G.FX.burst(h.x, h.y - 6, h.color, Math.round(h.r / 3), 160);
+      if (h.enc) {
+        G.FX.ring(h.x, h.y, h.r * 0.25, h.r, '#e5fbff', 0.65, 7);
+        G.FX.sp('impact', G.VFX.forType(h.type).pal, h.x, h.y - 18, {life:0.55,scale:3});
+        for (let i=0;i<6;i++) {
+          const a=i*Math.PI/3;
+          G.FX.px(h.x+Math.cos(a)*h.r*0.5,h.y+Math.sin(a)*h.r*0.5,h.color,{vy:-95,grav:120,life:0.8,size:3});
+        }
+      }
       if (near) { G.Audio.sfx('break'); if (h.r > 60) G.Camera.kick(0.35); }
     } else {
-      G.FX.beam(h.x, h.y - G.LIFT, h.angle, h.len, h.w, h.color, G.VFX.forType(h.type || (h.pure ? 'electric' : 'normal')));
+      const visual = G.VFX.forType(h.type || (h.pure ? 'electric' : 'normal'));
+      if (h.enc) visual.life = 0.45;
+      G.FX.beam(h.x, h.y - G.LIFT, h.angle, h.len, h.w, h.color, visual);
       if (near) G.Audio.sfx('shot', { kind: 'beam', type: h.type });
     }
   }
@@ -77,7 +87,7 @@ G.Hazards = (() => {
   function draw(ctx) {
     const blink = Math.sin(performance.now() / 60) > 0;
     for (const h of list) {
-      if (h.hit) continue;
+      if (h.hit || h.telegraph === false) continue;
       const k = Math.min(1, h.t / h.delay);
       ctx.save();
       if (h.kind === 'zone') {
