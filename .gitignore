@@ -24,3 +24,4 @@ docs/CONTACTOS_CREADORES.md
 
 #Ignore firebase
 js/core/firebase-config.js
+/firebase-config.js
