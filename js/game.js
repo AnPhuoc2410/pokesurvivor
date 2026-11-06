@@ -19,6 +19,9 @@ G.Game = (() => {
   let state = 'ui';
   let realTime = 0, matchTime = 0, last = 0, pendingLevels = 0;
   let hurryMode = false;
+  let storyTestMode = false;
+  let bossChallengeMode = false;
+  let bossChallengeInvincible = false;
   let pl = null;
   let caught = [];          // shinies conseguidos en esta run
   let biome = -1;
@@ -34,6 +37,8 @@ G.Game = (() => {
 
   function init() {
     cv = document.getElementById('game');
+    const immortalButton = document.getElementById('boss-immortal');
+    if (immortalButton) immortalButton.onclick = toggleBossChallengeInvincibility;
     ctx = cv.getContext('2d');
     resize();
     addEventListener('resize', resizeSoon);
@@ -114,7 +119,7 @@ G.Game = (() => {
     if (state !== 'ui') {
       // En partida: pausa (en grupo abre la pausa sin parar a los demás). Con las
       // cartas, la pausa o el resumen abiertos, no pasa nada: te quedas donde estás.
-      if (state === 'playing' && !G.Judgment.cinematic && !G.UI.isOpen('scr-pause')) togglePause();
+      if (state === 'playing' && !G.Judgment.cinematic && !G.Rift.cinematic && !G.UI.isOpen('scr-pause')) togglePause();
       return;
     }
     if (shown('pull-fx')) return;                                  // la tirada del gacha
@@ -163,7 +168,7 @@ G.Game = (() => {
   // ---------------- run ----------------
 
   /** @param coop  { seed, host, members } para una partida en grupo */
-  function startRun(coop = null) {
+  function startRun(coop = null, options = {}) {
     holdBy = []; awayBy = null;
     // Halloween (systems/halloween.js): lo que sea al empezar vale toda la partida (en grupo, lo dice el anfitrión).
     G.Halloween.runStart(coop ? coop.hw : undefined);
@@ -190,6 +195,11 @@ G.Game = (() => {
     G.World.setBiome(G.Tiles.runBiome(0), true);
     biome = 0;
     realTime = 0; matchTime = 0; pendingLevels = 0;
+    storyTestMode = false;
+    bossChallengeMode = !!options.bossChallenge;
+    bossChallengeInvincible = false;
+    const immortalButton = typeof document === 'undefined' ? null : document.getElementById('boss-immortal');
+    if (immortalButton) { immortalButton.classList.add('hidden'); immortalButton.classList.remove('on'); immortalButton.textContent = 'Bất tử: Tắt'; immortalButton.setAttribute('aria-pressed', 'false'); }
     hurryMode = coop ? !!coop.hurry : (typeof localStorage !== 'undefined' && localStorage.getItem('ps.hurryMode') !== '0');
     runReal = performance.now(); tampered = false;
 
@@ -225,16 +235,55 @@ G.Game = (() => {
     G.Sprites.preload([mon.dex], 8000, pl.shiny, pl.anim.skin || '');
     G.Audio.music(G.BIOME_MUSIC[0]);
     // Ranking: sube las marcas del histórico que estaban esperando (ver DEFER en ranking.js).
-    G.Ranking.newSeal();          // el sello del ranking de esta partida (también el invitado)
-    if (!coop || G.Coop.isHost) G.Ranking.runStarted();
+    if (!bossChallengeMode) {
+      G.Ranking.newSeal();          // el sello del ranking de esta partida (también el invitado)
+      if (!coop || G.Coop.isHost) G.Ranking.runStarted();
+    }
     deathT = 0;
 
     state = 'playing';
   }
 
   function quitRun() {
+    if (bossChallengeMode) { exitBossChallenge(); return; }
     if (G.Coop.active) G.Coop.leave();
     endRun(false);
+  }
+
+  function startBossChallenge(stageId) {
+    if (state !== 'ui' || !G.DB.save.partner || G.Coop.active) return;
+    startRun(null, { bossChallenge: true });
+    document.getElementById('boss-immortal')?.classList.remove('hidden');
+    tampered = true;
+    if (!G.Rift.startChallenge(stageId)) exitBossChallenge();
+  }
+
+  function exitBossChallenge() {
+    if (!bossChallengeMode) return;
+    bossChallengeMode = false;
+    bossChallengeInvincible = false;
+    document.getElementById('boss-immortal')?.classList.add('hidden');
+    storyTestMode = false;
+    G.UI.hideAll();
+    G.UI.chrome(true);
+    G.Rift.reset(); G.Hazards.clear(); G.Weather.clear(); G.Orbs.reset();
+    G.Game.toUI();
+    G.Audio.music('village');
+    G.MenuUI.openBossStages();
+  }
+
+  function toggleBossChallengeInvincibility() {
+    if (!bossChallengeMode) return;
+    bossChallengeInvincible = !bossChallengeInvincible;
+    const button = document.getElementById('boss-immortal');
+    if (button) {
+      button.classList.toggle('on', bossChallengeInvincible);
+      button.textContent = 'Bất tử: ' + (bossChallengeInvincible ? 'Bật' : 'Tắt');
+      button.setAttribute('aria-pressed', String(bossChallengeInvincible));
+    }
+    if (bossChallengeInvincible && pl) { pl.revive(1); pl.hp = pl.maxHp; }
+    G.Audio.sfx('click');
+    G.Spawner.say(bossChallengeInvincible ? 'Đã bật bất tử.' : 'Đã tắt bất tử.', 1.5, true);
   }
 
   /** Todos los jugadores de la partida (tú primero). */
@@ -398,6 +447,7 @@ G.Game = (() => {
   };
 
   function endRun(dead = true) {
+    if (bossChallengeMode) { exitBossChallenge(); return; }
     if (state === 'over' || !pl) return;
     const coop = !!pl.uid;                    // sólo las partidas en grupo le ponen uid
     const wasHost = !!pl.coopHost;
@@ -666,6 +716,7 @@ G.Game = (() => {
       if (['space', 'enter', 'escape'].some(k => G.Input.tap(k))) G.Judgment.skip();
       return;
     }
+    if (G.Rift.cinematic && state === 'playing') return;
     if (state === 'levelup') {
       for (let i = 0; i < 3; i++) {
         if (G.Input.tap('digit' + (i + 1)) || G.Input.tap('numpad' + (i + 1))) G.RunUI.pick(i);
@@ -708,7 +759,8 @@ G.Game = (() => {
         }
       }
     }
-    if (['keyj', 'j', 'keyy', 'y'].some(k => G.Input.tap(k))) {
+    if (G.Rift.lockAutoSwap) { pl.autoSwap = false; pl.autoSwapTimer = 0; }
+    if (!G.Rift.lockAutoSwap && ['keyj', 'j', 'keyy', 'y'].some(k => G.Input.tap(k))) {
       pl.toggleAutoSwap();
     }
     // Debug Time Warp (Shift + T): tua nhanh 60s trận đấu trên localhost/dev
@@ -723,6 +775,7 @@ G.Game = (() => {
     }
     // Caído en grupo: Q / E cambian a quién miras.
     if (pl.dead) { if (G.Input.tap('keyq')) cycleWatch(-1); if (G.Input.tap('keye') || G.Input.tap('tab')) cycleWatch(1); return; }
+    if (G.Rift.duelStance && G.Input.tap('keyf')) G.Rift.cycleStoryTarget(1);
     if (G.Input.tap('keyq')) pl.cycle(-1);
     if (G.Input.tap('keye') || G.Input.tap('tab')) pl.cycle(1);
     // Esferas: 5-8 (o el teclado numérico); en el mando, X la usa e Y cambia de esfera.
@@ -806,6 +859,15 @@ G.Game = (() => {
   function update(dt) {
     const coop = G.Coop.active;
     if (flashT > 0) flashT -= dt;
+    if (G.Rift.cinematic) {
+      G.Rift.cineTick(dt);
+      pl.anim.update(dt);
+      if (coop) for (const p of G.Coop.puppets()) p.netUpdate(dt);
+      G.World.update(dt, G.Camera);
+      G.FX.update(dt);
+      G.Audio.music('rift');
+      return;
+    }
     // La Sentencia de Arceus: mientras dura la animación, todo lo demás se para.
     if (G.Judgment.cinematic) {
       G.Judgment.cineTick(dt);
@@ -830,7 +892,8 @@ G.Game = (() => {
     realTime += dt;
     // Hurry mode: TIME_SCALE = 2 trước khi Arceus giáng thế; khi vào Judgment thì TIME_SCALE = 1
     const timeScale = st.timeScale;
-    matchTime += dt * timeScale;
+    // Story Rift time is separate from the outer run clock and Judgment timer.
+    if (!G.Rift.pauseRunClock) matchTime += dt * timeScale;
 
     const b = Math.floor(matchTime / 240);
     if (b !== biome && !G.Rift.inArena && !G.Judgment.active) {
@@ -841,8 +904,16 @@ G.Game = (() => {
       G.FX.ring(pl.x, pl.y, 10, G.Camera.outerRadius(), '#ffffff', 0.7, 6);
     }
 
+    G.StoryEncounters?.update(dt);
     pl.frozen = coop && (G.UI.isOpen('scr-pause') || G.UI.isOpen('scr-item'));
     pl.update(dt);
+    if (G.Rift.duelStance) {
+      const target = G.EnemyMgr.get(G.Rift.targetBossId);
+      if (target && !target.dead) {
+        pl.target = target;
+        pl.aim = Math.atan2(target.y - pl.y, target.x - pl.x);
+      }
+    }
     G.Orbs.update(dt, pl);
     if (coop) {
       for (const p of G.Coop.puppets()) { p.netUpdate(dt); G.Combat.ghostOrbit(p, dt, realTime); }
@@ -865,6 +936,7 @@ G.Game = (() => {
     G.Hazards.update(dt);
     G.Interact.update(dt, pl);
     G.Rift.update(dt, pl, matchTime);
+    if (state === 'ui') return;
     G.Judgment.update(dt, pl, matchTime);
     G.Events.update(dt, all, matchTime);
     G.Weather.update(dt, matchTime, pl);
@@ -900,6 +972,7 @@ G.Game = (() => {
     const t = performance.now() / 1000;
     G.World.drawGround(ctx, cam);
     G.World.drawLiquid(ctx, cam, t);
+    G.StoryEncounters?.drawGround(ctx);
     G.Hazards.draw(ctx);
     G.Combat.drawGroundFields(ctx);
     G.Pickups.draw(ctx);
@@ -975,8 +1048,10 @@ G.Game = (() => {
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, w, h);
     }
+    G.StoryEncounters?.drawOverlay(ctx, w, h);
     if (!G.Judgment.cinematic) G.HUD.draw(ctx, w, h, pl, st);
     G.Judgment.drawOverlay(ctx, w, h);
+    G.Rift.drawOverlay(ctx, w, h);
     G.Touch.draw(ctx);
     drawAimMark();
     if (G.Settings.get('fps')) {
@@ -1096,6 +1171,14 @@ G.Game = (() => {
 
   return {
     init, startRun, everyone, levelXp, flash, offerBond,
+    startStoryTest() {
+      startBossChallenge('weather');
+      if (bossChallengeMode) { storyTestMode = true; if (!bossChallengeInvincible) toggleBossChallengeInvincibility(); }
+    },
+    startBossChallenge, exitBossChallenge,
+    get bossChallengeMode() { return bossChallengeMode; },
+    get bossChallengeInvincible() { return bossChallengeMode && bossChallengeInvincible; },
+    get storyTestMode() { return storyTestMode; },
     /** Para pruebas: salta el reloj de la run. */
     debugTime(t) { tampered = true; matchTime = t; realTime = t / st.timeScale; },
     get hurryMode() { return hurryMode; },
@@ -1184,6 +1267,8 @@ G.Flow = {
     } else this.goMenu();
   },
   play() { G.Game.startRun(); },
+  storyTest() { G.Game.startStoryTest(); },
+  bossChallenge(stageId) { G.Game.startBossChallenge(stageId); },
   /** Empieza la partida en grupo (el anfitrión la manda a todos). */
   startCoop(cfg) {
     if (G.Game.state !== 'ui' || !G.Social.room) return;

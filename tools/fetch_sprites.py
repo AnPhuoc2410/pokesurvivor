@@ -6,6 +6,7 @@ a assets/pokemon/ y genera js/data/sprites-meta.js.
 
     python tools/fetch_sprites.py            # todos los que existan (1-1025)
     python tools/fetch_sprites.py 1 151      # sólo un rango de la Pokédex
+    python tools/fetch_sprites.py --dexes 837,870,878
 
 Se puede interrumpir y relanzar: lo ya bajado se reutiliza (tools/cache/).
 
@@ -215,15 +216,22 @@ def do_dex(job):
 
 
 def main():
-    lo = int(sys.argv[1]) if len(sys.argv) > 1 else 1
-    hi = int(sys.argv[2]) if len(sys.argv) > 2 else 1025
+    if len(sys.argv) > 2 and sys.argv[1] == '--dexes':
+        requested = sorted({int(value) for value in sys.argv[2].split(',') if value.strip()})
+    else:
+        lo = int(sys.argv[1]) if len(sys.argv) > 1 else 1
+        hi = int(sys.argv[2]) if len(sys.argv) > 2 else 1025
+        requested = range(lo, hi + 1)
+    if not requested:
+        raise SystemExit('No Pokédex IDs provided.')
+    lo, hi = min(requested), max(requested)
     os.makedirs(OUT_ASSETS, exist_ok=True)
     os.makedirs(CACHE, exist_ok=True)
 
     print('Leyendo tracker.json de SpriteCollab...')
     tracker = json.loads(fetch(RAW + '/tracker.json').decode('utf-8'))
     jobs = []
-    for dex in range(lo, hi + 1):
+    for dex in requested:
         tag = f'{dex:04d}'
         e = tracker.get(tag)
         if not e:
@@ -271,8 +279,11 @@ def main():
                 content = f.read()
             for m in re.finditer(r'^\s*(\d+):\s*(\{.*\}),\s*$', content, re.MULTILINE):
                 d = int(m.group(1))
+                old = json.loads(m.group(2))
                 if d not in metas:
-                    metas[d] = json.loads(m.group(2))
+                    metas[d] = old
+                elif old.get('f'):
+                    metas[d].setdefault('f', {}).update(old['f'])
         except Exception as e:
             print(f'Warning khi đọc sprites-meta.js: {e}')
 

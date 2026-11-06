@@ -54,6 +54,16 @@
       this.name = (G.DEX_BY[def.dex] && G.DEX_BY[def.dex].name) || def.name;
       this.x = x; this.y = y;
       this.boss = boss;
+      this.storyBoss = false;
+      this.challengeBoss = false;
+      this.challengePhase2 = false;
+      this.storyPhase = 1;
+      this.spriteForm = '';
+      this.phaseInvuln = 0;
+      this.transformT = 0;
+      this.transformForm = '';
+      this.transformChanged = false;
+      this.transformFxT = 0;
       this.scale = boss ? bossScale(def.dex) : 1;
       this.anim = new G.Sprites.Animator(def.dex, this.scale);
       this.r = G.Sprites.bodyRadius(def.dex, this.scale);
@@ -108,6 +118,66 @@
 
     cy() { return this.y; }
 
+    setStoryForm(form) {
+      if (this.spriteForm === form || (form && !G.SPRITE_META[this.dex]?.f?.[form])) return;
+      this.spriteForm = form;
+      const old = this.anim;
+      this.anim = new G.Sprites.Animator(this.dex, this.scale, this.shiny, form);
+      this.anim.dir = old.dir;
+      this.anim.skin = old.skin;
+      this.r = G.Sprites.bodyRadius(this.dex, this.scale, form);
+      this.bodyH = G.Sprites.bodyHeight(this.dex, this.scale, form);
+      for (const anim of G.Sprites.ANIMS) G.Sprites.sheet(this.dex, anim, this.shiny, '', form);
+    }
+
+    startStoryTransformation(form) {
+      this.transformT = 2;
+      this.transformForm = form;
+      this.transformChanged = false;
+      this.transformFxT = 0;
+      this.phaseInvuln = 2;
+      G.FX.ring(this.x, this.y, this.r * 0.7, this.r * 4.5, '#d8f5ff', 1.9, 12);
+      G.FX.burst(this.x, this.y - this.bodyH * 0.5, '#e6fbff', 44, 240);
+      G.FX.burst(this.x, this.y - this.bodyH * 0.5, '#72dfff', 28, 190);
+      G.Camera.kick(0.9);
+    }
+
+    startChallengeTransformation() {
+      this.transformT = 2;
+      this.transformForm = '';
+      this.transformChanged = false;
+      this.transformFxT = 0;
+      this.phaseInvuln = 2;
+      G.FX.ring(this.x, this.y, this.r * 0.7, this.r * 4.5, '#ffe879', 1.9, 12);
+      G.FX.burst(this.x, this.y - this.bodyH * 0.5, '#fff6c8', 48, 250);
+      G.FX.burst(this.x, this.y - this.bodyH * 0.5, '#ff9c42', 30, 190);
+      G.Camera.kick(1);
+    }
+
+    updateStoryTransformation(dt) {
+      if (this.transformT <= 0) return;
+      const previous = this.transformT;
+      this.transformT = Math.max(0, this.transformT - dt);
+      if (!this.transformChanged && previous > 1 && this.transformT <= 1) {
+        this.setStoryForm(this.transformForm);
+        this.transformChanged = true;
+        G.FX.ring(this.x, this.y, this.r, this.r * 6, '#ffffff', 0.45, 10);
+        G.FX.burst(this.x, this.y - this.bodyH * 0.5, '#ffffff', 50, 300);
+      }
+      this.transformFxT -= dt;
+      if (this.transformFxT <= 0 && G.Camera.sees(this.x, this.y, 120)) {
+        this.transformFxT = 0.16;
+        const color = this.transformChanged ? '#67dfff' : '#fff6b0';
+        G.FX.twinkle(this.x + G.U.rand(-this.r, this.r), this.y - G.U.rand(4, this.bodyH));
+        G.FX.spark(this.x, this.y - this.bodyH * 0.5, color, G.U.rand(-1, 1), G.U.rand(-1, 1), 7);
+      }
+      if (this.transformT === 0) {
+        G.FX.ring(this.x, this.y, this.r * 0.6, this.r * 5.5, '#72dfff', 0.55, 8);
+        G.FX.burst(this.x, this.y - this.bodyH * 0.5, '#72dfff', 36, 230);
+        this.transformForm = '';
+      }
+    }
+
     /** Lo convierte en shiny: otro sprite, más aguante y mucha más XP. */
     makeShiny() {
       this.shiny = true;
@@ -127,6 +197,9 @@
     /** @param eff  'super' | 'weak' | null (tabla de tipos, sólo para enseñarlo) */
     hurt(amount, color = '#fff', dirX = 0, dirY = 0, knock = 0, eff = null) {
       if (this.dead) return;
+      if (this.phaseInvuln > 0) return;
+      if (G.StoryEncounters?.hidden(this)) return;
+      amount *= G.BossForms?.damageTaken(this) ?? 1;
       const d = Math.max(1, Math.round(amount));
       // Arceus en la Sentencia: no cae nunca; el golpe suma a su cuenta de daño
       // (la lleva quien manda: el invitado se lo manda al anfitrión).
@@ -161,7 +234,25 @@
         this.ky += ny * knock;
       }
       if (G.Coop.isHost) G.Coop.hurtShown(this, d, color);
-      if (this.hp <= 0) this.die();
+      if (this.hp <= 0 && this.challengeBoss && !this.challengePhase2) {
+        this.challengePhase2 = true;
+        this.storyPhase = 2;
+        this.hp = this.maxHp;
+        if (!G.BossForms?.onBarBreak(this)) this.startChallengeTransformation();
+        this.spd *= 1.25;
+        this.dmg *= 1.3;
+        G.Spawner.say('¡' + this.name + ' entra en fase de furia!', 2.4, true);
+        if (G.Coop.isHost) G.Coop.bossPhase(this, 2);
+      } else if (this.hp <= 0 && this.storyBoss && this.storyPhase === 1 && (!G.StoryEncounters?.controls(this) || [382, 383, 384].includes(this.dex))) {
+        this.storyPhase = 2;
+        this.startStoryTransformation('0001');
+        this.hp = this.maxHp;
+        this.storyFury = true;
+        this.spd *= 1.25;
+        this.ai = null;
+        G.Spawner.say('¡' + this.name + ' cambia de forma!', 2, true);
+        if (G.Coop.isHost) G.Coop.bossPhase(this, this.storyPhase);
+      } else if (this.hp <= 0) this.die();
     }
 
     /** Lo que se VE al recibir un golpe. */
@@ -222,13 +313,14 @@
         return;
       }
       // (Los legendarios de la Sentencia de Arceus sólo dan experiencia.)
-      if (this.boss && !this.judge) {
+      if (G.Game.bossChallengeMode) { G.StoryEncounters?.defeated(this); G.Audio.sfx('bossDown'); return; }
+      if (this.boss && !this.judge && !this.storyBoss) {
         G.Camera.kick(0.9);
         for (let i = 0; i < 10; i++) G.Pickups.drop('coin', this.x + G.U.rand(-40, 40), this.y + G.U.rand(-30, 30), 5);
         // Los jefes siempre sueltan un objeto equipable.
         G.Pickups.drop('item', this.x - 26, this.y - 10, G.Items.roll());
       }
-      G.Pickups.dropXp(this.x, this.y, this.xp, this.boss, !!this.legend, !!this.judge);
+      if (!this.storyBoss) G.Pickups.dropXp(this.x, this.y, this.xp, this.boss, !!this.legend, !!this.judge);
       // Halloween: caramelos, con el ritmo que deja systems/halloween.js (los Fantasma
       // en cuanto toca; los demás, sólo si se han ido acumulando).
       if (G.Halloween.inRun && !this.judge && G.Halloween.takeCandy(G.Game.st.time, (this.types || []).includes('ghost') ? 1 : 3)) {
@@ -266,6 +358,8 @@
       if (this.flash > 0) this.flash -= dt;
       if (this.dead) { this.fade -= dt; return; }
       if (this.touchCd > 0) this.touchCd -= dt;
+      if (this.phaseInvuln > 0) this.phaseInvuln = Math.max(0, this.phaseInvuln - dt);
+      this.updateStoryTransformation(dt);
       this.bob += dt * 6;
       if (this.shiny) {
         this.sparkT -= dt;
@@ -306,6 +400,8 @@
         }
       }
       if (this.touchCd > 0) this.touchCd -= dt;
+      if (this.phaseInvuln > 0) this.phaseInvuln = Math.max(0, this.phaseInvuln - dt);
+      this.updateStoryTransformation(dt);
       if (this.rd > 0) this.rd *= Math.exp(-dt / RD_TAU);
       this.bob += dt * 6;
 
@@ -322,6 +418,23 @@
         if (this.poisonT <= 0) this.poison = 0;
       }
       if (this.dead) return;
+      if (this.storyBoss && G.Rift.specialLock) {
+        const isSpecialUser = this.id === G.Rift.specialBossId;
+        if (this.specialAttackAnimT > 0) this.specialAttackAnimT = Math.max(0, this.specialAttackAnimT - dt);
+        if (!this.specialPaused) {
+          this.specialPaused = true;
+          if (this.ai) { this.ai.cast = null; this.ai.cd = Math.max(this.ai.cd || 0, 1.2); }
+          this.jump = null; this.jumpLift = 0; this.kx = 0; this.ky = 0;
+          if (!(isSpecialUser && this.specialAttackAnimT > 0)) this.anim._start(isSpecialUser ? 'Charge' : 'Idle', false);
+        }
+        const scriptedMove = G.StoryEncounters?.specialMove(this, dt);
+        if (isSpecialUser && !scriptedMove && this.specialAttackAnimT <= 0) this.anim.loop('Charge');
+        return;
+      }
+      if (this.storyBoss && this.specialPaused) {
+        this.specialPaused = false;
+        if (this.ai) { this.ai.cast = null; this.ai.cd = Math.max(this.ai.cd || 0, 1); }
+      }
 
       // --- terreno ---
       let terrainMul = 1;
@@ -406,7 +519,7 @@
       let animBase = 'Walk';
 
       if (this.boss) {
-        [vx, vy, animBase] = this.bossMove(dt, pl, dist, dx, dy, spd);
+        [vx, vy, animBase] = G.StoryEncounters?.move(this, dt, pl, spd) || this.bossMove(dt, pl, dist, dx, dy, spd);
       } else if (this.behavior === 'charger') {
         this.pt -= dt;
         if (this.phase === 'walk') {
@@ -485,7 +598,7 @@
       const ranged = [pref, others[Math.floor(G.U.hash(this.dex, 5, 9) * 3) % 3]];
       const far = this.behavior === 'ranged';
       this.ai = { melee, ranged, farLike: far ? 0.65 : 0.35, mode: far ? 'far' : 'close', modeT: G.U.rand(6, 8),
-                  cd: 1.6, cast: null, fury: false, side: Math.random() < 0.5 ? -1 : 1 };
+                  cd: 1.6, cast: null, fury: !!this.storyFury, side: Math.random() < 0.5 ? -1 : 1 };
     }
 
     bossMove(dt, pl, dist, dx, dy, spd) {
@@ -754,7 +867,7 @@
     }
 
     draw(ctx) {
-      const alpha = this.dead ? G.U.clamp(this.fade / 0.5, 0, 1) : 1;
+      const alpha = this.dead ? G.U.clamp(this.fade / 0.5, 0, 1) : G.StoryEncounters?.hidden(this) ? 0.12 : 1;
       if (alpha <= 0) return;
 
       const gold = this.golden || this.behavior === 'thief' || (this.remote && !this.boss && G.Events.golden);
@@ -772,7 +885,24 @@
       // Los que flotan ya van en el aire en su sprite: sólo se mecen un poco.
       // (Y los que saltan, en arco.)
       const lift = (this.flying && !this.boss ? 1 + Math.sin(this.bob) * 1.5 : 0) + (this.jumpLift || 0);
-      this.anim.draw(ctx, this.x, this.y - lift, { flash: this.flash > 0, alpha });
+      const transforming = this.transformT > 0;
+      const transformPulse = transforming ? 0.5 + 0.5 * Math.sin((2 - this.transformT) * 24) : 0;
+      if (transforming) {
+        ctx.save();
+        ctx.globalAlpha = alpha * (0.18 + transformPulse * 0.32);
+        ctx.fillStyle = this.transformChanged ? '#77e7ff' : '#fff4ae';
+        ctx.shadowColor = this.transformChanged ? '#55dfff' : '#fff1a0';
+        ctx.shadowBlur = 18 + transformPulse * 28;
+        ctx.beginPath();
+        ctx.ellipse(this.x, this.y - this.bodyH * 0.48, this.r * (1.35 + transformPulse * 0.45), this.bodyH * 0.58, 0, 0, 6.2832);
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2 + transformPulse * 3;
+        ctx.beginPath();
+        ctx.ellipse(this.x, this.y - this.bodyH * 0.48, this.r * (1.3 + transformPulse * 0.9), this.bodyH * (0.54 + transformPulse * 0.22), 0, 0, 6.2832);
+        ctx.stroke();
+        ctx.restore();
+      }
+      this.anim.draw(ctx, this.x, this.y - lift, { flash: this.flash > 0 || (transforming && transformPulse > 0.42), alpha });
       ctx.restore();
 
       if (this.dead) return;
@@ -831,6 +961,12 @@
         ctx.fillRect(this.x - w / 2, y, w, 3.4);
         ctx.fillStyle = this.boss ? '#ffcb3d' : '#ff5f6d';
         ctx.fillRect(this.x - w / 2, y, w * Math.max(0, this.hp / this.maxHp), 3.4);
+        if (this.storyBoss && (this.challengeBoss || !G.StoryEncounters?.controls(this) || [382,383,384].includes(this.dex))) {
+          const half = (w - 2) / 2;
+          ctx.fillStyle = 'rgba(0,0,0,.85)'; ctx.fillRect(this.x - w / 2, y - 5, w, 2.5);
+          ctx.fillStyle = '#73d8ff'; ctx.fillRect(this.x - w / 2, y - 5, half * (this.storyPhase === 1 ? Math.max(0, this.hp / this.maxHp) : 0), 2.5);
+          ctx.fillStyle = '#ff786e'; ctx.fillRect(this.x + 1, y - 5, half * (this.storyPhase === 2 ? Math.max(0, this.hp / this.maxHp) : 1), 2.5);
+        }
       }
     }
   }
@@ -942,7 +1078,7 @@
 
     function separate(dt) {
       for (const e of list) {
-        if (e.dead) continue;
+        if (e.dead || (e.storyBoss && G.Rift.specialLock)) continue;
         const cx = Math.floor(e.x / CELL), cy = Math.floor(e.y / CELL);
         let px = 0, py = 0, n = 0;
         for (let j = -1; j <= 1; j++) {
@@ -1020,7 +1156,7 @@
           pl.kills++;
           if (pl.abil && pl.abil.kill) pl.abil.kill(pl, e);     // Autoestima y parecidas
           if (e.boss && !e.judge) pl.bosses++;
-          G.Progress.kill(e);
+          if (!G.Game.bossChallengeMode) G.Progress.kill(e);
           corpses.push(e);
           list.splice(i, 1);
           byId.delete(e.id);

@@ -20,8 +20,9 @@ G.Combat = (() => {
 
   function tick(dt, pl, now) {
     if (pl.dead) return;
+    if (G.Rift && G.Rift.evading) return;
 
-    if (pl.autoSwap && pl.slots && pl.slots.length >= 2) {
+    if (pl.autoSwap && !(G.Rift && G.Rift.lockAutoSwap) && pl.slots && pl.slots.length >= 2) {
       const cur = (pl.active === 0 || pl.active === 1) ? pl.active : 0;
       const other = cur === 0 ? 1 : 0;
 
@@ -46,6 +47,7 @@ G.Combat = (() => {
   }
 
   function tickMove(dt, pl, m, now) {
+    if (['dash', 'charge', 'shove'].includes(m.kind) && G.StoryEncounters?.effects(pl).noDash) return;
     if (m.kind === 'orbit') { orbit(pl, m, dt, now); return; }
 
     m.t -= dt;
@@ -56,7 +58,8 @@ G.Combat = (() => {
       return;
     }
     // (Bromista: los potenciadores se recargan antes, ver data/ability-fx.js.)
-    m.t = Math.max(0.05, m.cd * pl.cdMul * (m.kind === 'buff' && pl.abil && pl.abil.statusCd || 1));
+    const cooldown = m.cd * pl.cdMul * (m.kind === 'buff' && pl.abil && pl.abil.statusCd || 1);
+    m.t = Math.max(G.Rift && G.Rift.duelStance ? 0.18 : 0.05, cooldown);
     pl.cast(m);
     if (G.Coop.active) G.Coop.cast(pl, m);
     // Vínculo: su icono destella en el HUD al lanzarse (uno que explota pegado al
@@ -152,8 +155,8 @@ G.Combat = (() => {
   function fireProjectiles(pl, m) {
     const col = G.U.TYPE_COLOR[m.type];
     const vis = G.VFX.forMove(m);
-    const n = Math.max(1, m.count | 0);
-    const spread = m.spread || 0;
+    const n = G.Rift && G.Rift.duelStance ? 1 : Math.max(1, m.count | 0);
+    const spread = n === 1 ? 0 : m.spread || 0;
     for (let i = 0; i < n; i++) {
       const off = n === 1 ? 0 : (i / (n - 1) - 0.5) * spread * n;
       const a = pl.aim + off + G.U.rand(-0.03, 0.03);
@@ -166,7 +169,7 @@ G.Combat = (() => {
   function nova(pl, m) {
     const col = G.U.TYPE_COLOR[m.type];
     const vis = G.VFX.forMove(m);
-    const n = Math.max(3, m.count | 0);
+    const n = G.Rift && G.Rift.duelStance ? 1 : Math.max(3, m.count | 0);
     for (let i = 0; i < n; i++) {
       const a = (i / n) * 6.2832 + G.U.rand(-0.06, 0.06);
       shot(pl, m, a, col, vis);
@@ -349,6 +352,7 @@ G.Combat = (() => {
 
   /** Embestida: cruzas como un rayo hacia el enemigo y golpeas a todo lo del camino. */
   function dash(pl, m) {
+    if (G.StoryEncounters?.effects(pl).noDash) return;
     const col = G.U.TYPE_COLOR[m.type], vis = G.VFX.forMove(m);
     const ca = Math.cos(pl.aim), sa = Math.sin(pl.aim);
     const sx = pl.x, sy = pl.y;
@@ -1184,6 +1188,7 @@ G.Combat = (() => {
 
   const NEW_FIELDS = new Set(['charge', 'spin', 'quake', 'vortex', 'stunzone']);
   function updateFields(dt) {
+    if (G.Rift && G.Rift.evading) return;
     for (let i = fields.length - 1; i >= 0; i--) {
       const f = fields[i];
       f.t += dt;
@@ -1409,6 +1414,8 @@ G.Combat = (() => {
   const arcK = e => (e.arceus ? G.Judgment.dmgK() : 1);
 
   function hit(pl, e, dmg, col, dx, dy, knock, m) {
+    if (G.Rift && G.Rift.duelStance && e.id !== G.Rift.targetBossId) return;
+    if (G.StoryEncounters?.blocksDamage(e, dx, dy, m)) return;
     const k = typeK(m.type, e) * G.Stats.taken(e.mon, m.cat) * abilOut(pl, m, e) * arcK(e);
     const crit = isCrit(pl), sk = statusK(pl);
     dmg *= k * (crit ? critMul(pl) : 1);
@@ -1438,21 +1445,30 @@ G.Combat = (() => {
 
     for (let i = projectiles.length - 1; i >= 0; i--) {
       const p = projectiles[i];
+      if (G.StoryEncounters?.intercept(p)) {
+        G.FX.ring(p.x, p.y, 3, 18, '#9bdcff', 0.2, 2);
+        projectiles.splice(i, 1);
+        continue;
+      }
 
       // --- disparos enemigos: paredes y objetos sólidos dan cobertura ---
       if (!p.friendly) {
-        if (G.World.projectileBlock(p.x, p.y, p.r)) {
+        if (!(p.enc && G.StoryEncounters?.active) && G.World.projectileBlock(p.x, p.y, p.r)) {
           G.FX.burst(p.x, p.y - G.LIFT, p.color, 5, 70);
           projectiles.splice(i, 1);
           continue;
         }
         if (G.U.dist2(p.x, p.y, pl.x, pl.y) < (p.r + pl.r) * (p.r + pl.r)) {
+          const hpBefore = pl.hp;
           pl.hurt(p.dmg, p.mtype, false, p.cat);
+          G.StoryEncounters?.projectileHit(p, pl, pl.hp < hpBefore);
           G.FX.burst(p.x, p.y - G.LIFT, p.color, 7, 110);
           projectiles.splice(i, 1);
         }
         continue;
       }
+
+      if (G.Rift && G.Rift.evading) continue;
 
       // --- disparos de jugadores ---
       // Orbes de un compañero: sólo se ven.
@@ -1499,6 +1515,12 @@ G.Combat = (() => {
       const half = Math.hypot(p.x - sx, p.y - sy) / 2;
       for (const e of G.EnemyMgr.queryCircle((sx + p.x) / 2, (sy + p.y) / 2, half + p.r)) {
         if (segDist2(sx, sy, p.x, p.y, e.x, e.y) > (p.r + e.r) * (p.r + e.r)) continue;
+        // Large/close projectiles can touch the body before crossing the shield plane.
+        if (G.StoryEncounters?.blocksDamage(e, p.vx || e.x - pl.x, p.vy || e.y - pl.y, p)) {
+          G.FX.ring(e.x, e.y, e.r, e.r + 28, '#9bdcff', 0.25, 4);
+          if (!p.orb) projectiles.splice(i, 1);
+          break;
+        }
         if (p.orb) {
           const last = p.hitLog.get(e.id) || -99;
           if (now - last < p.rehit) continue;
@@ -1550,6 +1572,7 @@ G.Combat = (() => {
     if (pl.dead) return;
 
     for (const e of G.EnemyMgr.queryCircle(pl.x, pl.y, pl.r + 40)) {
+      if ((e.storyBoss && G.Rift.specialLock) || G.StoryEncounters?.hidden(e)) continue;
       if (G.U.dist2(e.x, e.y, pl.x, pl.y) > (e.r + pl.r) * (e.r + pl.r)) continue;
       if (e.arceus || e.touchCd > 0 || e.behavior === 'thief' || e.stunT > 0 || e.sleepT > 0 || (e.net && e.net.st & 16)) continue;
       e.touchCd = 0.55;

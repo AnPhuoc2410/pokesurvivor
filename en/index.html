@@ -84,6 +84,7 @@
 <body>
 
 <canvas id="game"></canvas>
+<button id="boss-immortal" class="boss-immortal hidden" type="button" aria-pressed="false">Bất tử: Tắt</button>
 <!-- En móvil se juega en horizontal -->
 <div id="rotate" class="hidden"><div class="box center"><div id="rotate-ico"></div><h2>Gira el móvil</h2><p class="sub">PokéSurvivor se juega en horizontal.</p></div></div>
 
@@ -188,6 +189,7 @@
       <p id="menu-mode-hint" class="sub">Arceus a los 15 min de combate: menos cartas y mejoras más potentes. Las elecciones y la Sentencia añaden tiempo.</p>
       <div class="menu-list">
         <button class="menu-item play" data-go="play">Jugar<small>Entra en la mazmorra</small></button>
+        <button class="menu-item" data-go="boss-select">Chọn màn đấu<small>Các trận đấu trùm và dạng Pokémon</small></button>
         <button class="menu-item coop" data-go="coop">Multijugador<small id="menu-coop-sub">Crear sala o unirse</small></button>
         <button class="menu-item" data-go="dex">Pokémon<small id="menu-dex-count">Tu colección</small></button>
         <button class="menu-item" data-go="upgrades">Mejoras<small>Haz más fuerte cada run</small></button>
@@ -203,6 +205,16 @@
     <div class="box" style="padding:14px 18px">
       <div id="menu-stats" style="font-size:14px;color:var(--muted)"></div>
     </div>
+  </div>
+</section>
+
+<section id="scr-boss-select" class="scr dim hidden">
+  <div class="box boss-select-box">
+    <div class="row between">
+      <div><h2>Chọn màn đấu</h2><p class="sub">Chế độ riềng · không ảnh hưởng lượt chơi hay tiến trình Arceus</p></div>
+      <button class="btn small ghost" data-back>Quay lại</button>
+    </div>
+    <div id="boss-stage-list" class="boss-stage-list"></div>
   </div>
 </section>
 
@@ -630,6 +642,6 @@
 
 <!-- datos generados -->
 <script defer src="js/core/firebase-config.js"></script>
-<script defer src="js/app.min.js?v=3cf10a467f"></script>
+<script defer src="js/app.min.js?v=d6f13805cc"></script>
 </body>
 </html>

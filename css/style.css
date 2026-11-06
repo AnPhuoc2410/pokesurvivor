@@ -305,6 +305,25 @@ label { display: block; font-size: 14px; color: var(--muted); margin: 8px 0 4px;
 }
 .menu-right > :first-child { margin-top: auto; }
 .menu-right > :last-child { margin-bottom: auto; }
+.boss-select-box { width: min(980px, 100%); max-height: calc(100dvh - 92px); }
+.boss-stage-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; }
+.boss-stage {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 5px; min-height: 128px;
+  padding: 12px; text-align: left; cursor: pointer; border: 2px solid rgba(244,248,255,.2); border-radius: 9px;
+  background: linear-gradient(180deg, rgba(37,67,125,.8), rgba(17,34,70,.92)); color: var(--fg);
+}
+.boss-stage:hover:not(:disabled), .boss-stage:focus-visible { border-color: var(--gold); filter: brightness(1.12); outline: none; }
+.boss-stage b { font-size: 18px; }
+.boss-stage small { color: #b7d4ff; font-size: 13px; }
+.boss-stage-roster { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
+.boss-stage-mon { display: inline-flex; flex-direction: column; align-items: center; min-width: 48px; color: #dce8ff; }
+.boss-stage-mon canvas { image-rendering: pixelated; }
+.boss-stage-mon em { font-size: 10px; font-style: normal; text-align: center; }
+.boss-stage-kind { color: var(--gold); font-size: 11px; text-transform: uppercase; letter-spacing: .8px; }
+.boss-stage .sub { margin: 0; font-size: 12px; }
+.boss-stage:disabled { cursor: not-allowed; opacity: .48; }
+.boss-immortal { position: fixed; top: 14px; right: 16px; z-index: 30; padding: 9px 13px; border: 1px solid #8c98b5; border-radius: 10px; color: #eef3ff; background: rgba(12, 17, 34, .9); font: 700 13px Pixelify, system-ui, sans-serif; cursor: pointer; }
+.boss-immortal.on { border-color: #68e6a4; color: #aaffd0; box-shadow: 0 0 14px rgba(72, 255, 161, .3); }
 /* Portátiles con poca altura: menú más compacto y, si hace falta, en dos columnas. */
 @media (max-height: 780px) and (min-height: 521px) {
   .menu-right { padding-top: 62px; gap: 10px; }
