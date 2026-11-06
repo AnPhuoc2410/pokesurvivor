@@ -79,6 +79,7 @@ G.Hazards = (() => {
       const visual = G.VFX.forType(h.type || (h.pure ? 'electric' : 'normal'));
       if (h.enc) visual.life = 0.45;
       G.FX.beam(h.x, h.y - G.LIFT, h.angle, h.len, h.w, h.color, visual);
+      if (h.vis === 'hoopaBeam') G.FX.ring(h.x,h.y,18,42,'#ffd760',0.25,6);
       if (near) G.Audio.sfx('shot', { kind: 'beam', type: h.type });
     }
   }
@@ -100,6 +101,23 @@ G.Hazards = (() => {
         ctx.strokeStyle = h.color; ctx.lineWidth = 2;
         ctx.setLineDash([4, 4]);
         ctx.beginPath(); ctx.ellipse(h.x, h.y, h.r, h.r * 0.75, 0, 0, 6.2832); ctx.stroke();
+        if (h.vis === 'teraCrystal') {
+          const crystalY=h.y-170*(1-k*k),size=h.r*0.65;
+          ctx.setLineDash([]);ctx.globalAlpha=0.9;ctx.fillStyle=h.color;ctx.strokeStyle='#f5fcff';ctx.lineWidth=3;
+          ctx.beginPath();ctx.moveTo(h.x,crystalY-size);ctx.lineTo(h.x+size*0.6,crystalY);
+          ctx.lineTo(h.x,crystalY+size);ctx.lineTo(h.x-size*0.6,crystalY);ctx.closePath();ctx.fill();ctx.stroke();
+          ctx.beginPath();ctx.moveTo(h.x,crystalY-size);ctx.lineTo(h.x,crystalY+size);ctx.stroke();
+        }
+        if (h.vis === 'hoopaOrb') {
+          const height = 200 * (1 - k * k), orbY = h.y - height;
+          ctx.setLineDash([]);
+          ctx.globalAlpha = 0.85; ctx.strokeStyle = '#ffd760'; ctx.lineWidth = 4;
+          ctx.beginPath(); ctx.ellipse(h.x,h.y-200,h.r*0.8,h.r*0.25,0,0,6.2832); ctx.stroke();
+          ctx.fillStyle = '#7135a7'; ctx.strokeStyle = '#edb6ff'; ctx.lineWidth = 3;
+          ctx.beginPath(); ctx.arc(h.x,orbY,h.r*0.7,0,6.2832); ctx.fill(); ctx.stroke();
+          ctx.strokeStyle = '#ffd760'; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.ellipse(h.x,orbY,h.r*0.85,h.r*0.28,k*4,0,6.2832); ctx.stroke();
+        }
       } else {
         ctx.translate(h.x, h.y);
         ctx.rotate(h.angle);
