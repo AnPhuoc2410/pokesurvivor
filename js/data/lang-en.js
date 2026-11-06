@@ -22,6 +22,7 @@ G.I18n.add({
   'Filo del Abismo': 'Precipice Blades',
   'Sentencia': 'Judgment',
   'Aerochorro': 'Aeroblast',
+  'Distorsión': 'Roar of Time',
   // ---------------- 43 EPIC & LEGENDARY SIGNATURE MOVES ----------------
   'Shuriken de Agua': 'Water Shuriken',
   'Balón Ígneo': 'Pyro Ball',

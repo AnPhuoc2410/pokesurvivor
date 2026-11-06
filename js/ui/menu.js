@@ -47,14 +47,14 @@ G.MenuUI = (() => {
   function openBossStages() {
     const list = $('boss-stage-list');
     const stages = G.Rift.challengeStages();
-    const viLabels = { forms: 'ĐỔI DẠNG', duo: 'BỘ ĐÔI', trio: 'BỘ BA', squad: 'ĐỘI / NHIỀU ĐỢT' };
+    const stageKindLabels = { forms: 'FORM SHIFT', duo: 'DUO', trio: 'TRIO', squad: 'SQUAD' };
     list.innerHTML = stages.map(stage => {
       const names = stage.dexes.map(dex => G.DEX_BY[dex]?.name || `#${dex}`).join(' · ');
       const missing = stage.dexes.filter(dex => !G.SPRITE_META[dex]);
       const disabled = !stage.available || missing.length > 0;
-      const note = disabled ? (stage.reason || 'Thiếu sprite cần thiết') : stage.description;
+      const note = disabled ? (stage.reason || 'Missing required sprites') : stage.description;
       return `<button class="boss-stage ${disabled ? 'disabled' : ''}" data-stage="${stage.id}" ${disabled ? 'disabled' : ''}>
-        <span class="boss-stage-kind">${viLabels[stage.kind] || 'MÀN ĐẤU'}</span>
+        <span class="boss-stage-kind">${stageKindLabels[stage.kind] || 'STAGE'}</span>
         <b>${stage.title}</b><small>${names}</small><span class="sub">${note}</span>
       </button>`;
     }).join('');

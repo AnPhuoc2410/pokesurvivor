@@ -9,7 +9,7 @@ function setup() {
   const G = {}, enemies = [], shots = [], hazards = [], messages = [], events = [];
   new Function('window', 'G', source('js/core/util.js'))({ G }, G);
   const noop = () => {};
-  G.Sprites = { PX: 2, bodyRadius: (dex,scale) => 14*scale, bodyHeight: (dex,scale) => 50*scale, hasShiny: () => false };
+  G.Sprites = { PX: 2, bodyRadius: (dex,scale) => 14*scale, bodyHeight: (dex,scale) => 50*scale, hasShiny: () => false, Animator: class { constructor() { this.dir = 0; } update() {} draw() {} } };
   G.Tiles = { T: 16, ARENA_THEMES: {}, arenaBiome: () => 0 };
   G.Coop = { active: false, isHost: false, scaleHp: () => 1, broadcast: e => events.push(e), enemyShot: noop };
   G.Game = { player: {x:0,y:100,r:12,hp:100,maxHp:100,dead:false,autoSwap:false, hurt(d){this.hp-=d;}}, st:{matchTime:0}, flash:noop, exitBossChallenge:noop };

@@ -2,18 +2,18 @@
 G.BossForms = (() => {
   const TAU = Math.PI * 2;
   const DEFINITIONS = {
-    555: { stage: 'darmanitan', name: 'Darmanitan', forms: ['', '0001'], labels: ['Thường', 'Zen'], phaseForm: true,
-      hint: 'Dưới 50% HP chuyển Zen: đứng tụ lực, giảm 80% sát thương; special chỉ tạo nhiều điểm nổ có báo trước.' },
+    555: { stage: 'darmanitan', name: 'Darmanitan', forms: ['', '0001'], labels: ['Standard', 'Zen'], phaseForm: true,
+      hint: 'Under 50% HP triggers Zen Mode: channels power with 80% damage reduction; special creates telegraphed blast zones.' },
     746: { stage: 'wishiwashi', name: 'Wishiwashi', forms: ['', '0001'], labels: ['Solo', 'School'], phaseForm: true,
-      hint: 'Hết thanh máu phase 1 mới gọi đàn cá ở phase 2; bong bóng lớn và cụm sóng nổ khắp arena.' },
-    800: { stage: 'necrozma', name: 'Necrozma', forms: ['', '0003'], labels: ['Lăng kính', 'Ultra'], phaseForm: true,
-      hint: 'Phase 1 bắn Prism nảy khỏi rìa rồi quay về; phase 2 hóa Ultra, vừa bắn Prism vừa quét tia.' },
+      hint: 'Deplete phase 1 HP to summon the School form in phase 2; giant bubbles and explosive shockwave clusters fill the arena.' },
+    800: { stage: 'necrozma', name: 'Necrozma', forms: ['', '0003'], labels: ['Prism', 'Ultra'], phaseForm: true,
+      hint: 'Phase 1 fires bouncing Prisms off walls; phase 2 transforms to Ultra form, combining Prisms with sweeping beams.' },
     386: { stage: 'deoxys', name: 'Deoxys', forms: ['0003', '0002', '0001', ''], labels: ['Speed', 'Defense', 'Attack', 'Normal'], interval: 10,
-      hint: 'Mỗi 10 giây đổi Speed → Defense → Attack → Normal, giữ phase hiện tại; mưa đạn có khe né.' },
+      hint: 'Cycles Speed → Defense → Attack → Normal every 10s while preserving current phase; bullet volleys have safe lanes.' },
     479: { stage: 'rotom', name: 'Rotom', forms: ['0001', '0002', '0003', '0005'], labels: ['Heat', 'Wash', 'Frost', 'Mow'], interval: 10,
-      hint: 'Mỗi 10 giây đổi thiết bị: quạt lửa, xoáy nước hút, băng làm chậm, lưỡi cưa zíc zắc.' },
+      hint: 'Swaps appliance every 10s: fire fans, whirlpool pull, freezing ice patches, and zigzag sawblades.' },
     648: { stage: 'meloetta', name: 'Meloetta', forms: ['', '0001'], labels: ['Aria', 'Pirouette'], interval: 10,
-      hint: 'Relic Song đổi dạng mỗi 10 giây: Aria bắn nốt nhạc nảy; Pirouette lướt chém khắp sân.' }
+      hint: 'Relic Song changes form every 10s: Aria fires bouncing musical notes; Pirouette dashes and slashes across the arena.' }
   };
   const api = () => G.StoryEncounters.attacks;
   const arena = () => G.Rift.arena;
@@ -172,8 +172,7 @@ G.BossForms = (() => {
   function skill(dex) {
     const d=DEFINITIONS[dex]; if(!d) return null;
     const e=G.EnemyMgr.all().find(e=>e.dex===dex && !e.dead), mode=e?.encounter?.formIndex||0;
-    const names={555:['Hỏa ngục liên hoàn','Pháo kích Zen'],746:['Thủy cầu liên hoàn','Đại hồng thủy'],800:['Bão lăng kính','Quang phá Ultra'],
-      386:['Mạng lưới tốc độ','Vòng chắn phản kích','Mưa sao hủy diệt','Xoắn kép vũ trụ'],479:['Bão lửa','Lốc xoáy hút','Bão băng','Cưa cắt lá'],648:['Khúc ca hỗn loạn','Vũ điệu xuyên sân']};
+    const names={555:['Inferno Barrage','Zen Artillery'],746:['Bubble Volley','Deluge Tsunami'],800:['Prism Storm','Ultra Light Burst'],386:['Speed Grid','Reflective Barrier','Extinction Meteor','Cosmic Double Helix'],479:['Firestorm Fan','Hydro Vortex','Blizzard Freeze','Leaf Sawblade'],648:['Echoing Cadence','Pirouette Cross-Slash']};
     return [names[dex][mode],d.hint];
   }
   for(const [dex,d] of Object.entries(DEFINITIONS)) G.StoryEncounters.STAGES[d.stage]={waves:[[Number(dex)]],description:d.hint};

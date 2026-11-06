@@ -55,8 +55,8 @@ G.Coop = (() => {
   // ---------------- escalado de dificultad ----------------
 
   // js/net/coop.js (dòng 55-56)
-  const scaleRate = n => 1 + 0.35 * Math.max(0, n - 1);  // 10 người thì tăng ~4.1x (vừa đông vừa mượt 60 FPS)
-  const scaleHp = n => 1 + 0.25 * Math.max(0, n - 1);    // Máu quái tăng hợp lý
+  const scaleRate = n => 1 + 0.35 * Math.max(0, n - 1);  // Scales ~4.1x for 10 players (dense encounters while maintaining 60 FPS)
+  const scaleHp = n => 1 + 0.25 * Math.max(0, n - 1);    // Balanced enemy HP scaling
 
   // ---------------- arranque / fin ----------------
 

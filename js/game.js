@@ -199,7 +199,7 @@ G.Game = (() => {
     bossChallengeMode = !!options.bossChallenge;
     bossChallengeInvincible = false;
     const immortalButton = typeof document === 'undefined' ? null : document.getElementById('boss-immortal');
-    if (immortalButton) { immortalButton.classList.add('hidden'); immortalButton.classList.remove('on'); immortalButton.textContent = 'Bất tử: Tắt'; immortalButton.setAttribute('aria-pressed', 'false'); }
+    if (immortalButton) { immortalButton.classList.add('hidden'); immortalButton.classList.remove('on'); immortalButton.textContent = 'Invincible: Off'; immortalButton.setAttribute('aria-pressed', 'false'); }
     hurryMode = coop ? !!coop.hurry : (typeof localStorage !== 'undefined' && localStorage.getItem('ps.hurryMode') !== '0');
     runReal = performance.now(); tampered = false;
 
@@ -278,12 +278,12 @@ G.Game = (() => {
     const button = document.getElementById('boss-immortal');
     if (button) {
       button.classList.toggle('on', bossChallengeInvincible);
-      button.textContent = 'Bất tử: ' + (bossChallengeInvincible ? 'Bật' : 'Tắt');
+      button.textContent = 'Invincible: ' + (bossChallengeInvincible ? 'On' : 'Off');
       button.setAttribute('aria-pressed', String(bossChallengeInvincible));
     }
     if (bossChallengeInvincible && pl) { pl.revive(1); pl.hp = pl.maxHp; }
     G.Audio.sfx('click');
-    G.Spawner.say(bossChallengeInvincible ? 'Đã bật bất tử.' : 'Đã tắt bất tử.', 1.5, true);
+    G.Spawner.say(bossChallengeInvincible ? 'Invincibility enabled.' : 'Invincibility disabled.', 1.5, true);
   }
 
   /** Todos los jugadores de la partida (tú primero). */
@@ -499,7 +499,7 @@ G.Game = (() => {
     G.DB.commit('run');
     if (G.Social.me) G.Social.publishProfile();
 
-    // Ranking: các trận đấu Hurry không nạp vào bảng xếp hạng 30 phút tiêu chuẩn
+    // Ranking: Hurry matches do not submit to standard 30-minute leaderboard
     const mark = { t: Math.floor(realTime), mt: Math.floor(matchTime), mode: hurryMode ? 'hurry' : 'standard', hurry: hurryMode, lv: pl.level, kills: pl.kills, dmg: judge ? judge.dmg : 0 };
     const ok = clean() && !hurryMode;
     const sent = ok && !coop ? G.Ranking.submitSolo(Object.assign(mark, { dex: pl.dex, shiny: pl.shiny }))
@@ -763,7 +763,7 @@ G.Game = (() => {
     if (!G.Rift.lockAutoSwap && ['keyj', 'j', 'keyy', 'y'].some(k => G.Input.tap(k))) {
       pl.toggleAutoSwap();
     }
-    // Debug Time Warp (Shift + T): tua nhanh 60s trận đấu trên localhost/dev
+    // Debug Time Warp (Shift + T): fast-forwards 60s of combat on localhost/dev
     const isLocalDev = !G.BUILT || /^(localhost|127\.0\.0\.1|192\.168\.|10\.|100\.)/.test(location.hostname) || location.protocol === 'file:' || (typeof location !== 'undefined' && location.hostname !== 'pokesurvivor.com' && !location.hostname.endsWith('.pokesurvivor.com'));
     if (isLocalDev && (!G.Coop.active || G.Coop.isHost)) {
       if ((G.Input.held('shiftleft') || G.Input.held('shiftright')) && G.Input.tap('keyt')) {
@@ -890,7 +890,7 @@ G.Game = (() => {
       return;
     }
     realTime += dt;
-    // Hurry mode: TIME_SCALE = 2 trước khi Arceus giáng thế; khi vào Judgment thì TIME_SCALE = 1
+    // Hurry mode: TIME_SCALE = 2 before Arceus; resets to TIME_SCALE = 1 during Judgment
     const timeScale = st.timeScale;
     // Story Rift time is separate from the outer run clock and Judgment timer.
     if (!G.Rift.pauseRunClock) matchTime += dt * timeScale;
