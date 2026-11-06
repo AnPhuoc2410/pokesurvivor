@@ -26,7 +26,7 @@ G.Combat = (() => {
       const cur = (pl.active === 0 || pl.active === 1) ? pl.active : 0;
       const other = cur === 0 ? 1 : 0;
 
-      // Hồi chiêu đồng thời cho slot không active để cả 2 skill đều sẵn sàng tung chiêu liên tục
+      // Parallel cooldown for inactive slot so both moves stay ready to fire
       if (pl.slots[other]) {
         for (const m of pl.slots[other]) {
           if (m.t > 0) m.t -= dt;
@@ -35,7 +35,7 @@ G.Combat = (() => {
 
       pl.autoSwapTimer = (pl.autoSwapTimer || 0) + dt;
 
-      // Đổi chiêu cực nhanh (mỗi 0.08s ~ 80ms) tạo hiệu ứng nháy liên tục, hoặc đổi NGAY khi chiêu kia đã hồi xong
+      // Fast auto-swap (every 0.08s ~ 80ms) or swap immediately once the other move is ready
       const otherReady = pl.slots[other] && pl.slots[other].some(m => m.t <= 0);
       if (otherReady || pl.autoSwapTimer >= 0.08) {
         pl.autoSwapTimer = 0;
@@ -68,7 +68,7 @@ G.Combat = (() => {
 
     run(pl, m);
 
-    // Tự động đổi chiêu giữa 1 và 2 liên tục sau khi tung đòn
+    // Auto-swap between slots 1 and 2 continuously after executing a move
     if (!ghost && !pl.remote && pl.autoSwap && pl.slots && pl.slots.length >= 2) {
       if (pl.active === 0) {
         pl.autoSwapTimer = 0;
@@ -475,7 +475,7 @@ G.Combat = (() => {
     fields.push({ kind: 'stunzone', owner: pl, ghost, m, col, vis, x: tg.x, y: tg.y, t: 0, delay: 0.45, r: m.radius, dmg: m.dmg * pl.atkFor(m) });
   }
 
-  // ================= MOVIMIENTOS EXCLUSIVOS LEGENDARIOS (DISEÑO AUTÉNTICO) =================
+  // ================= EXCLUSIVE SIGNATURE MOVES (AUTHENTIC DESIGN) =================
 
   function runElectroDrift(pl, m) {
     const col = G.U.TYPE_COLOR[m.type], vis = G.VFX.forMove(m);

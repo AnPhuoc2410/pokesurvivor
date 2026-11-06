@@ -1,40 +1,40 @@
-/* ============ moves.js — catálogo de movimientos ============
+/* ============ moves.js — move catalog ============
  *
- * kind (comportamiento, implementado en systems/combat.js):
- *   projectile  dispara `count` proyectiles al enemigo más cercano
- *   melee       golpe en arco alrededor del Pokémon
- *   beam        rayo recto que atraviesa todo lo que pilla
- *   orbit       orbes que giran alrededor mientras el movimiento está activo
- *   nova        ráfaga radial en todas las direcciones
- *   aura        círculo de daño continuo alrededor
- *   buff        potencia al propio Pokémon (acumulable, caduca)
- *   ---- desde 2026-10-10 (mismos gráficos, otra forma de jugar) ----
- *   boomerang   sale hacia el enemigo y vuelve a ti, golpeando a la ida y a la vuelta
- *   chain       golpea a uno y salta a los `count` siguientes más cercanos
- *   mine        minas en el suelo que estallan al pisarlas
- *   meteor      caen `count` meteoros sobre enemigos cercanos (avisa la sombra)
- *   turret      deja algo que dispara solo durante `dur` segundos
- *   dash        cruzas hacia el enemigo golpeando todo el camino (sin recibir daño)
- *   trail       vas dejando charcos que dañan a lo que los pisa
- *   cone        muchos disparos cortos en abanico (aliento, chorro...)
- *   ---- desde 2026-10-19 (más ataques por tipo; mismos gráficos) ----
- *   homing      proyectiles que persiguen al enemigo
- *   bounce      un proyectil que rebota de enemigo en enemigo `bounce` veces
- *   charge      se carga `charge` s y sale un rayo enorme
- *   spin        giras golpeando todo alrededor `count` veces seguidas
- *   quake       una onda avanza por el suelo en línea: `count` explosiones
- *   vortex      un remolino atrae a los enemigos a su centro y les va dañando
- *   shove       onda alrededor que daña y aparta a los enemigos
- *   stun        zona con aviso que daña y deja aturdidos (quietos) `stun` s
+ * kind (behavior, implemented in systems/combat.js):
+ *   projectile  fires `count` projectiles at the nearest enemy
+ *   melee       arced strike around the Pokémon
+ *   beam        straight beam piercing everything in its path
+ *   orbit       orbs orbiting around the user while active
+ *   nova        radial burst in all directions
+ *   aura        continuous damage circle around the user
+ *   buff        boosts self stats (stackable, expires)
+ *   ---- since 2026-10-10 (same sprites, new playstyles) ----
+ *   boomerang   travels towards target and returns, hitting both ways
+ *   chain       strikes one target and jumps to the next `count` nearest foes
+ *   mine        ground mines that detonate on touch
+ *   meteor      calls down `count` meteors on nearby foes (shadow telegraph)
+ *   turret      spawns a turret that automatically shoots for `dur` seconds
+ *   dash        dashes through foes dealing damage along the path (invulnerable)
+ *   trail       leaves damaging hazard pools along the movement path
+ *   cone        spread spray of short-range projectiles (breath, stream...)
+ *   ---- since 2026-10-19 (more attacks per type) ----
+ *   homing      projectiles that home in on enemies
+ *   bounce      projectile bouncing from enemy to enemy `bounce` times
+ *   charge      charges for `charge` s before releasing a massive beam
+ *   spin        spins in place striking all around `count` consecutive times
+ *   quake       shockwave traveling along the ground: `count` eruptions
+ *   vortex      whirlpool pulling enemies inward while dealing damage
+ *   shove       radial wave dealing damage and pushing enemies back
+ *   stun        telegraphed zone that damages and stuns foes for `stun` s
  *
- * Sólo el movimiento ACTIVO se ejecuta. Se cambia con 1-4 / Q / E.
+ * Only the ACTIVE move executes. Switch with 1-4 / Q / E / U I O P.
  *
- * El icono no se guarda aquí: G.Icons lo compone (emblema del tipo +
- * insignia de la familia), ver ui/icons.js.
+ * Icons are procedurally generated: G.Icons composites them (type crest +
+ * family badge), see ui/icons.js.
  *
- * Las mejoras (lvl 1 -> 5) salen de una escalera común por `kind`:
- *   mods multiplicativos -> dmg, cd, speed, radius, dur, amount, arc
- *   mods aditivos        -> count, pierce, stacks
+ * Upgrades (lvl 1 -> 5) share standard ladders by `kind`:
+ *   multiplicative mods -> dmg, cd, speed, radius, dur, amount, arc
+ *   additive mods       -> count, pierce, stacks
  */
 (() => {
   const LADDERS = {
@@ -179,7 +179,7 @@
   };
 
   const RAW = [
-    // ---------------- NORMAL (pool común a todos) ----------------
+    // ---------------- NORMAL (common pool for all) ----------------
     {
       id: 'tackle', name: 'Placaje', type: 'normal', kind: 'melee',
       desc: 'Embiste en arco a todo lo que tengas delante.',
@@ -197,8 +197,8 @@
       desc: 'No hace daño: acumula ATAQUE (físico) mientras esté activo.',
       cd: 0.85, stat: 'patk', amount: 0.13, dur: 7, stacks: 5
     },
-    // Como Danza Espada, para los especiales (en los juegos es Siniestro; aquí
-    // va en el grupo Normal para que la pueda aprender cualquiera).
+    // Similar to Swords Dance, but for Special Attack (in main series it is Dark-type;
+    // placed in Normal here so any Pokémon can learn it).
     {
       id: 'nasty-plot', name: 'Maquinación', type: 'normal', kind: 'buff',
       desc: 'No hace daño: acumula ATAQUE ESPECIAL mientras esté activo.',
@@ -217,7 +217,7 @@
       cd: 0.85, stat: 'def', amount: 0.07, dur: 7, stacks: 5
     },
 
-    // ---------------- FUEGO ----------------
+    // ---------------- FIRE ----------------
     {
       id: 'ember', name: 'Ascuas', type: 'fire', kind: 'projectile',
       desc: 'Bola de fuego al enemigo más cercano.',
@@ -242,7 +242,7 @@
       cd: 1.25, dmg: 13, speed: 250, count: 10, pierce: 1, life: 1.1, size: 7, burn: 1
     },
 
-    // ---------------- AGUA ----------------
+    // ---------------- WATER ----------------
     {
       id: 'water-gun', name: 'Pistola Agua', type: 'water', kind: 'projectile',
       desc: 'Chorro perforante. Fiable a cualquier distancia.',
@@ -267,7 +267,7 @@
       cd: 0.90, stat: 'regen', amount: 1.6, dur: 8, stacks: 4
     },
 
-    // ---------------- PLANTA ----------------
+    // ---------------- GRASS ----------------
     {
       id: 'vine-whip', name: 'Látigo Cepa', type: 'grass', kind: 'melee',
       desc: 'Látigos de largo alcance en arco amplio.',
@@ -286,14 +286,14 @@
       cd: 0.26, dmg: 14, count: 4, radius: 74, speed: 2.6, size: 8
     },
 
-    // (Antes Gigadrenado: curaba con cada golpe y estaba roto. Mismo id para no romper partidas.)
+    // (Formerly Giga Drain: healed on every hit and was overtuned. Retaining same id to preserve save compatibility.)
     {
       id: 'giga-drain', name: 'Hierba Lazo', type: 'grass', kind: 'aura',
       desc: 'Raíces que atrapan y machacan todo lo que tienes cerca.',
       cd: 0.55, dmg: 9, radius: 76
     },
 
-    // ---------------- ELÉCTRICO ----------------
+    // ---------------- ELECTRIC ----------------
     {
       id: 'thunder-shock', name: 'Impactrueno', type: 'electric', kind: 'projectile',
       desc: 'Descarga rapidísima que atraviesa varios enemigos.',
@@ -312,8 +312,8 @@
       cd: 0.95, dmg: 21, count: 4, radius: 140
     },
 
-    // ---------------- PSÍQUICO ----------------
-    // (11-10-2026: -22/-30 % de daño y persiguen menos; llenaban el ranking.)
+    // ---------------- PSYCHIC ----------------
+    // (11-10-2026: -22/-30% damage and reduced homing strength)
     {
       id: 'confusion', name: 'Confusión', type: 'psychic', kind: 'projectile',
       desc: 'Onda que persigue sola a su objetivo.',
@@ -332,7 +332,7 @@
       cd: 1.35, dmg: 10, speed: 230, count: 12, pierce: 1, life: 1.6, size: 7, homing: 1.0
     },
 
-    // ---------------- TIPOS SECUNDARIOS ----------------
+    // ---------------- SECONDARY TYPES ----------------
     {
       id: 'sludge', name: 'Residuos', type: 'poison', kind: 'projectile',
       desc: 'Lodo tóxico que envenena al impactar.',
@@ -370,7 +370,7 @@
       cd: 1.15, dmg: 12, speed: 260, count: 9, pierce: 1, life: 0.9, size: 7
     },
 
-    // ---------------- VENENO (extra) ----------------
+    // ---------------- POISON (extra) ----------------
     {
       id: 'poison-sting', name: 'Picotazo Veneno', type: 'poison', kind: 'projectile',
       desc: 'Aguijón rápido que envenena.',
@@ -383,14 +383,14 @@
       cd: 0.3, dmg: 6, radius: 26, dur: 3, poison: 1
     },
 
-    // ---------------- TIERRA (extra) ----------------
+    // ---------------- GROUND (extra) ----------------
     {
       id: 'bulldoze', name: 'Terratemblor', type: 'ground', kind: 'aura',
       desc: 'Sacude el suelo: daña y frena a lo cercano.',
       cd: 0.7, dmg: 11, radius: 80, slow: 0.35
     },
 
-    // ---------------- BICHO ----------------
+    // ---------------- BUG ----------------
     {
       id: 'bug-bite', name: 'Picadura', type: 'bug', kind: 'melee',
       desc: 'Mordisco rápido en arco corto.',
@@ -409,7 +409,7 @@
       cd: 0.45, dmg: 8, radius: 66
     },
 
-    // ---------------- ROCA ----------------
+    // ---------------- ROCK ----------------
     {
       id: 'rock-throw', name: 'Lanzarrocas', type: 'rock', kind: 'projectile',
       desc: 'Pedrusco pesado que empuja al enemigo.',
@@ -420,9 +420,9 @@
       id: 'rock-slide', name: 'Avalancha', type: 'rock', kind: 'meteor',
       desc: 'Caen rocas del cielo sobre los enemigos cercanos.',
       cd: 1.3, dmg: 21, count: 3, radius: 46, knock: 50
-    },     // (12-10-2026: era 26; mataba el doble que la media)
+    },
 
-    // ---------------- HIELO ----------------
+    // ---------------- ICE ----------------
     {
       id: 'ice-beam', name: 'Rayo Hielo', type: 'ice', kind: 'beam',
       desc: 'Rayo helado que congela casi del todo.',
@@ -435,7 +435,7 @@
       cd: 0.55, dmg: 8, radius: 76, slow: 0.45
     },
 
-    // ---------------- LUCHA ----------------
+    // ---------------- FIGHTING ----------------
     {
       id: 'karate-chop', name: 'Golpe Kárate', type: 'fighting', kind: 'melee',
       desc: 'Golpe seco y potente al frente.',
@@ -448,7 +448,7 @@
       cd: 0.62, dmg: 17, speed: 300, count: 1, spread: 0.1, pierce: 0, life: 2.0, size: 8, homing: 4
     },
 
-    // ---------------- FANTASMA ----------------
+    // ---------------- GHOST ----------------
     {
       id: 'lick', name: 'Lengüetazo', type: 'ghost', kind: 'melee',
       desc: 'Lametazo espectral que paraliza un poco.',
@@ -461,7 +461,7 @@
       cd: 0.66, dmg: 19, speed: 280, count: 1, spread: 0.1, pierce: 2, life: 1.6, size: 9
     },
 
-    // ---------------- DRAGÓN ----------------
+    // ---------------- DRAGON ----------------
     {
       id: 'dragon-rage', name: 'Furia Dragón', type: 'dragon', kind: 'beam',
       desc: 'Llamarada dracónica en línea recta.',
@@ -474,7 +474,7 @@
       cd: 0.7, stat: 'patk', amount: 0.11, dur: 7, stacks: 5
     },
 
-    // ---------------- HADA ----------------
+    // ---------------- FAIRY ----------------
     {
       id: 'fairy-wind', name: 'Viento Feérico', type: 'fairy', kind: 'nova',
       desc: 'Brisa mágica en todas direcciones.',
@@ -487,7 +487,7 @@
       cd: 0.5, dmg: 9, radius: 72
     },
 
-    // ---------------- ACERO ----------------
+    // ---------------- STEEL ----------------
     {
       id: 'metal-claw', name: 'Garra Metal', type: 'steel', kind: 'melee',
       desc: 'Zarpazo de acero en arco.',
@@ -500,7 +500,7 @@
       cd: 1.05, dmg: 23, radius: 220, width: 30
     },
 
-    // ---------------- SINIESTRO ----------------
+    // ---------------- DARK ----------------
     {
       id: 'bite', name: 'Mordisco', type: 'dark', kind: 'melee',
       desc: 'Dentellada rápida que hace retroceder.',
@@ -519,7 +519,7 @@
       cd: 0.5, dmg: 9, radius: 72
     },
 
-    // ---------------- NUEVOS (2026-10-10): mismas formas, otras mecánicas ----------------
+    // ---------------- NEW (2026-10-10): same sprites, new mechanics ----------------
     {
       id: 'bonemerang', name: 'Huesomerang', type: 'ground', kind: 'boomerang',
       desc: 'Un hueso que va y vuelve golpeando fuerte.',
@@ -554,7 +554,7 @@
       id: 'meteor-mash', name: 'Puño Meteoro', type: 'steel', kind: 'meteor',
       desc: 'Dos meteoros de acero que aplastan donde caen.',
       cd: 1.4, dmg: 24, count: 2, radius: 48, knock: 70
-    },     // (23-10-2026: era 34 y radio 54; al máximo y evolucionado pegaba 1,8 veces lo que Avalancha)
+    },     // (2026-10-23: was 34 dmg and 54 radius; maxed & evolved dealt 1.8x Rock Slide)
 
     {
       id: 'will-o-wisp', name: 'Fuego Fatuo', type: 'fire', kind: 'turret',
@@ -592,7 +592,7 @@
       cd: 0.9, dmg: 17, count: 4, radius: 150, hex: 1.7
     },
 
-    // ================= NUEVOS (19-10-2026): todos los tipos con 5 o más =================
+    // ================= NEW (19-10-2026): all types with 5 or more moves =================
     // Normal
     {
       id: 'hyper-beam', name: 'Hiperrayo', type: 'normal', kind: 'charge',
@@ -604,19 +604,19 @@
       desc: 'Giras sobre ti mismo golpeando todo lo que te rodea varias veces.',
       cd: 1.0, dmg: 9, count: 3, radius: 62
     },
-    // Fuego
+    // Fire
     {
       id: 'flame-charge', name: 'Nitrocarga', type: 'fire', kind: 'dash',
       desc: 'Te lanzas envuelto en llamas y quemas todo el camino.',
       cd: 0.8, dmg: 19, radius: 115, width: 36, burn: 1
     },
-    // Agua
+    // Water
     {
       id: 'whirlpool', name: 'Torbellino', type: 'water', kind: 'vortex',
       desc: 'Un remolino que arrastra a los enemigos a su centro y los va dañando.',
       cd: 3.0, dmg: 8, radius: 72, dur: 2.6, pull: 150
     },
-    // Planta
+    // Grass
     {
       id: 'seed-bomb', name: 'Bomba Germen', type: 'grass', kind: 'bounce',
       desc: 'Una semilla que rebota de enemigo en enemigo.',
@@ -632,7 +632,7 @@
       desc: 'Absorbe luz un momento y la suelta en un rayo enorme.',
       cd: 2.3, charge: 0.85, dmg: 62, radius: 290, width: 40
     },
-    // Eléctrico
+    // Electric
     {
       id: 'thunder-wave', name: 'Onda Trueno', type: 'electric', kind: 'stun',
       desc: 'Una descarga que avisa en el suelo y deja paralizados a los que pilla.',
@@ -643,7 +643,7 @@
       desc: 'Una bola eléctrica que salta de enemigo en enemigo.',
       cd: 0.62, dmg: 10, speed: 340, life: 1.6, size: 7, bounce: 3
     },
-    // Psíquico
+    // Psychic
     {
       id: 'extrasensory', name: 'Paranormal', type: 'psychic', kind: 'shove',
       desc: 'Una onda mental que daña y aparta a todos los que tienes cerca.',
@@ -654,13 +654,13 @@
       desc: 'Una bola de bruma que persigue al enemigo y le frena.',
       cd: 0.55, dmg: 13, speed: 270, life: 2.0, size: 8, homing: 5, slow: 0.3
     },
-    // Veneno
+    // Poison
     {
       id: 'acid-spray', name: 'Bomba Ácida', type: 'poison', kind: 'bounce',
       desc: 'Un chorro ácido que salta entre enemigos y los envenena.',
       cd: 0.66, dmg: 8, speed: 310, life: 1.6, size: 7, bounce: 3, poison: 1
     },
-    // Tierra
+    // Ground
     {
       id: 'sand-tomb', name: 'Bucle Arena', type: 'ground', kind: 'vortex',
       desc: 'Un remolino de arena que atrapa y arrastra a los enemigos.',
@@ -671,7 +671,7 @@
       desc: 'El suelo revienta en línea delante de ti, onda tras onda.',
       cd: 1.15, dmg: 18, count: 6, radius: 30
     },
-    // Volador
+    // Flying
     {
       id: 'whirlwind', name: 'Remolino', type: 'flying', kind: 'shove',
       desc: 'Un golpe de viento que barre a todos los que tienes cerca.',
@@ -682,7 +682,7 @@
       desc: 'Dos cuchillas de aire que buscan al enemigo.',
       cd: 0.55, dmg: 9, count: 2, spread: 0.35, speed: 330, life: 1.6, size: 7, homing: 4
     },
-    // Bicho
+    // Bug
     {
       id: 'signal-beam', name: 'Rayo Señal', type: 'bug', kind: 'bounce',
       desc: 'Un destello que rebota entre los enemigos.',
@@ -693,7 +693,7 @@
       desc: 'Cruzas entre los enemigos golpeando a todos los del camino.',
       cd: 0.7, dmg: 17, radius: 120, width: 34
     },
-    // Roca
+    // Rock
     {
       id: 'rock-tomb', name: 'Tumba Rocas', type: 'rock', kind: 'stun',
       desc: 'Caen rocas donde avisa el suelo y dejan atrapados a los que pilla.',
@@ -709,7 +709,7 @@
       desc: 'Un destello de gema que rebota de enemigo en enemigo.',
       cd: 0.66, dmg: 11, speed: 320, life: 1.6, size: 8, bounce: 3
     },
-    // Hielo
+    // Ice
     {
       id: 'ice-shard', name: 'Canto Helado', type: 'ice', kind: 'homing',
       desc: 'Esquirlas rapidísimas que persiguen al enemigo.',
@@ -720,7 +720,7 @@
       desc: 'Un frío repentino que avisa en el suelo y deja congelados a los que pilla.',
       cd: 1.6, dmg: 24, radius: 60, stun: 1.0
     },
-    // Lucha
+    // Fighting
     {
       id: 'rolling-kick', name: 'Patada Giro', type: 'fighting', kind: 'spin',
       desc: 'Patadas en giro que golpean todo lo que tienes alrededor.',
@@ -736,7 +736,7 @@
       desc: 'Un puñetazo tremendo donde avisa el suelo: deja aturdidos a los que pilla.',
       cd: 1.7, dmg: 33, radius: 54, stun: 0.9
     },
-    // Fantasma
+    // Ghost
     {
       id: 'shadow-sneak', name: 'Sombra Vil', type: 'ghost', kind: 'homing',
       desc: 'Una sombra que se escurre por el suelo hasta el enemigo.',
@@ -747,7 +747,7 @@
       desc: 'Un viento maldito que arremolina a los enemigos y los va dañando.',
       cd: 3.0, dmg: 9, radius: 74, dur: 2.6, pull: 140
     },
-    // Dragón
+    // Dragon
     {
       id: 'dragon-breath', name: 'Dragoaliento', type: 'dragon', kind: 'cone',
       desc: 'Un aliento de dragón en abanico corto que frena.',
@@ -763,7 +763,7 @@
       desc: 'Una furia de golpes en giro que no deja a nadie en pie.',
       cd: 1.1, dmg: 12, count: 4, radius: 64
     },
-    // Hada
+    // Fairy
     {
       id: 'draining-kiss', name: 'Beso Drenaje', type: 'fairy', kind: 'homing',
       desc: 'Un beso que persigue al enemigo y te cura un poco al darle.',
@@ -779,7 +779,7 @@
       desc: 'Un grito encantador que daña y aparta a los que tienes cerca.',
       cd: 1.15, dmg: 15, radius: 94, knock: 300
     },
-    // Acero
+    // Steel
     {
       id: 'mirror-shot', name: 'Disparo Espejo', type: 'steel', kind: 'bounce',
       desc: 'Un destello metálico que rebota entre los enemigos.',
@@ -790,7 +790,7 @@
       desc: 'Giras como una bola de acero golpeando todo alrededor.',
       cd: 1.05, dmg: 12, count: 3, radius: 60
     },
-    // Siniestro
+    // Dark
     {
       id: 'sucker-punch', name: 'Golpe Bajo', type: 'dark', kind: 'homing',
       desc: 'Un golpe a traición que busca al enemigo.',
@@ -802,7 +802,7 @@
       cd: 1.0, dmg: 11, count: 3, radius: 62
     },
 
-    // Movimientos exclusivos de Pokémon Legendarios (Diseño fiel y auténtico)
+    // Exclusive signature moves for Legendary Pokémon (authentic design)
     // size (radio) y life (segundos) son ajustes del juego; PokeAPI no los proporciona.
     {
       id: 'electro-drift', name: 'Electroderrape', type: 'electric', kind: 'dash', sig: 1008,
@@ -919,9 +919,9 @@
     { id: 'electro-shot', name: 'Electrorrayo', type: 'electric', kind: 'charge', sig: 1018, desc: 'Acumula electricidad como un cañón de riel y dispara un rayo fulminante.', cd: 1.6, charge: 0.45, dmg: 60, radius: 350, width: 48 }
   ];
 
-  // Cuerpo a cuerpo (12-10-2026): +20 % de daño y +25 % de alcance y de arco
-  // (y -25 % de daño recibido mientras sea tu ataque activo, en player.js).
-  // Pegaban bien, pero había que arriesgar mucho más que con los de distancia.
+  // Melee adjustment (2026-10-12): +20% damage and +25% reach/arc
+  // (and -25% damage taken while it is your active attack, in player.js).
+  // Strong hits, but required significantly higher risk compared to ranged moves.
   for (const m of RAW) {
     if (m.kind !== 'melee') continue;
     m.dmg = Math.round(m.dmg * 1.2);
@@ -929,8 +929,8 @@
     if (m.arc) m.arc = Math.min(3, +(m.arc * 1.25).toFixed(2));
   }
 
-  // Pool de movimientos por tipo. El pool `normal` lo tienen todos.
-  // Los movimientos exclusivos (sig: dex) solo entran al pool de su Pokémon.
+  // Move pools by type. All Pokémon have access to the 'normal' pool.
+  // Exclusive signature moves (sig: dex) are only added to their Pokémon's pool.
   const POOL = {}, SIG_MOVES = {};
   for (const m of RAW) {
     if (m.sig) {
@@ -941,25 +941,23 @@
   }
 
   /*
-   * Físico o especial (G.Stats), como en los juegos. Los de estado que aquí sí
-   * hacen daño van por lo que hacen: trampas y golpes, físicos (Púas, Disparo
-   * Demora, Sustituto); efectos y energía, especiales (Tóxico, Granizo, Fuego
-   * Fatuo). Los potenciadores (buff) no tienen: no hacen daño.
+   * Physical or special (G.Stats), similar to main series games. Status moves
+   * that deal damage here are categorized by their nature: traps and physical hits
+   * are physical (Spikes, String Shot, Substitute); elemental effects and energy
+   * are special (Toxic, Hail, Will-O-Wisp). Buffs have none (deal no damage).
    */
   const PHYSICAL = new Set(['tackle', 'quick-attack', 'vine-whip', 'razor-leaf', 'wing-attack', 'body-slam', 'poison-sting',
     'bulldoze', 'bug-bite', 'string-shot', 'rock-throw', 'rock-slide', 'karate-chop', 'lick', 'metal-claw', 'bite',
     'bonemerang', 'psycho-cut', 'spikes', 'toxic-spikes', 'meteor-mash', 'substitute', 'aerial-ace', 'flame-wheel',
-    // nuevos del 19-10-2026
+    // 2026-10-19 additions
     'rapid-spin', 'flame-charge', 'seed-bomb', 'sand-tomb', 'magnitude', 'u-turn', 'rock-tomb', 'ice-shard',
     'rolling-kick', 'dynamic-punch', 'shadow-sneak', 'dragon-claw', 'outrage', 'play-rough', 'gyro-ball',
     'sucker-punch', 'night-slash',
-    // exclusivos físicos
+    // physical signature moves
     'collision-course', 'dragon-ascent', 'precipice-blades', 'sacred-fire', 'shadow-force',
     'pyro-ball', 'spirit-shackle', 'darkest-lariat', 'drum-beating', 'flower-trick', 'aqua-step', 'gigaton-hammer', 'bitter-blade', 'leaf-blade', 'blaze-kick', 'dragon-darts', 'v-create', 'bolt-strike', 'sunsteel-strike', 'spectral-thief', 'plasma-fists', 'behemoth-blade', 'behemoth-bash', 'wicked-blow', 'ivy-cudgel']);
 
-  // Los que disparan bolas necesitan count y spread de base: las mejoras los
-  // multiplican y, sin ellos, "+1 proyectil" no sumaba ninguno y el abanico se
-  // quedaba en 1,3 rad (Bomba Ácida evolucionada salía hacia los lados).
+  // Projectile moves require base count and spread: upgrades multiply them.
   for (const m of RAW) {
     if (m.kind !== 'projectile' && m.kind !== 'homing' && m.kind !== 'bounce') continue;
     if (m.count == null) m.count = 1;
@@ -975,8 +973,8 @@
   }
 
   /**
-   * Movimientos que este Pokémon puede aprender (sus tipos + normal) y, salvo
-   * con `natural`, los que ha aprendido con MT (Tienda Kecleon, ver G.Mons).
+   * Moves this Pokémon can learn (its types + normal) and, unless
+   * `natural` is true, those learned via TM (Kecleon Shop, see G.Mons).
    */
   function poolFor(mon, natural) {
     const ids = new Set(POOL.normal || []);
@@ -988,8 +986,8 @@
   }
 
   /**
-   * Instancia de movimiento en una run: los números base de `def` con todas
-   * las mejoras de la escalera hasta `lvl` ya aplicadas.
+   * In-run move instance: base values from `def` with ladder upgrades
+   * up to `lvl` applied.
    */
   function instance(id, lvl = 1) {
     const def = BY_ID[id];
@@ -1011,7 +1009,7 @@
     }
   }
 
-  /** Sube de nivel una instancia ya creada. */
+  /** Levels up an existing move instance. */
   function levelUp(s, levels = 1) {
     if (s.lvl >= s.def.maxLvl) return false;
     const end = Math.min(s.def.maxLvl, s.lvl + levels);
@@ -1022,12 +1020,12 @@
     return true;
   }
 
-  /** Texto de la próxima mejora, para la carta de subida de nivel. */
+  /** Next upgrade description for the level-up card. */
   function nextUpText(s, levels = 1) {
     return s.lvl >= s.def.maxLvl ? null : s.def.ups.slice(s.lvl - 1, s.lvl - 1 + levels).map(u => u.t).join('<br>');
   }
 
-  /** Movimiento inicial según el tipo principal (si el Pokémon no trae uno). */
+  /** Default starting move based on primary type (if Pokémon has none assigned). */
   const START = {
     fire: 'ember', water: 'water-gun', grass: 'vine-whip', electric: 'thunder-shock',
     psychic: 'confusion', poison: 'sludge', ground: 'mud-shot', flying: 'gust',
@@ -1042,18 +1040,18 @@
     return 'tackle';
   }
 
-  // ---------------- evolución de movimientos ----------------
+  // ---------------- move evolution ----------------
   /*
-   * Un movimiento al NIVEL MÁXIMO evoluciona si en esa run has cogido alguna
-   * vez la mejora de su condición (`needs`, un id de LevelUp.STATS). Sale una
-   * carta dorada. Los potenciadores (buff) no evolucionan.
+   * A move at MAX LEVEL evolves if during the run the player picked its
+   * required stat upgrade (`needs`, a LevelUp.STATS id). Displays as a golden card.
+   * Buffs do not evolve.
    */
   const NEED_NAME = {
     hp: 'Vigor', atk: 'Potencia', spd: 'Carrera', cd: 'Reflejos', def: 'Coraza',
     rgn: 'Síntesis', mag: 'Imán', xp: 'Aprendizaje'
   };
-  // Condición de cada uno. Al evolucionar se llama igual con « +» (Puño Meteoro +):
-  // así ningún nombre de movimiento queda gastado en una evolución.
+  // Requirement for each move. Evolved moves append " +" (e.g., Meteor Mash +):
+  // preserves original move names without exhausting name variants.
   const EVO = {
     'tackle': 'hp', 'quick-attack': 'spd',
     'body-slam': 'atk', 'hyper-voice': 'cd',
@@ -1085,7 +1083,7 @@
     'will-o-wisp': 'cd', 'substitute': 'def',
     'aerial-ace': 'spd', 'flame-wheel': 'spd',
     'bubble-beam': 'atk', 'hex': 'mag',
-    // nuevos del 19-10-2026
+    // added on 2026-10-19
     'hyper-beam': 'atk', 'rapid-spin': 'spd',
     'flame-charge': 'spd', 'whirlpool': 'rgn',
     'seed-bomb': 'atk', 'energy-ball': 'rgn',
@@ -1105,7 +1103,7 @@
     'play-rough': 'atk', 'disarming-voice': 'def',
     'mirror-shot': 'atk', 'gyro-ball': 'def',
     'sucker-punch': 'atk', 'night-slash': 'spd',
-    // exclusivos
+    // signature / exclusive moves
     'electro-drift': 'spd', 'collision-course': 'atk',
     'psystrike': 'cd', 'dragon-ascent': 'atk',
     'origin-pulse': 'mag', 'precipice-blades': 'hp',
@@ -1114,7 +1112,7 @@
     'spacial-rend': 'cd', 'shadow-force': 'spd',
     'water-shuriken': 'spd', 'pyro-ball': 'atk', 'spirit-shackle': 'cd', 'darkest-lariat': 'atk', 'drum-beating': 'hp', 'flower-trick': 'spd', 'torch-song': 'cd', 'aqua-step': 'spd', 'gigaton-hammer': 'atk', 'bitter-blade': 'hp', 'armor-cannon': 'def', 'fiery-dance': 'cd', 'night-daze': 'mag', 'leaf-blade': 'atk', 'blaze-kick': 'spd', 'muddy-water': 'rgn', 'blast-burn': 'atk', 'hydro-cannon': 'def', 'frenzy-plant': 'hp', 'dragon-darts': 'spd', 'dark-void': 'cd', 'psycho-boost': 'atk', 'doom-desire': 'mag', 'v-create': 'atk', 'blue-flare': 'atk', 'bolt-strike': 'atk', 'glaciate': 'cd', 'geomancy': 'rgn', 'oblivion-wing': 'hp', 'core-enforcer': 'def', 'sunsteel-strike': 'atk', 'moongeist-beam': 'cd', 'photon-geyser': 'atk', 'spectral-thief': 'spd', 'plasma-fists': 'atk', 'behemoth-blade': 'atk', 'behemoth-bash': 'def', 'dynamax-cannon': 'hp', 'wicked-blow': 'atk', 'astral-barrage': 'cd', 'ivy-cudgel': 'atk', 'tera-starstorm': 'mag', 'electro-shot': 'def'
   };
-  // Lo que gana al evolucionar, según cómo funcione.
+  // Stat and effect modifications granted upon evolution by move kind.
   const EVO_MODS = {
     projectile: { t: '×1,8 daño, +2 proyectiles, +2 perforación y más grandes', m: { dmg: 1.8, count: 2, pierce: 2, size: 1.3, spread: 1.1 } },
     melee: { t: '×1,9 daño, más alcance y golpea en 360°', m: { dmg: 1.9, radius: 1.3, arc: 9 } },
@@ -1142,7 +1140,7 @@
 
   const evoName = name => name + ' +';
 
-  /** ¿Puede evolucionar ya? → { name, needs, needName, text, ready } o null */
+  /** Can it evolve now? → { name, needs, needName, text, ready } or null */
   function evoInfo(m, statsTaken) {
     const needs = EVO[m.id];
     if (!needs || m.evolved || m.lvl < m.def.maxLvl || !EVO_MODS[m.kind]) return null;
@@ -1155,7 +1153,7 @@
     };
   }
 
-  /** Evoluciona una instancia (cambia nombre y potencia; sigue siendo del mismo tipo). */
+  /** Evolves an instance (updates name and stats; retains original type). */
   function evolve(m) {
     if (!EVO[m.id] || m.evolved) return false;
     const mods = m.id === 'water-shuriken'

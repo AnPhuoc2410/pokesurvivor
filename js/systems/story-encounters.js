@@ -511,7 +511,7 @@ G.StoryEncounters = (() => {
     const latios=all.find(e=>e?.dex===381 && !e.dead), latias=all.find(e=>e?.dex===380);
     if(arena.challengeId==='eon' && latios && (!latias||latias.dead) && !latios.encounter.enraged) {
       latios.encounter.enraged=true; latios.spd*=2; latios.dmg*=2;
-      G.Spawner.say('Latios cuồng nộ: tốc độ và sát thương ×2!',3,true);
+      G.Spawner.say('Enraged Latios: Speed and Damage ×2!',3,true);
       G.FX.ring(latios.x,latios.y,latios.r,latios.r*4,'#ff596c',0.8,4);
     }
     return null;
@@ -718,7 +718,7 @@ G.StoryEncounters = (() => {
     }
     if(fx.dark) {
       ctx.save();ctx.fillStyle='rgba(5,2,16,.97)';ctx.fillRect(0,0,w,h);ctx.restore();
-      labels.push('Ác mộng · 0,5 giây');
+      labels.push('Nightmare · 0.5s');
     }
     if(fx.confused) labels.push('Lú lẫn · đảo điều khiển 3 giây');
     if(fx.noHeal) labels.push('Sương: khóa hồi máu'); if(fx.noDash) labels.push('Địa hình: khóa dash');
@@ -757,7 +757,7 @@ G.StoryEncounters = (() => {
     drawGround, drawOverlay, drawProjectile, onEvent,
     get active() { return active(); }, get fields() { return fields; },
     defeated(e) { if (controls(e)) { arena.lastDefeated = e.dex; e.encDeathNoted = true; } },
-    skill(dex) { return G.BossForms?.skill(dex) || MOVES[dex] || ['Sức mạnh tai ương','Hạ một boss để phá aura, rồi né các loạt đạn tối.']; },
+    skill(dex) { return G.BossForms?.skill(dex) || MOVES[dex] || ['Ruinous Power','Defeat one boss to break the aura, then dodge dark bullet volleys.']; },
   attacks: { shot, fan, beam, pool, pointNear, bound, radius, attackRadius: radius, startDash, dashMove, applyStatus },
     specialMove(e, dt) {
       const swordDance=arena?.challengeId==='swords' && e.encounter?.swordDance && e.encounter?.dash?.special;

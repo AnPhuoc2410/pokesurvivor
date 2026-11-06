@@ -33,7 +33,7 @@ G.Net = (() => {
   // junta ('failed') y el anfitrión lo reintenta cada RETRY_MS. Por la base de datos
   // sólo pasa la señalización (unos pocos mensajes pequeños para conectarse).
   const DIRECT_TIMEOUT = 9000, TURN_TIMEOUT = 15000;   // ms para conseguir canal
-  // Trên web chính thức (pokesurvivor.com) và unit tests tắt relay; trên dev/LAN browser bật relay để không bị kẹt khi mạng chặn P2P.
+  // Public website and unit tests disable relay; dev/LAN browser enables relay to prevent P2P NAT blocks.
   const ALLOW_RELAY = typeof window !== 'undefined' && typeof location !== 'undefined' &&
     location.hostname !== 'pokesurvivor.com' && !location.hostname.endsWith('.pokesurvivor.com');
   const RETRY_MS = 15000;

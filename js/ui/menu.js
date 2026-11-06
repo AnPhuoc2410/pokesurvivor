@@ -54,16 +54,16 @@ G.MenuUI = (() => {
       $('boss-test-preview').textContent = `${n} người: bán kính sân ${G.Rift.arenaRadius(n)} ô · mô phỏng sân và HP co-op, không tạo đồng đội.`;
     };
     $('boss-test-players').onchange = preview; preview();
-    const viLabels = { forms: 'ĐỔI DẠNG', duo: 'BỘ ĐÔI', trio: 'BỘ BA', squad: 'ĐỘI / NHIỀU ĐỢT' };
+    const viLabels = { forms: 'FORM SHIFT', duo: 'DUO', trio: 'TRIO', squad: 'SQUAD' };
     list.innerHTML = stages.map((stage, index) => {
       const tier = G.Rift.DIFFICULTIES[stage.difficulty];
       const names = stage.dexes.map(dex => G.DEX_BY[dex]?.name || `#${dex}`).join(' · ');
       const missing = stage.dexes.filter(dex => !G.SPRITE_META[dex]);
       const disabled = !stage.available || missing.length > 0;
-      const note = disabled ? (stage.reason || 'Thiếu sprite cần thiết') : stage.description;
+      const note = disabled ? (stage.reason || 'Missing required sprites') : stage.description;
       return `${index === 0 || stages[index - 1].difficulty !== stage.difficulty ? `<h3 class="boss-stage-heading">${tier.name} <small>HP ×${tier.hp} · Sát thương ×${tier.damage}</small></h3>` : ''}
       <button class="boss-stage ${disabled ? 'disabled' : ''}" data-stage="${stage.id}" ${disabled ? 'disabled' : ''}>
-        <span class="boss-stage-kind">${tier.name} · ${viLabels[stage.kind] || 'MÀN ĐẤU'}</span>
+        <span class="boss-stage-kind">${tier.name} · ${viLabels[stage.kind] || 'STAGE'}</span>
         <b>${stage.title}</b><small>${names}</small><span class="sub">${note}</span>
       </button>`;
     }).join('');

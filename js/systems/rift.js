@@ -1,27 +1,26 @@
-/* ============ rift.js — grietas y arena del legendario ============
+/* ============ rift.js — rifts and legendary arena ============
  *
- * De vez en cuando (pocas veces por partida) se abre una GRIETA cerca de un
- * jugador. Dura GRIETA_TTL segundos; si entras, te lleva (con todo el grupo)
- * a una arena cerrada en el Mundo Distorsión, contra un Pokémon LEGENDARIO.
+ * Occasionally (a few times per run), a RIFT opens near a player.
+ * It lasts TTL seconds; entering transports the player (and party)
+ * to an arena in the Distortion World against a LEGENDARY Pokémon.
  *
- *   ganas    el legendario suelta tickets (el ×10, la mitad de las veces) y monedas, y cada uno se lleva un
- *            VÍNCULO (fusiona movimientos, ver Player.fuse); a los pocos
- *            segundos volvéis al mapa donde estabais y se elige la fusión
- *   pierdes  (caéis todos o se acaba el tiempo) volvéis sin premio, con algo
- *            de vida; la partida sigue
+ *   win   the legendary drops tickets (x10 ticket ~50% of the time) and coins,
+ *         and each player gets a BOND (fuse moves, see Player.fuse); after a
+ *         few seconds players return to the map to choose their fusion.
+ *   lose  (all faint or time expires) return without reward, with remaining
+ *         HP; the run continues.
  *
- * Mientras dura la arena, los enemigos del mapa se guardan (EnemyMgr.stash) y
- * no aparecen nuevos; al volver todo sigue como estaba.
+ * While the arena lasts, map enemies are stashed (EnemyMgr.stash) and
+ * no new enemies spawn; upon returning, state is restored.
  *
- * Cooperativo: lo decide el anfitrión. Mensajes (ver coop.js):
- *   'rift' x y ttl · 'riftx' · 'arena' cfg · 'aw' (ganada) · 'al' (perdida)
- *   y del invitado al anfitrión 're' (he entrado en la grieta).
+ * Coop: decided by host. Messages (see coop.js):
+ *   'rift' x y ttl · 'riftx' · 'arena' cfg · 'aw' (won) · 'al' (lost)
+ *   and from client to host: 're' (entered rift).
  */
 G.Rift = (() => {
-  // (0.14 hasta el 11-10-2026: más grietas para que se vean los vínculos)
-  // Menos azar (12-10-2026): cada vez que no sale, la siguiente es más
-  // probable (20 %, 40 %, 60 %, 80 %, 100 %): como mucho 2,5 min sin grieta.
-  // Desde 2 min antes de la Sentencia de Arceus (minuto 30) ya no se abren.
+  // Cooldown and spawn chance:
+  // After each failed check, chance increases (20%, 40%, 60%, 80%, 100%):
+  // at most 2.5 min between rifts. Closed 2 min prior to Judgment (minute 30).
   const CHECK = 30, CHANCE = 0.2, TTL = 45;
   const ARENA_R = 11, ARENA_TIME = 120, STORY_TIME = 300, FROM = 75;
   const STORY_BOSSES = [382, 383, 384]; // Kyogre, Groudon, Rayquaza
@@ -33,59 +32,59 @@ G.Rift = (() => {
   const partySize = count => Math.max(1, Math.min(10, Math.floor(Number(count) || 1)));
   const arenaRadius = (count, base = ARENA_R) => Math.ceil(base * (1 + 0.2 * (partySize(count) - 1)));
   const CHALLENGES = [
-    ['zygarde','Zygarde · Núcleo cambiante','forms',[718],[[718]]], ['darmanitan','Darmanitan · Modo Zen','forms',[555],[[555]]],
-    ['wishiwashi','Wishiwashi · Banco de peces','forms',[746],[[746]]], ['necrozma','Necrozma · Alas del amanecer','forms',[800],[[800]]],
-    ['aegislash','Aegislash · Cambio de postura','forms',[681],[[681]]], ['deoxys','Deoxys · Formas cambiantes','forms',[386],[[386]]],
-    ['rotom','Rotom · Electrodomésticos','forms',[479],[[479]]], ['meloetta','Meloetta · Aria y Danza','forms',[648],[[648]]],
-    ['hoopa','Hoopa · Desatado','forms',[720],[[720]]], ['terapagos','Terapagos · Terastal','forms',[1024],[[1024]]],
-    ['weather','Bộ ba thời tiết','trio',[382,383,384],[[382,383],[384]]], ['creation','Bộ ba sáng tạo','trio',[483,484,487],[[483,484],[487]]],
-    ['tao','Bộ ba Tao','trio',[643,644,646],[[643,644],[646]]], ['lake','Bộ ba hồ','trio',[480,481,482],[[480,481,482]]],
-    ['beasts','Bộ ba thú huyền thoại','trio',[243,244,245],[[243,244,245]]], ['birds','Bộ ba chim huyền thoại','trio',[144,145,146],[[144,145,146]]],
-    ['swords','Bộ tứ Thánh kiếm','squad',[638,639,640,647],[[638,639,640,647]]], ['tapu','Bộ tứ Hộ thần','squad',[785,786,787,788],[[785,786,787,788]]],
-    ['ruin','Bộ tứ tai ương','squad',[1001,1002,1003,1004],[[1001,1002,1003,1004]]],
-    ['regi','Đội hình Người khổng lồ','squad',[377,378,379,894,895,486],[[377,378,379,894,895],[486]]],
-    ['eon','Bộ đôi Eon','duo',[380,381],[[380,381]]], ['moon','Bộ đôi Mặt trăng','duo',[488,491],[[488,491]]],
-    ['tower','Bộ đôi tháp trời','duo',[249,250],[[249,250]]], ['heroes','Bộ đôi anh hùng','duo',[888,889],[[888,889]]]
+    ['zygarde','Zygarde · Order Restored','forms',[718],[[718]]], ['darmanitan','Darmanitan · Zen Awakening','forms',[555],[[555]]],
+    ['wishiwashi','Wishiwashi · Schooling','forms',[746],[[746]]], ['necrozma','Necrozma · Ultra Burst','forms',[800],[[800]]],
+    ['aegislash','Aegislash · Stance Change','forms',[681],[[681]]], ['deoxys','Deoxys · Four Formes','forms',[386],[[386]]],
+    ['rotom','Rotom · Appliance Shifts','forms',[479],[[479]]], ['meloetta','Meloetta · Relic Song','forms',[648],[[648]]],
+    ['hoopa','Hoopa · Unbound Prison','forms',[720],[[720]]], ['terapagos','Terapagos · Terastal Form','forms',[1024],[[1024]]],
+    ['weather','Weather Trio','trio',[382,383,384],[[382,383],[384]]], ['creation','Creation Trio','trio',[483,484,487],[[483,484],[487]]],
+    ['tao','Tao Trio','trio',[643,644,646],[[643,644],[646]]], ['lake','Lake Trio','trio',[480,481,482],[[480,481,482]]],
+    ['beasts','Legendary Beasts','trio',[243,244,245],[[243,244,245]]], ['birds','Legendary Birds','trio',[144,145,146],[[144,145,146]]],
+    ['swords','Swords of Justice','squad',[638,639,640,647],[[638,639,640,647]]], ['tapu','Guardian Deities','squad',[785,786,787,788],[[785,786,787,788]]],
+    ['ruin','Treasures of Ruin','squad',[1001,1002,1003,1004],[[1001,1002,1003,1004]]],
+    ['regi','Legendary Titans','squad',[377,378,379,894,895,486],[[377,378,379,894,895],[486]]],
+    ['eon','Eon Duo','duo',[380,381],[[380,381]]], ['moon','Lunar Duo','duo',[488,491],[[488,491]]],
+    ['tower','Tower Duo','duo',[249,250],[[249,250]]], ['heroes','Hero Duo','duo',[888,889],[[888,889]]]
   ].map(([id,title,kind,dexes,waves]) => ({id,title,kind,dexes,waves,available:id!=='ruin',description:({
-    ruin:'Chưa mở: Wo-Chien và Chien-Pao còn thiếu sprite.', weather:'Kyogre/Groudon rải vùng nổ đỏ; Rayquaza quét tia chéo.',
-    swords:'Bốn boss áp sát; né vùng đỏ và các đợt đạn.', eon:'Latias hỗ trợ Latios; các đợt vùng đỏ xuất hiện quanh người chơi.',
-    creation:'Dialga/Palkia tạo vùng nguy hiểm; Giratina mở đợt tấn công cuối.', tao:'Hai boss đầu mở màn; Kyurem kế tiếp với các vùng đạn liên tục.',
-    forms:'Boss có hai thanh máu. Khi thanh đầu cạn, né trong lúc boss biến đổi.'
-  })[id] || (kind==='forms'?'Boss có hai thanh máu. Khi thanh đầu cạn, boss biến đổi; né vùng đỏ trong chiêu đặc biệt.':'Các boss lần lượt tung đợt tấn công đặc biệt; vùng đỏ báo vị trí sắp trúng.')}));
+    ruin:'Locked: Wo-Chien and Chien-Pao missing sprites.', weather:'Kyogre/Groudon deploy blast hazards; Rayquaza sweeps diagonal beams.',
+    swords:'Four bosses converge; dodge red danger zones and bullet fans.', eon:'Latias supports Latios; danger zones appear around the player.',
+    creation:'Dialga/Palkia create danger zones; Giratina delivers the final assault.', tao:'Initial duo opens battle; Kyurem follows with dense bullet zones.',
+    forms:'Boss has two HP bars. When the first empties, dodge during the transformation.'
+  })[id] || (kind==='forms'?'Boss has two HP bars; when first empties, boss transforms; dodge danger zones.':'Bosses unleash telegraphed special attacks in sequence.')}));
   CHALLENGES.forEach(stage => {
     stage.title = ({
-      zygarde: 'Zygarde: Từ 10% đến Hoàn chỉnh', darmanitan: 'Darmanitan: Thức tỉnh Thần lực', wishiwashi: 'Wishiwashi: Đàn cá hội tụ', necrozma: 'Necrozma: Ánh sáng Ultra',
-      aegislash: 'Aegislash: Kiếm và Khiên', deoxys: 'Deoxys: Bốn dạng chiến đấu', rotom: 'Rotom: Các dạng thiết bị', meloetta: 'Meloetta: Khúc ca đổi dạng',
-      hoopa: 'Hoopa: Phong ấn bị phá vỡ', terapagos: 'Terapagos: Tinh thể Terastal', weather: 'Bộ ba Thời tiết', creation: 'Bộ ba Sáng thế', tao: 'Bộ ba Tao', lake: 'Bộ ba Hồ thiêng',
-      beasts: 'Bộ ba Thú huyền thoại', birds: 'Bộ ba Chim huyền thoại', swords: 'Bộ tứ Thánh Kiếm', tapu: 'Bộ tứ Hộ thần', ruin: 'Bộ tứ Tai ương', regi: 'Đội hình Người khổng lồ',
-      eon: 'Bộ đôi Eon', moon: 'Bộ đôi Mặt trăng', tower: 'Bộ đôi Tháp trời', heroes: 'Bộ đôi Anh hùng'
+      zygarde: 'Zygarde: Order Restored', darmanitan: 'Darmanitan: Zen Awakening', wishiwashi: 'Wishiwashi: Schooling', necrozma: 'Necrozma: Ultra Burst',
+      aegislash: 'Aegislash: Stance Change', deoxys: 'Deoxys: Four Formes', rotom: 'Rotom: Appliance Shifts', meloetta: 'Meloetta: Relic Song',
+      hoopa: 'Hoopa: Unbound Prison', terapagos: 'Terapagos: Terastal Form', weather: 'Weather Trio', creation: 'Creation Trio', tao: 'Tao Trio', lake: 'Lake Trio',
+      beasts: 'Legendary Beasts', birds: 'Legendary Birds', swords: 'Swords of Justice', tapu: 'Guardian Deities', ruin: 'Treasures of Ruin', regi: 'Legendary Titans',
+      eon: 'Eon Duo', moon: 'Lunar Duo', tower: 'Tower Duo', heroes: 'Hero Duo'
     })[stage.id];
-    stage.description = stage.id === 'zygarde' ? 'Ba hình thái: 10% → 50% → Hoàn chỉnh.' : stage.kind === 'forms'
-      ? 'Boss có hai thanh máu; khi thanh đầu cạn, boss chuyển dạng và tung chiêu đặc biệt.'
-      : 'Đánh bại các boss qua từng đợt. Quan sát vùng báo hiệu để né chiêu đặc biệt.';
-    if (stage.id === 'zygarde') stage.previewForms = ['Dạng 10%', 'Dạng 50%', 'Dạng Hoàn chỉnh'];
+    stage.description = stage.id === 'zygarde' ? 'Three forms: 10% → 50% → Complete.' : stage.kind === 'forms'
+      ? 'Boss has two HP bars; when first empties, it transforms with a special attack.'
+      : 'Defeat bosses across sequential waves. Watch hazard telegraphs to evade special attacks.';
+    if (stage.id === 'zygarde') stage.previewForms = ['10% Form', '50% Form', 'Complete Form'];
   });
   let rift = null;          // { x, y, ttl, t }
   let arena = null;         // { tx, ty, r, dex, shiny, x, y, back, biome, t, phase, endT, bossId }
-  let zone = null;          // dónde estaba la última arena { x, y, r } (ver leftBehind)
+  let zone = null;          // previous arena location { x, y, r } (see leftBehind)
   let checkT = CHECK, asked = false, downT = 0, misses = 0;
   let storyStarted = false;
   const authority = () => !G.Coop.active || G.Coop.isHost;
   const TS = () => G.Tiles.T * G.Sprites.PX;
+  const T = (k, ctx) => (G.I18n?.t ? G.I18n.t(k, ctx) : (typeof G.T === 'function' ? G.T(k, ctx) : k));
 
   function reset() { G.StoryEncounters?.reset(); rift = null; arena = null; zone = null; checkT = CHECK; asked = false; downT = 0; misses = 0; storyStarted = false; }
 
   /**
-   * ¿Sigue este jugador en la arena aunque aquí ya se haya vuelto al mapa?
-   * En grupo, el anfitrión vuelve unas décimas antes que los invitados (el aviso
-   * tarda en llegar) y en ese rato los ve aún allí: el jefe que esperaba salía a su
-   * lado, a miles de metros, y ya no se le encontraba (ni salían más grietas).
+   * Is this player still in the arena even if we already returned to the map?
+   * In coop, host returns slightly before clients (network delay) and still sees
+   * them in the arena zone.
    */
   function leftBehind(p) {
     return !arena && !!zone && G.U.dist2(p.x, p.y, zone.x, zone.y) < zone.r * zone.r;
   }
 
-  // ---------------- grieta en el mapa ----------------
+  // ---------------- rift on map ----------------
 
   function update(dt, pl, time) {
     if (!arena && authority() && G.Game.hurryMode && !G.Game.bossChallengeMode && time >= G.Judgment.AT) {
@@ -106,7 +105,7 @@ G.Rift = (() => {
       checkT -= dt * (G.Game && G.Game.timeScale != null ? G.Game.timeScale : 1);
       if (checkT <= 0) {
         checkT = CHECK;
-        if (G.EnemyMgr.bossAlive()) return;           // con un jefe vivo no cuenta como intento
+        if (G.EnemyMgr.bossAlive()) return;           // a living boss prevents rift attempts
         if (Math.random() < CHANCE * (1 + misses)) { misses = 0; open(); }
         else misses++;
       }
@@ -142,11 +141,11 @@ G.Rift = (() => {
     if (G.Coop.isHost) G.Coop.broadcast(['rift', Math.round(x), Math.round(y), TTL, 1]);
   }
 
-  /** Aparece la grieta (también la que manda el anfitrión). */
+  /** Spawns the rift (including broadcast from host). */
   function show(x, y, ttl, story = false) {
     rift = { x, y, ttl, t: 0, story };
     asked = false;
-    // (El aviso grande lo dibuja hud.js mientras rift.t < 4,5 s.)
+    // (Banner is drawn by hud.js while rift.t < 4.5s)
     G.Audio.sfx('rift');
     G.FX.ring(x, y, 6, 80, '#b48aff', 0.7, 5);
   }
@@ -160,15 +159,15 @@ G.Rift = (() => {
 
   // ---------------- arena ----------------
 
-  /** Quien manda: elige legendario y lugar, y avisa a todos. */
-  let nextType = null;          // pruebas/vídeos: tipo de la próxima arena
+  /** Host authority: selects legendary and location, and broadcasts to party. */
+  let nextType = null;          // debug/video: next arena type
 
   function start(forceType) {
     if (arena) return;
     forceType = forceType || nextType; nextType = null;
     let pool = G.DEX.filter(p => p.leg && G.SPRITE_META[p.dex]);
     if (forceType && pool.some(p => p.types.includes(forceType))) pool = pool.filter(p => p.types.includes(forceType));
-    // Los legendarios que aún no has vencido salen 4 veces más (menos repetidos).
+    // Unbeaten legendaries have 4x weight (fewer repeats).
     const beaten = (G.DB.save && G.DB.save.legends) || {};
     const ws = pool.map(p => (beaten[p.dex] ? 1 : 4));
     let r = Math.random() * ws.reduce((a, b) => a + b, 0), mi = 0;
@@ -177,7 +176,7 @@ G.Rift = (() => {
     const cfg = {
       tx: 5000 + Math.floor(Math.random() * 3000), ty: 5000 + Math.floor(Math.random() * 3000), r: arenaRadius(G.Game.everyone().length),
       dex: mon.dex, shiny: G.Sprites.hasShiny(mon.dex) && Math.random() < 1 / 512,
-      // La arena es la de uno de sus tipos, al azar.
+      // Arena matches one of the boss types at random.
       type: forceType || G.U.pick(mon.types)
     };
     if (G.Coop.isHost) G.Coop.broadcast(['arena', cfg]);
@@ -230,7 +229,7 @@ G.Rift = (() => {
     return true;
   }
 
-  /** En cada ordenador: viaje a la arena. */
+  /** Local machine: travel to arena. */
   function begin(cfg) {
     const pl = G.Game.player;
     const ts = TS();
@@ -256,16 +255,16 @@ G.Rift = (() => {
     G.Hazards.clear();
     G.World.setArena({ tx: cfg.tx, ty: cfg.ty, r: cfg.r, type: cfg.type, clearFloor: !!(cfg.challenge && G.StoryEncounters?.STAGES[cfg.challengeId]) });
     G.World.setBiome(G.Tiles.arenaBiome(cfg.type), true);
-    // Cada arena trae su clima (el volcán, sol; el glaciar, nieve...).
+    // Each arena brings its weather (volcano -> sun, glacier -> snow, etc.).
     const th = G.Tiles.ARENA_THEMES[cfg.type];
     if (th && th.weather) G.Weather.force(th.weather, ARENA_TIME + 15);
-    // Todos al sur de la arena, en fila; el legendario aparece al norte.
+    // Players spawn to the south in a line; legendary spawns north.
     const ps = G.Game.everyone();
     ps.forEach((p, i) => { p.x = arena.x + (i - (ps.length - 1) / 2) * 34; p.y = arena.y + ts * 3; });
     G.Camera.x = pl.x; G.Camera.y = pl.y;
     G.Game.flash(cfg.story ? '#fff1a3' : '#c9a6ff', 0.9);
     G.Audio.sfx('rift');
-    G.Spawner.say(cfg.challenge ? cfg.challengeTitle : cfg.story ? 'La tríada del clima…' : 'Has entrado en la grieta…', 2.4, true);
+    G.Spawner.say(cfg.challenge ? cfg.challengeTitle : cfg.story ? T('La tríada del clima…') : T('Has entrado en la grieta…'), 2.4, true);
   }
 
   function spawnLegend(dex = arena.dex, storyBoss = false, x = arena.x, y = arena.y - TS() * 3.5) {
@@ -285,8 +284,7 @@ G.Rift = (() => {
     const e = new G.Enemy(def, x, y, G.Enemies.hurryScale(t, true), true);
     e.legend = true;
     e.storyBoss = storyBoss;
-    // Choca con las paredes y columnas como tú: si volara por encima de las
-    // rocas, tus disparos no podrían alcanzarle (bug de Celebi).
+    // Collides with walls and pillars like player so shots can hit.
     e.flying = false;
     if (arena.shiny) e.makeShiny();
     G.EnemyMgr.add(e);
@@ -296,7 +294,7 @@ G.Rift = (() => {
     G.Audio.sfx('boss');
   }
 
-  /** Nadie sale del círculo de la arena (por si algo empuja demasiado). */
+  /** Constrain entities within the circular arena boundary. */
   function keepInside() {
     const ts = TS(), max = (arena.r - 1.4) * ts;
     for (const e of G.EnemyMgr.all()) {
@@ -652,10 +650,10 @@ G.Rift = (() => {
 
   function specialName(dex) {
     if (G.StoryEncounters?.active) return G.StoryEncounters.skill(dex)[0];
-    if (dex === 382) return arena.challenge ? 'Vòng sóng nước' : 'Sóng thủy triều 4 hướng';
-    if (dex === 383) return 'Chuỗi phun trào dung nham';
-    if (dex === 384) return 'Tia cắt chéo';
-    return 'Đợt tấn công riêng';
+    if (dex === 382) return arena.challenge ? 'Tidal Ring' : '4-Way Tidal Wave';
+    if (dex === 383) return 'Magma Eruption Chain';
+    if (dex === 384) return 'Diagonal Cutting Beams';
+    return 'Special Attack Wave';
   }
 
   function cineTick(dt) {
@@ -700,7 +698,7 @@ G.Rift = (() => {
     }
     if (pl && !arena.story) {
       pl.bonds++;
-      G.FX.dmgText(pl.x, pl.y - pl.bodyH - 10, '¡Vínculo!', '#ff8ad8', true);
+      G.FX.dmgText(pl.x, pl.y - pl.bodyH - 10, T('¡Vínculo!'), '#ff8ad8', true);
       G.FX.ring(pl.x, pl.y, 8, 90, '#ff8ad8', 0.7, 5);
     }
   }
@@ -708,11 +706,11 @@ G.Rift = (() => {
   function lost() {
     if (!arena || arena.phase !== 'fight') return;
     arena.phase = 'lost'; arena.endT = 1.2;
-    G.Spawner.say('La grieta os ha expulsado…', 2.6, true);
+    G.Spawner.say(T('La grieta os ha expulsado…'), 2.6, true);
     G.Audio.sfx('back');
   }
 
-  /** En cada ordenador: vuelta al mapa. */
+  /** Local machine: return to map. */
   function finish() {
     const pl = G.Game.player;
     const a = arena;
@@ -731,10 +729,7 @@ G.Rift = (() => {
     if (a.challenge) { G.Game.exitBossChallenge(); return; }
     G.World.setBiome(a.biome, true);
     G.Weather.clear();
-    // Invitado: no se borra nada. El anfitrión avisa de los de la arena que se
-    // van y de los del mapa que vuelven; si el invitado terminaba su cuenta
-    // atrás un poco más tarde (pasa casi siempre), borraba los que acababan de
-    // volver y no se veían hasta que caían (sólo sus ataques).
+    // Client: host notifies arena despawns and map enemy restoration.
     if (authority()) G.EnemyMgr.restore();
     G.Projectiles.clear();
     G.Combat.clearFields();
@@ -754,7 +749,7 @@ G.Rift = (() => {
       const cine = arena.cine;
       const k = Math.min(1, cine.t / 0.14, (cine.dur - cine.t) / 0.18);
       const mon = G.DEX_BY[cine.dex];
-      const title = mon ? G.T(mon.name).toUpperCase() : '¡EL JEFE!';
+      const title = mon ? T(mon.name).toUpperCase() : '¡EL JEFE!';
       const boss = G.EnemyMgr.get(cine.bossId);
       const color = G.U.TYPE_COLOR[boss && boss.atkType] || '#fff0ad';
       const pulse = 0.5 + 0.5 * Math.sin(cine.t * 13);
@@ -803,7 +798,7 @@ G.Rift = (() => {
     }
     if (arena.phase === 'fight' && arena.evading > 0) {
       const boss = G.EnemyMgr.get(arena.activeEvadeBossId);
-      const title = boss ? `${G.T(boss.name).toUpperCase()} · ${specialName(boss.dex).toUpperCase()}` : 'CHIÊU ĐẶC BIỆT';
+      const title = boss ? `${T(boss.name).toUpperCase()} · ${specialName(boss.dex).toUpperCase()}` : 'SPECIAL ATTACK';
       const progress = Math.max(0, Math.min(1, arena.evading / 4));
       ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'top';
       ctx.translate(0, 96);
@@ -811,7 +806,7 @@ G.Rift = (() => {
       ctx.font = '700 20px Pixelify, monospace'; ctx.fillStyle = '#ff6868';
       ctx.shadowColor = '#300'; ctx.shadowBlur = 12; ctx.fillText(title, w / 2, 16, w * 0.74);
       ctx.font = '700 14px Pixelify, monospace'; ctx.fillStyle = '#fff1bc';
-      const instruction = G.StoryEncounters?.active && boss ? G.StoryEncounters.skill(boss.dex)[1] : 'DI CHUYỂN ĐỂ NÉ · 3 ĐỢT TRONG 4 GIÂY';
+      const instruction = G.StoryEncounters?.active && boss ? G.StoryEncounters.skill(boss.dex)[1] : 'MOVE TO EVADE · 3 WAVES IN 4 SECONDS';
       ctx.fillText(instruction, w / 2, 42, w * 0.74);
       ctx.shadowBlur = 0; ctx.fillStyle = 'rgba(255,255,255,.24)';
       ctx.fillRect(w * 0.25, 64, w * 0.5, 5);
@@ -821,7 +816,7 @@ G.Rift = (() => {
     }
     if (arena.phase !== 'intro') return;
     const t = arena.introT, fade = Math.min(1, t * 2, (4 - t) * 2);
-    const title = arena.challenge ? arena.challengeTitle.toUpperCase() : 'LA TRÍADA DEL CLIMA';
+    const title = arena.challenge ? arena.challengeTitle.toUpperCase() : 'WEATHER TRIO';
     ctx.save();
     ctx.fillStyle = `rgba(4, 8, 22, ${0.74 * Math.max(0, fade)})`;
     ctx.fillRect(0, 0, w, h);
@@ -850,13 +845,13 @@ G.Rift = (() => {
       });
     }
     ctx.shadowBlur = 0; ctx.font = '700 ' + Math.max(13, Math.min(20, w * 0.026)) + 'px Pixelify, monospace';
-    ctx.fillStyle = '#c8dcff'; ctx.fillText(arena.challenge ? 'POKÉMON SẮP XUẤT HIỆN' : 'BỘ BA THỜI TIẾT', cx, cy + 82);
+    ctx.fillStyle = '#c8dcff'; ctx.fillText(arena.challenge ? 'POKÉMON INCOMING' : 'WEATHER TRIO', cx, cy + 82);
     ctx.restore();
   }
 
   // ---------------- dibujo ----------------
 
-  /** La grieta, para ordenarla por Y con el resto de la escena. */
+  /** Rift drawable for Y-sorting with scene elements. */
   function drawable() {
     if (!rift) return null;
     return {
@@ -919,9 +914,9 @@ G.Rift = (() => {
     get timeLeft() { return arena ? (arena.challenge ? Infinity : Math.max(0, (arena.story ? STORY_TIME : ARENA_TIME) - arena.t)) : 0; },
     debugOpen() { open(); },
     debugStory() { if (!arena) startStory(); },
-    /** Para pruebas: arena de un tipo ya. */
+    /** Debug: test arena by type. */
     debugArena(type) { start(type); },
-    /** Para vídeos: la próxima grieta en la que entres será de este tipo. */
+    /** Debug: set next rift arena type. */
     debugNextType(type) { nextType = type; }
   };
 })();

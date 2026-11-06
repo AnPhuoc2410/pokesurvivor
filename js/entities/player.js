@@ -39,7 +39,7 @@ G.Player = class Player {
     this.active = 0;           // hueco activo
     this.maxMoves = 4;         // huecos
     this.bonds = 0;            // vínculos por usar (premio de los legendarios)
-    this.autoSwap = false;     // tự động đổi skill 1 ⇄ 2
+    this.autoSwap = false;     // auto-swap move slots 1 ⇄ 2
     this.autoSwapTimer = 0;
 
     // patk / satk: Danza Espada y Danza Dragón (físico) y Maquinación (especial).

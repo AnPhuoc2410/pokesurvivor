@@ -405,7 +405,7 @@ G.HUD = (() => {
       }
     }
 
-    // ---------- nút / chỉ báo AUTO đổi chiêu [J] ----------
+    // ---------- AUTO move swap button / indicator [J] ----------
     if (pl.slots && pl.slots.length >= 2) {
       const autoActive = pl.autoSwap;
       const abw = 56, abh = 20;
