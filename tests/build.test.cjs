@@ -47,6 +47,11 @@ test('both published entry pages contain the mode controls and use the current b
     const html = fs.readFileSync(path.join(root, f), 'utf8');
     assert.equal((html.match(/id="menu-mode"/g) || []).length, 1, f);
     assert.ok(html.includes('id="menu-mode-hint"'), f);
+    assert.ok(html.includes('3 màn boss ngẫu nhiên, mỗi mức 1 màn'), f);
+    assert.ok(html.includes('data-go="hurry-test"'), f);
+    assert.ok(html.includes('id="boss-test-players"'), f);
+    assert.ok(html.includes('id="boss-test-immortal"'), f);
+    assert.ok(html.includes('<option value="10">10 người</option>'), f);
     if (f !== 'dev.html') assert.ok(html.includes('js/app.min.js?v=' + version), f);
   }
 });

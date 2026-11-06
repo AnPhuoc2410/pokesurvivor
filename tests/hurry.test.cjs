@@ -217,7 +217,7 @@ test('weather checks compress in Hurry but weather duration remains combat time'
   }
 });
 
-test('starting Hurry initializes the right XP curve and a chest grants one level with XP bonuses', () => {
+function startup() {
   const { G, pl } = setup(false), mon = pl.mon;
   const reset = { reset() {}, clear() {} };
   G.Halloween = { runStart() {} }; G.DB = { save: { partner: 4 }, upgradesOf: () => ({}) };
@@ -233,7 +233,12 @@ test('starting Hurry initializes the right XP curve and a chest grants one level
   G.startMoveOf = () => 'ember';
   G.Coop = { active: true, isHost: true, begin() {}, xpFactor: () => 0.8 };
   G.Social = { setPlaying() {} };
-  new Function('G', 'addEventListener', source('js/game.js'))(G, () => {});
+  new Function('G', 'addEventListener', 'document', source('js/game.js'))(G, () => {}, { getElementById: () => null });
+  return G;
+}
+
+test('starting Hurry initializes the right XP curve and a chest grants one level with XP bonuses', () => {
+  const G = startup();
   G.Game.startRun({ hurry: true, members: [] });
   const player = G.Game.player;
   assert.equal(G.Game.st.hurryMode, true);
@@ -245,13 +250,57 @@ test('starting Hurry initializes the right XP curve and a chest grants one level
   assert.equal(player.gainXp(drop * G.Coop.xpFactor()), 1);
 });
 
-test('game clock reaches Arceus at 15 minutes in Hurry and 30 in Standard', () => {
+test('the menu test jumps to the Hurry finale with a prepared player and no reward seal', () => {
+  const G = startup(); G.Coop.active = false;
+  let seals = 0, entered = 0, exited = 0, returned = 0;
+  G.Judgment.AT = 1800;
+  G.Ranking.newSeal = () => seals++;
+  G.Rift = { reset() {}, startHurryFinale() { entered++; return true; } };
+  G.Spawner = { reset() {}, say() {} };
+  G.MenuUI = { openBossStages() { exited++; } };
+  G.World.MENU_SEED = 0;
+  G.Sprites.Animator.prototype._start = () => {};
+  G.Game.startHurryFinaleTest();
+  G.Game.toUI = () => returned++;
+  assert.equal(entered, 1); assert.equal(seals, 0);
+  assert.equal(G.Game.realTime, 900); assert.equal(G.Game.matchTime, 1800);
+  assert.equal(G.Game.hurryMode, true); assert.equal(G.Game.storyTestMode, true);
+  assert.equal(G.Game.bossChallengeInvincible, true);
+  assert.equal(G.Game.player.level, 43);
+  assert.ok(G.Game.player.moves.every(m => m.lvl === m.def.maxLvl));
+  G.Game.finishHurryFinale(true);
+  assert.equal(exited, 1); assert.equal(returned, 1); assert.equal(G.Game.bossChallengeMode, false);
+});
+
+test('boss practice forwards the simulated party size and optionally enables invincibility', () => {
+  const G = startup(); G.Coop.active = false;
+  let args, seals = 0;
+  G.Ranking.newSeal = () => seals++;
+  G.Rift = { reset() {}, startChallenge(...values) { args = values; return true; } };
+  G.Spawner = { reset() {}, say() {} };
+  G.Sprites.Animator.prototype._start = () => {};
+  G.Game.startBossChallenge('creation', 10, true);
+  assert.deepEqual(args, ['creation', null, 10]);
+  assert.equal(G.Game.bossChallengeInvincible, true); assert.equal(seals, 0);
+});
+
+test('game clock reaches the Hurry finale at 15 minutes and uses normal speed during boss stages', () => {
   const { G } = setup(); G.Judgment = { active: false };
   new Function('G', 'addEventListener', source('js/game.js'))(G, () => {});
   G.Game.setHurryMode(true); G.Game.debugTime(1800);
   assert.equal(G.Game.st.time, 900); assert.equal(G.Game.st.matchTime, 1800);
   assert.equal(G.Game.timeScale, 2);
+  G.Rift = { hurryFinale: true }; assert.equal(G.Game.timeScale, 1);
+  G.Rift.hurryFinale = false;
   G.Judgment.active = true; assert.equal(G.Game.timeScale, 1);
   G.Judgment.active = false; G.Game.setHurryMode(false); G.Game.debugTime(1800);
   assert.equal(G.Game.st.time, 1800); assert.equal(G.Game.timeScale, 1);
+});
+
+test('Hurry never starts the invincible Arceus encounter', () => {
+  const { G } = setup();
+  G.Game.hurryMode = true;
+  load(G, 'js/systems/judgment.js');
+  G.Judgment.update(1, G.Game.player, G.Judgment.AT);
+  assert.equal(G.Judgment.active, false);
 });
