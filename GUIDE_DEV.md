@@ -113,7 +113,7 @@ js/
 │   ├── menu.js           # Menu chính ngoài sảnh
 │   ├── hud.js            # Thanh máu, đồng hồ trận đấu, bảng chiêu thức trong trận
 │   ├── login.js          # Màn hình đăng nhập tài khoản / Khách (Guest)
-│   ├── social-ui.js      # Giao diện Phòng chờ (Lobby), Bạn bè, Ô nhập Nickname Host
+│   ├── social-ui.js      # Giao diện Phòng chờ (Lobby), Bạn bè, Ô nhập Nickname Host1
 │   ├── run-ui.js         # Màn hình kết thúc trận (Thắng/Thua, Thống kê sát thương)
 │   ├── shop-ui.js        # Giao diện Cửa hàng Kecleon
 │   ├── gacha-ui.js       # Giao diện Bàn quay Gacha

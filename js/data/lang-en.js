@@ -67,7 +67,10 @@ G.I18n.add({
   'Teraclúster': 'Tera Starstorm',
   'Electrorrayo': 'Electro Shot',
 
-  'Lanza veloces shurikens de agua a presión que perforan a los enemigos.': 'Hurls high-speed pressurized water shurikens that pierce through enemies.',
+  'Lanza veloces shurikens de agua a presión (1 a 5 según el nivel).': 'Hurls high-speed pressurized water shurikens (1 to 5 based on level).',
+  '×1,8 daño y Shuriken Gigante': '×1.8 damage & Giant Shuriken',
+  '+1 shuriken y -25% recarga': '+1 shuriken & -25% cooldown',
+  '+2 shurikens y +25% daño': '+2 shurikens & +25% damage',
   'Chuta una esfera de fuego llameante que explota con violencia al impactar.': 'Kicks a flaming soccer fireball that explodes with violent force on impact.',
   'Dispara flechas espectrales que cosen al enemigo al suelo frenándolo.': 'Fires spectral arrows that pin enemies to the ground, heavily slowing them.',
   'Gira con los brazos en llamas ignorando las defensas y apartando a todos.': 'Spins with fiery muscular arms, ignoring enemy defense and batting foes away.',
