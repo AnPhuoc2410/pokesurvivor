@@ -146,7 +146,7 @@ G.Combat = (() => {
     G.Projectiles.spawn(Object.assign({
       x: pl.x + Math.cos(a) * 3, y: pl.y + Math.sin(a) * 3,
       vx: Math.cos(a) * m.speed, vy: Math.sin(a) * m.speed,
-      dmg: m.dmg * pl.atkFor(m), r: m.size, life: m.life,
+      dmg: m.dmg * pl.atkFor(m), r: m.size || 6, life: m.life || 1.4,
       pierce: m.pierce | 0, color: col, homing: m.homing || 0,
       hits: new Set(), vis, ghost, owner: pl
     }, payload(m)));
@@ -863,18 +863,15 @@ G.Combat = (() => {
 
 
   function runWaterShuriken(pl, m) {
-    const col = '#2299ff', vis = G.VFX.forMove(m);
-    const count = 5;
+    const col = G.U.TYPE_COLOR[m.type];
+    const vis = G.VFX.forMove(m);
+    const n = G.Rift && G.Rift.duelStance ? 1 : Math.max(1, m.count | 0);
+    const spread = n === 1 ? 0 : m.spread || 0;
     G.Audio.sfx('hit');
-    for (let i = 0; i < count; i++) {
-      const spread = (i - (count - 1) / 2) * 0.12;
-      const a = pl.aim + spread;
-      const vx = Math.cos(a) * 460, vy = Math.sin(a) * 460;
-      G.Projectiles.spawn(Object.assign({
-        x: pl.x + Math.cos(a) * 12, y: pl.y + Math.sin(a) * 12,
-        vx, vy, dmg: m.dmg * pl.atkFor(m), r: 8, life: 1.1,
-        pierce: 2, color: col, hits: new Set(), vis, ghost, owner: pl
-      }, payload(m)));
+    for (let i = 0; i < n; i++) {
+      const off = n === 1 ? 0 : (i / (n - 1) - 0.5) * spread * n;
+      const a = pl.aim + off;
+      shot(pl, m, a, col, vis);
     }
     G.FX.ring(pl.x, pl.y, 6, 40, col, 0.2, 2);
   }

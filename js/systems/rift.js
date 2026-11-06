@@ -358,6 +358,7 @@ G.Rift = (() => {
         arena.bossIds.push(arena.bossId);
         G.StoryEncounters?.configure(enemy);
       });
+      G.StoryEncounters?.beginSharedHealth(arena.bossIds);
       arena.dex = wave[0];
       arena.evading = 0; arena.cine = null; arena.evadeT = 12;
       arena.targetId = arena.bossIds[0];

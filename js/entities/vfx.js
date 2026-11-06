@@ -31,7 +31,8 @@ G.VFX = (() => {
     steel:    ['#232d38', '#56667a', '#8c9caf', '#cad6e2', '#ffffff'],
     fairy:    ['#6a2050', '#b04a8a', '#ff8acb', '#ffc4e6', '#ffffff'],
     normal:   ['#3e3834', '#7a7068', '#c4bcb0', '#ece6dc', '#ffffff'],
-    aura:     ['#0c2460', '#1c4cb0', '#3a7cff', '#90d2ff', '#ffffff']
+    aura:     ['#0c2460', '#1c4cb0', '#3a7cff', '#90d2ff', '#ffffff'],
+    shuriken: ['#0a1a45', '#1f56c4', '#3d8bff', '#8ccaff', '#eaf7ff']
   };
   const IDX = { o: 0, d: 1, m: 2, l: 3, w: 4 };
   const H = (a, b, c) => G.U.hash(a, b, c);
@@ -252,6 +253,25 @@ G.VFX = (() => {
       ['.ll...ll.', 'lwll.llll', 'lllllllll', 'lllllllll', '.lllllll.', '..lllll..', '...lll...', '....l....']
         .forEach((row, y) => [...row].forEach((c, x) => { if (c !== '.') P.set(x, y, c === 'w' ? 'w' : 'l'); }));
       P.outline();
+    } },
+    shuriken: { w: 9, h: 9, spin: true, gen(P) {
+      const cx = 4, cy = 4;
+      P.set(cx, cy, 'w');
+      P.set(cx - 1, cy, 'l'); P.set(cx + 1, cy, 'l');
+      P.set(cx, cy - 1, 'l'); P.set(cx, cy + 1, 'l');
+
+      const blade = [
+        [1, 1, 'd'],
+        [2, -1, 'm'], [2, 0, 'm'], [2, 1, 'd'],
+        [3, -2, 'w'], [3, -1, 'l'], [3, 0, 'd']
+      ];
+
+      for (const [dx, dy, c] of blade) {
+        for (const [rx, ry] of [[dx, dy], [-dy, dx], [-dx, -dy], [dy, -dx]]) {
+          P.set(cx + rx, cy + ry, c);
+        }
+      }
+      P.outline();
     } }
   };
 
@@ -432,7 +452,7 @@ G.VFX = (() => {
     'roar-of-time':    { beam: 'star', proj: 'fire' },
     'spacial-rend':    { melee: 'claw' },
     'shadow-force':    { proj: 'shadow', trail: 'wisp' },
-    'water-shuriken': { proj: 'crescent', pal: 'water' },
+    'water-shuriken': { proj: 'shuriken', pal: 'shuriken', trail: 'drip' },
     'pyro-ball': { proj: 'fire', trail: 'ember', pal: 'fire' },
     'spirit-shackle': { proj: 'needle', trail: 'wisp', pal: 'ghost' },
     'darkest-lariat': { proj: 'crescent', pal: 'dark' },
@@ -485,7 +505,9 @@ G.VFX = (() => {
 
   function forMove(m) {
     const v = MOVE[m.id] || {};
-    return Object.assign({ pal: m.type, proj: TYPE_SHAPE[m.type] || 'ball' }, v, { pal: v.pal || m.type });
+    let pal = v.pal || m.type;
+    if (m && m.id === 'water-shuriken' && m.evolved) pal = 'fire';
+    return Object.assign({ pal: m.type, proj: TYPE_SHAPE[m.type] || 'ball' }, v, { pal });
   }
   function forType(type) { return { proj: TYPE_SHAPE[type] || 'ball', pal: PAL[type] ? type : 'normal' }; }
 
