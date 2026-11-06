@@ -132,7 +132,7 @@ G.Judgment = (() => {
     const q = [];
     for (let i = 0; i < 40; i++) q.push(G.U.pick(pool).dex);
     const hw = G.Halloween.inRun ? 1 : 0;
-    const c = { tx: -6000 - Math.floor(Math.random() * 2000), ty: -6000 - Math.floor(Math.random() * 2000), q,
+    const c = { tx: -6000 - Math.floor(Math.random() * 2000), ty: -6000 - Math.floor(Math.random() * 2000), q, r: G.Rift.arenaRadius(G.Game.everyone().length, ARENA_R),
                 pl: hw ? 'ghost' : G.U.pick(Object.keys(PLATES)), hw };
     if (G.Coop.isHost) G.Coop.broadcast(['jd', c]);
     begin(c);
@@ -181,7 +181,7 @@ G.Judgment = (() => {
     G.Pickups.clear();
     G.Events.reset();
     G.Weather.clear();
-    G.World.setArena({ tx: cfg.tx, ty: cfg.ty, r: ARENA_R, type: 'judgment' });
+    G.World.setArena({ tx: cfg.tx, ty: cfg.ty, r: cfg.r || ARENA_R, type: 'judgment' });
     G.World.setBiome(G.Tiles.arenaBiome('judgment'), true);
     center = { x: cfg.tx * ts + ts / 2, y: cfg.ty * ts + ts / 2 };
     const ps = G.Game.everyone();
@@ -308,6 +308,7 @@ G.Judgment = (() => {
 
   /** En la pelea (lo llama game.js en cada fotograma de juego). */
   function update(dt, pl, time) {
+    if (G.Game.hurryMode) return;
     if (!phase) {
       sampleDps(dt);                        // (para la vida del primer legendario)
       if (authority() && time >= AT && !G.Rift.inArena) start();
@@ -450,7 +451,7 @@ G.Judgment = (() => {
 
   /** Nadie sale de la arena (Arceus, los legendarios y tú). */
   function keepInside() {
-    const ts = TS(), max = (ARENA_R - 1.4) * ts;
+    const ts = TS(), max = ((cfg.r || ARENA_R) - 1.4) * ts;
     const clampIn = o => {
       const dx = o.x - center.x, dy = o.y - center.y, d = Math.hypot(dx, dy);
       if (d > max) { o.x = center.x + dx / d * max; o.y = center.y + dy / d * max; }
@@ -463,7 +464,7 @@ G.Judgment = (() => {
   // Cada juego, con su jugador (también los invitados).
   function keepMeInside(pl) {
     if (!pl || !center) return;
-    const max = (ARENA_R - 1.4) * TS(), dx = pl.x - center.x, dy = pl.y - center.y, d = Math.hypot(dx, dy);
+    const max = ((cfg.r || ARENA_R) - 1.4) * TS(), dx = pl.x - center.x, dy = pl.y - center.y, d = Math.hypot(dx, dy);
     if (d > max) { pl.x = center.x + dx / d * max; pl.y = center.y + dy / d * max; }
   }
 
@@ -477,7 +478,7 @@ G.Judgment = (() => {
     // Lejos de todos (en el borde de la arena).
     let x = center.x, y = center.y;
     for (let i = 0; i < 16; i++) {
-      const a = Math.random() * 6.2832, d = (ARENA_R - G.U.rand(3, 6)) * ts;
+      const a = Math.random() * 6.2832, d = ((cfg.r || ARENA_R) - G.U.rand(3, 6)) * ts;
       x = center.x + Math.cos(a) * d; y = center.y + Math.sin(a) * d;
       if (G.Game.everyone().every(p => G.U.dist2(p.x, p.y, x, y) > 280 * 280)) break;
     }

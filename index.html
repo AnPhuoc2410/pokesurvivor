@@ -10,6 +10,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>PokéSurvivor – Juego Pokémon gratis online estilo Survivor.io</title>
 <meta name="description" content="Sobrevive a hordas de Pokémon con tu compañero en este fan game gratis para navegador y móvil: 966 Pokémon, shinies, legendarios y cooperativo con amigos. Sin descargas ni anuncios.">
+
 <link rel="canonical" href="https://pokesurvivor.com/">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <meta name="theme-color" content="#0a1430">
@@ -30,6 +31,7 @@
 <meta name="twitter:description" content="Fan game gratis para navegador y móvil, con cooperativo hasta 4. Sin descargas ni anuncios.">
 <meta name="twitter:image" content="https://pokesurvivor.com/assets/og-image.jpg">
 <meta name="ps-pages" content="1">
+
 <link rel="manifest" href="manifest.webmanifest">
 <!-- Google sólo enseña en los resultados iconos de 48 px o múltiplos -->
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -44,6 +46,7 @@
 <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
 <link rel="preload" href="assets/fonts/PixelifyPS-400.ttf" as="font" type="font/ttf" crossorigin>
 <link rel="preload" href="assets/fonts/PixelifyPS-700.ttf" as="font" type="font/ttf" crossorigin>
+
 <!-- Datos estructurados para Google (tipo de página: videojuego gratuito) -->
 <script type="application/ld+json">
 {
@@ -77,7 +80,8 @@
   ]
 }
 </script>
-<link rel="stylesheet" href="css/style.css?v=649e0027c4">
+
+<link rel="stylesheet" href="css/style.css?v=25ae28db89">
 <script src="js/core/locales.js?v=6ffb0e101d"></script>
 <script src="js/noframe.js"></script>
 </head>
@@ -186,10 +190,11 @@
         <option value="0">Estándar (30:00)</option>
         <option value="1">Hurry (15:00)</option>
       </select>
-      <p id="menu-mode-hint" class="sub">Arceus a los 15 min de combate: menos cartas y mejoras más potentes. Las elecciones y la Sentencia añaden tiempo.</p>
+      <p id="menu-mode-hint" class="sub">Sau 15 phút chiến đấu: 3 màn boss ngẫu nhiên, mỗi mức 1 màn — Dễ → Trung bình → Khó. Giữ Pokémon và nâng cấp; thắng cả 3 để hoàn thành Hurry.</p>
       <div class="menu-list">
         <button class="menu-item play" data-go="play">Jugar<small>Entra en la mazmorra</small></button>
         <button class="menu-item" data-go="boss-select">Chọn màn đấu<small>Các trận đấu trùm và dạng Pokémon</small></button>
+        <button class="menu-item" data-go="hurry-test">Test sau 15′ · Hurry<small>Vào ngay chuỗi boss · có bật/tắt bất tử · không lưu thưởng</small></button>
         <button class="menu-item coop" data-go="coop">Multijugador<small id="menu-coop-sub">Crear sala o unirse</small></button>
         <button class="menu-item" data-go="dex">Pokémon<small id="menu-dex-count">Tu colección</small></button>
         <button class="menu-item" data-go="upgrades">Mejoras<small>Haz más fuerte cada run</small></button>
@@ -215,6 +220,18 @@
       <div><h2>Chọn màn đấu</h2><p class="sub">Chế độ riềng · không ảnh hưởng lượt chơi hay tiến trình Arceus</p></div>
       <button class="btn small ghost" data-back>Quay lại</button>
     </div>
+    <div class="row" style="flex-wrap:wrap;margin:12px 0">
+      <label for="boss-test-players">Thử sân co-op:</label>
+      <select id="boss-test-players" class="field">
+        <option value="1">1 người</option><option value="2">2 người</option>
+        <option value="3">3 người</option><option value="4">4 người</option>
+        <option value="5">5 người</option><option value="6">6 người</option>
+        <option value="7">7 người</option><option value="8">8 người</option>
+        <option value="9">9 người</option><option value="10">10 người</option>
+      </select>
+      <label><input id="boss-test-immortal" type="checkbox"> Bật bất tử khi vào màn</label>
+    </div>
+    <p id="boss-test-preview" class="sub" role="status"></p>
     <div id="boss-stage-list" class="boss-stage-list"></div>
   </div>
 </section>
@@ -355,7 +372,8 @@
       <h1>PokéSurvivor</h1>
       <p>PokéSurvivor necesita JavaScript para funcionar. Actívalo para jugar.</p>
       <p>Fan game gratuito de supervivencia con 966 Pokémon de las 9 regiones: elige tu compañero, sobrevive a las hordas, evoluciona tus ataques, enfréntate a legendarios y juega en cooperativo con hasta 4 amigos.</p>
-      <p><a href="guia/">Guía del juego</a> · <a href="pokedex/">Pokédex: todos los Pokémon jugables</a></p>    </div>
+      <p><a href="guia/">Guía del juego</a> · <a href="pokedex/">Pokédex: todos los Pokémon jugables</a></p>
+    </div>
   </div>
 </noscript>
 
@@ -415,7 +433,7 @@
         </label>
       </div>
     </div>
-    <p class="sub">Arceus a los 15 min de combate: menos cartas y mejoras más potentes. Las elecciones y la Sentencia añaden tiempo.</p>
+    <p class="sub">Hurry: sau 15 phút chiến đấu, cả đội đánh 3 màn ngẫu nhiên: 1 Dễ → 1 Trung bình → 1 Khó.</p>
     <div class="row" style="margin-top:14px">
       <button id="lobby-start" class="btn gold grow">Empezar partida</button>
     </div>
@@ -642,6 +660,6 @@
 </section>
 
 <!-- datos generados -->
-<script defer src="js/app.min.js?v=fb204420f4"></script>
+<script defer src="js/app.min.js?v=1b5d9f21b7"></script>
 </body>
 </html>

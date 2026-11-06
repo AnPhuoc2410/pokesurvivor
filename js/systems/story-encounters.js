@@ -3,7 +3,7 @@ G.StoryEncounters = (() => {
   const TAU = Math.PI * 2;
   const STAGES = {
     weather: { waves: [[382, 383]], description: 'Vũng nước làm chậm, dung nham rút máu. Hạ một boss để gọi Rayquaza; hạ toàn bộ để thắng.' },
-    creation: { waves: [[483, 484, 487]], description: 'Dialga làm chậm; Palkia khiến tốc độ lúc nhanh lúc chậm và bẻ cong đạn; Giratina ẩn mình rồi lao tới.' },
+    creation: { waves: [[483, 484, 487]], description: 'Dialga làm chậm; Palkia teleport người chơi mỗi 8 giây, báo trước 1 giây; Giratina ẩn mình rồi lao tới.' },
     tao: { waves: [[643, 644], [646]], description: 'Bão lửa và sét định vị; hạ cả hai để đối mặt Kyurem hợp thể và bão tuyết.' },
     lake: { waves: [[480, 481, 482]], description: 'Dịch chuyển rồi tụ lực 0,8 giây mới bắn; đạn nhỏ gây đảo điều khiển 3 giây. Hạ cả ba.' },
     beasts: { waves: [[243, 244, 245]], description: 'Các lượt lao xuyên arena để lại vệt điện, lửa và băng. Hạ cả ba.' },
@@ -22,7 +22,7 @@ G.StoryEncounters = (() => {
     383: ['Đại địa phun trào', 'Rời miệng núi lửa trước khi nổ; tránh dung nham còn lại.'],
     384: ['Thiên không phán quyết', 'Né các dải laser chéo; chỗ giao nhau gây sát thương.'],
     483: ['Tiếng gầm thời gian', 'Vùng thời gian làm chậm di chuyển và đạn.'],
-    484: ['Không gian biến dạng', 'Quỹ đạo đạn xoắn quanh các khe không gian.'],
+    484: ['Hoán chuyển không gian', 'Mỗi 8 giây dịch chuyển người chơi đến vị trí ngẫu nhiên; báo trước 1 giây.'],
     487: ['Bóng ma phản vật chất', 'Vệt bóng báo hướng tấn công trước khi Giratina xuất hiện.'],
     643: ['Bão lửa', 'Né quạt lửa và các vệt cháy.'], 644: ['Lôi kích định vị', 'Sét khóa vị trí cũ; tiếp tục di chuyển.'],
     646: ['Bão tuyết hợp thể', 'Né tuyết lớn; băng làm trượt chân.'],
@@ -45,6 +45,7 @@ G.StoryEncounters = (() => {
   };
   let arena = null, fields = [], volleyQueue = [], clock = 0, nextField = 1;
   let statuses = new WeakMap();
+  let warpT = 7, warp = null; // 7 giây chờ + 1 giây báo trước mỗi lần teleport.
   const host = () => !G.Coop.active || G.Coop.isHost;
   const tile = () => G.Tiles.T * G.Sprites.PX;
   const radius = () => (arena.r - 1.4) * tile();
@@ -55,7 +56,7 @@ G.StoryEncounters = (() => {
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
   const emit = (op, data) => { if (G.Coop.isHost) G.Coop.broadcast(['enc', op, data]); };
 
-  function reset() { arena = null; fields = []; volleyQueue = []; clock = 0; nextField = 1; statuses = new WeakMap(); }
+  function reset() { arena = null; fields = []; volleyQueue = []; clock = 0; nextField = 1; statuses = new WeakMap(); warpT = 7; warp = null; }
   function begin(a) { reset(); if (a.challenge && STAGES[a.challengeId]) arena = a; }
   function controls(e) { return !!arena && !!e && e.storyBoss && STAGES[arena.challengeId].waves.flat().concat(arena.challengeId === 'weather' ? [384] : []).includes(e.dex); }
   function status(p) {
@@ -67,8 +68,7 @@ G.StoryEncounters = (() => {
     const s = status(p), bosses = living();
     const ruin = arena.challengeId === 'ruin' && bosses.length === 4;
     const time = bosses.some(e => e.dex === 483);
-    const space = bosses.some(e => e.dex === 484) ? 0.65 + (Math.sin(clock * 2.7) + 1) * 0.45 : 1;
-    return { speed: (ruin ? 0.5 : 1) * (time ? 0.72 : 1) * space * (s.root > 0 ? 0 : s.slow > 0 ? 0.6 : 1),
+    return { speed: (ruin ? 0.5 : 1) * (time ? 0.72 : 1) * (s.root > 0 ? 0 : s.slow > 0 ? 0.6 : 1),
       damage: ruin ? 0.5 : 1, confused: s.confuse > 0, dark: s.dark > 0, slide: s.slide > 0, noHeal: s.noHeal > 0, noDash: s.noDash > 0 };
   }
   function applyStatus(p, effect) {
@@ -91,6 +91,42 @@ G.StoryEncounters = (() => {
   function bound(p, padding = 0) {
     const dx = p.x - arena.x, dy = p.y - arena.y, d = Math.hypot(dx, dy), r = radius() - padding;
     return d > r ? { x: arena.x + dx / d * r, y: arena.y + dy / d * r } : { x: p.x, y: p.y };
+  }
+  function warnWarp() {
+    warp = { delay: 1 }; warpT = 7;
+    G.Audio.sfx('rift');
+    emit('warpWarning', 1);
+  }
+  function warpTargets() {
+    const targets = [];
+    for (const p of G.Game.everyone()) {
+      if (p.dead) continue;
+      for (let i = 0; i < 40; i++) {
+        const angle = Math.random() * TAU, distance = Math.sqrt(Math.random()) * (radius() - p.r - 16);
+        const point = { uid: p.uid || '', x: arena.x + Math.cos(angle) * distance, y: arena.y + Math.sin(angle) * distance, r: p.r };
+        if (Math.hypot(point.x - p.x, point.y - p.y) < tile() * 2 || !G.World.isFree(point.x, point.y, p.r)) continue;
+        if (living().some(e => Math.hypot(point.x - e.x, point.y - e.y) < e.r + p.r + 24)) continue;
+        if (targets.some(t => Math.hypot(point.x - t.x, point.y - t.y) < t.r + p.r + 16)) continue;
+        if (fields.some(f => f.damage > 0 && clock - f.born >= f.delay && contains(f, point))) continue;
+        targets.push(point); break;
+      }
+    }
+    return targets;
+  }
+  function applyWarp(targets) {
+    if (!Array.isArray(targets)) return;
+    for (const t of targets) {
+      if (!t || !Number.isFinite(t.x) || !Number.isFinite(t.y) || Math.hypot(t.x - arena.x, t.y - arena.y) > radius()) continue;
+      const p = G.Game.everyone().find(p => (p.uid || '') === t.uid && !p.dead);
+      if (!p) continue;
+      G.FX.ring(p.x, p.y, 6, p.r * 3, '#ddaaff', 0.4, 3);
+      p.x = p._px = t.x; p.y = p._py = t.y; p.kx = p.ky = 0;
+      p.invuln = Math.max(p.invuln || 0, 0.75);
+      if (p.net) Object.assign(p.net, { x: t.x, y: t.y, vx: 0, vy: 0 });
+      if (p === G.Game.player) { G.Camera.x = p.x; G.Camera.y = p.y; }
+      G.FX.ring(p.x, p.y, p.r * 3, 6, '#ddaaff', 0.4, 3);
+    }
+    warp = null;
   }
   function addField(o, remote = false) {
     const f = Object.assign({ id: nextField++, born: clock, delay: 0.7, duration: 6, radius: 65, damage: 0, tick: 0, color: color(o.type), shape: 'pool' }, o);
@@ -282,7 +318,7 @@ G.StoryEncounters = (() => {
       case 249: wind(e, p, false); break;
       case 889: fan(e, p, 3, 0.8, { type:'steel', speed:160 }); break;
       case 483: fan(e, p, 5, 1.1, { type:'steel', speed:145, enc:{effect:'slow'} }); break;
-      case 484: fan(e, p, 7, 1.8, { type:'water', speed:155, enc:{curve:0.8} }); break;
+      case 484: fan(e, p, 7, 1.8, { type:'water', speed:155 }); break;
       case 638: case 639: case 640: case 647:
       case 377: case 378: case 379: case 894: case 895:
         staggeredVolley(e,p,5,e.atkType,0.8,2.2); break;
@@ -329,7 +365,7 @@ G.StoryEncounters = (() => {
         break;
       }
       case 483: field(pointNear(p,80),'steel','slow',{radius:120,damage:e.dmg*0.3,duration:2}); fan(e,p,17,2.6,{speed:110,type:'steel',enc:{effect:'slow'}}); break;
-      case 484: for(let i=0;i<28;i++) shot(e,i*TAU/28+wave*0.2,{type:'water',speed:150,enc:{curve:0.45}}); break;
+      case 484: for(let i=0;i<28;i++) shot(e,i*TAU/28+wave*0.2,{type:'water',speed:150}); break;
       case 487: for(let i=0;i<3;i++) { const a=wave+i*TAU/3; beam(e,{x:arena.x+Math.cos(a)*R,y:arena.y+Math.sin(a)*R},pointNear(p,90),40,0.9,'ghost'); } break;
       case 643: fan(e,p,15,2.2,{type:'fire',speed:175}); for(let i=0;i<3;i++) field(pointNear(p,160),'fire',null,{radius:55,duration:3}); break;
       case 644: for(let i=0;i<4;i++) field(i?pointNear(p,120):p,'electric',null,{shape:'lightning',radius:45,damage:e.dmg,delay:0.8+i*0.06,duration:0.3}); break;
@@ -437,6 +473,15 @@ G.StoryEncounters = (() => {
   function update(dt) {
     if(!active()) return;
     clock+=dt;
+    if (!living().some(e => e.dex === 484)) { warp = null; warpT = 7; }
+    else if (!G.Rift.specialLock) {
+      if (warp) {
+        warp.delay -= dt;
+        if (host() && warp.delay <= 0) {
+          const targets = warpTargets(); applyWarp(targets); emit('warp', targets);
+        }
+      } else if (host() && (warpT -= dt) <= 0) warnWarp();
+    }
     if (host() && !G.Rift.specialLock) {
       for (let i=volleyQueue.length-1;i>=0;i--) {
         const v=volleyQueue[i];
@@ -476,7 +521,6 @@ G.StoryEncounters = (() => {
       const bosses=living();
       if(bosses.some(e=>e.dex===483)) { p.vx*=p.encTimeSlow?1:0.55; p.vy*=p.encTimeSlow?1:0.55; p.encTimeSlow=true; }
       else if(p.encTimeSlow) { p.vx/=0.55; p.vy/=0.55; p.encTimeSlow=false; }
-      if(bosses.some(e=>e.dex===484)) rotateVelocity(p,Math.sin(clock*2)*0.8*dt);
     } else if(p.enc?.curve) rotateVelocity(p,p.enc.curve*dt);
     if (!p.friendly && p.enc?.homing) {
       const target=G.Game.player, speed=Math.hypot(p.vx,p.vy), a=Math.atan2(target.y-p.y,target.x-p.x), old=Math.atan2(p.vy,p.vx);
@@ -597,7 +641,7 @@ G.StoryEncounters = (() => {
     if(fx.noHeal) labels.push('Sương: khóa hồi máu'); if(fx.noDash) labels.push('Địa hình: khóa dash');
     if(fx.damage<1) labels.push('Aura Họa Tai: sát thương và tốc độ −50%');
     if(living().some(e=>e.dex===483)) labels.push('Dialga: thời gian chậm');
-    if(living().some(e=>e.dex===484)) labels.push('Palkia: tốc độ biến động · quỹ đạo cong');
+    if(living().some(e=>e.dex===484)) labels.push(warp ? 'Palkia: teleport sau ' + Math.max(0, warp.delay).toFixed(1) + 's' : 'Palkia: teleport ngẫu nhiên mỗi 8 giây');
     const regi=living().find(e=>e.dex===486 && e.encounter?.age<10);
     if(regi) labels.push('Slow Start · '+Math.ceil(10-regi.encounter.age)+'s');
     if(labels.length) {ctx.save();ctx.textAlign='center';ctx.font='700 13px Pixelify, sans-serif';ctx.fillStyle='#ffe5a0';ctx.strokeStyle='#121629';ctx.lineWidth=4;const t=labels.join(' · ');ctx.strokeText(t,w/2,h-88,w-40);ctx.fillText(t,w/2,h-88,w-40);ctx.restore();}
@@ -615,6 +659,8 @@ G.StoryEncounters = (() => {
   }
   function onEvent(ev) {
     if(!arena) return;
+    if(ev[1]==='warpWarning' && living().some(e=>e.dex===484)) { warp = { delay: 1 }; G.Audio.sfx('rift'); }
+    if(ev[1]==='warp' && living().some(e=>e.dex===484)) applyWarp(ev[2]);
     if(ev[1]==='field') addField(ev[2],true);
     if(ev[1]==='clearFields') fields=[];
     if(ev[1]==='state') {const e=G.EnemyMgr.get(ev[2].id);if(e) {configure(e);if(e.encounter)e.encounter.hidden=!!ev[2].hidden;}}
