@@ -597,6 +597,7 @@
       cd: 1.0, dmg: 11, count: 3, radius: 62 },
 
     // Movimientos exclusivos de Pokémon Legendarios (Diseño fiel y auténtico)
+    // size (radio) y life (segundos) son ajustes del juego; PokeAPI no los proporciona.
     { id: 'electro-drift', name: 'Electroderrape', type: 'electric', kind: 'dash', sig: 1008,
       desc: 'Embiste en modo aceleración dejando un rastro eléctrico en el suelo que electrocuta y potencia tu velocidad.',
       cd: 0.85, dmg: 32, radius: 150, width: 46, knock: 60 },
@@ -648,18 +649,18 @@
     { id: 'night-daze', name: 'Pulso Noche', type: 'dark', kind: 'shove', sig: 571, desc: 'Libera una onda de choque oscura de tono siniestro que ciega a los rivales.', cd: 1.15, dmg: 36, radius: 120, knock: 240 },
     { id: 'leaf-blade', name: 'Hoja Aguda', type: 'grass', kind: 'melee', sig: 254, desc: 'Corta con afiladas hojas en los brazos con alta probabilidad de golpe crítico.', cd: 0.6, dmg: 28, radius: 85, arc: 2.4, knock: 65 },
     { id: 'blaze-kick', name: 'Patada Ígnea', type: 'fire', kind: 'melee', sig: 257, desc: 'Lanza una patada ardiente de gran impacto que puede causar quemaduras.', cd: 0.7, dmg: 30, radius: 80, arc: 2.2, burn: 1, knock: 120 },
-    { id: 'muddy-water', name: 'Agua Lodosa', type: 'water', kind: 'cone', sig: 260, desc: 'Lanza una ola de agua lodosa que arrastra y frena a los rivales.', cd: 0.9, dmg: 22, count: 9, speed: 340, life: 0.55, arc: 1.1, slow: 0.45 },
+    { id: 'muddy-water', name: 'Agua Lodosa', type: 'water', kind: 'cone', sig: 260, desc: 'Lanza una ola de agua lodosa que arrastra y frena a los rivales.', cd: 0.9, dmg: 22, count: 9, speed: 340, life: 0.55, arc: 1.1, slow: 0.45, size: 8 },
     { id: 'blast-burn', name: 'Anillo Ígneo', type: 'fire', kind: 'meteor', sig: 6, desc: 'Desata una colosal explosión volcánica en forma de anillo ígneo que calcina todo.', cd: 1.5, dmg: 65, radius: 130, knock: 140 },
     { id: 'hydro-cannon', name: 'Hidrocañón', type: 'water', kind: 'beam', sig: 9, desc: 'Dispara dos cañones de agua a máxima presión que repelen violentamente a los rivales.', cd: 1.45, dmg: 55, radius: 330, width: 48, knock: 160 },
     { id: 'frenzy-plant', name: 'Planta Feroz', type: 'grass', kind: 'quake', sig: 3, desc: 'Enormes raíces ancestrales brotan del suelo aplastando a todos a su paso.', cd: 1.4, dmg: 58, count: 6, radius: 55, knock: 120 },
-    { id: 'dragon-darts', name: 'Dracoflechas', type: 'dragon', kind: 'homing', sig: 887, desc: 'Lanza dos misiles dragón fantasmales que persiguen a blancos distintos.', cd: 0.7, dmg: 26, count: 2, speed: 420, homing: 7 },
+    { id: 'dragon-darts', name: 'Dracoflechas', type: 'dragon', kind: 'homing', sig: 887, desc: 'Lanza dos misiles dragón fantasmales que persiguen a blancos distintos.', cd: 0.7, dmg: 26, count: 2, speed: 420, homing: 7, size: 8, life: 1.4 },
     { id: 'dark-void', name: 'Brecha Negra', type: 'dark', kind: 'vortex', sig: 491, desc: 'Abre una brecha de oscuridad de pesadilla que arrastra a los enemigos y los sume en el sueño.', cd: 2, dmg: 18, radius: 140, dur: 3, pull: 220 },
     { id: 'psycho-boost', name: 'Psicoataque', type: 'psychic', kind: 'beam', sig: 386, desc: 'Dispara un haz cósmico de energía psíquica a máxima potencia.', cd: 1.5, dmg: 65, radius: 340, width: 50 },
     { id: 'doom-desire', name: 'Deseo Oculto', type: 'steel', kind: 'meteor', sig: 385, desc: 'Concentra la luz de las estrellas que cae poco después en un rayo demoledor.', cd: 1.4, dmg: 60, radius: 120, knock: 100 },
     { id: 'v-create', name: 'V de Fuego', type: 'fire', kind: 'dash', sig: 494, desc: 'Enciende su frente en una V ardiente y embiste con una explosión cataclísmica.', cd: 1.3, dmg: 70, radius: 160, width: 55, knock: 140 },
-    { id: 'blue-flare', name: 'Llama Azul', type: 'fire', kind: 'cone', sig: 643, desc: 'Envuelve el campo en un vendaval de bellas e intensas llamas azules.', cd: 1.25, dmg: 40, count: 10, speed: 420, life: 0.55, arc: 1, burn: 1 },
+    { id: 'blue-flare', name: 'Llama Azul', type: 'fire', kind: 'cone', sig: 643, desc: 'Envuelve el campo en un vendaval de bellas e intensas llamas azules.', cd: 1.25, dmg: 40, count: 10, speed: 420, life: 0.55, arc: 1, burn: 1, size: 8 },
     { id: 'bolt-strike', name: 'Ataque Fulgor', type: 'electric', kind: 'dash', sig: 644, desc: 'Carga rodeado de rayos de alto voltaje como un proyectil eléctrico viviente.', cd: 1.2, dmg: 60, radius: 155, width: 50, knock: 120 },
-    { id: 'glaciate', name: 'Mundo Gélido', type: 'ice', kind: 'nova', sig: 646, desc: 'Emite una ventisca a cero absoluto que congela y ralentiza a los enemigos.', cd: 1.3, dmg: 28, count: 16, speed: 300, pierce: 3, life: 1.4, slow: 0.8 },
+    { id: 'glaciate', name: 'Mundo Gélido', type: 'ice', kind: 'nova', sig: 646, desc: 'Emite una ventisca a cero absoluto que congela y ralentiza a los enemigos.', cd: 1.3, dmg: 28, count: 16, speed: 300, pierce: 3, life: 1.4, slow: 0.8, size: 8 },
     { id: 'geomancy', name: 'Geocontrol', type: 'fairy', kind: 'aura', sig: 716, desc: 'Canaliza la energía del árbol de la vida creando un aura de luz que restaura salud.', cd: 2.4, dmg: 20, radius: 150 },
     { id: 'oblivion-wing', name: 'Ala Mortífera', type: 'flying', kind: 'beam', sig: 717, desc: 'Dispara el rayo de la muerte que absorbe la vitalidad de todos los enemigos alcanzados.', cd: 1.35, dmg: 45, radius: 320, width: 44 },
     { id: 'core-enforcer', name: 'Núcleo Castigo', type: 'dragon', kind: 'beam', sig: 718, desc: 'Dispara rayos de energía del núcleo que trazan una gran Z de castigo en el suelo.', cd: 1.6, dmg: 55, radius: 340, width: 52 },
@@ -672,9 +673,9 @@
     { id: 'behemoth-bash', name: 'Embate Supremo', type: 'steel', kind: 'shove', sig: 889, desc: 'Embate con el escudo supremo que aplasta y empuja a todos los rivales.', cd: 1.05, dmg: 45, radius: 130, knock: 280 },
     { id: 'dynamax-cannon', name: 'Cañón Dinamax', type: 'dragon', kind: 'beam', sig: 890, desc: 'Dispara un cañonazo espiral de energía Dinamax desde el núcleo de su pecho.', cd: 1.4, dmg: 54, radius: 340, width: 50 },
     { id: 'wicked-blow', name: 'Golpe Oscuro', type: 'dark', kind: 'melee', sig: 892, desc: 'Un golpe marcial certero y demoledor que siempre asesta un golpe crítico.', cd: 0.8, dmg: 42, radius: 85, arc: 2, knock: 120 },
-    { id: 'astral-barrage', name: 'Orbes Espectro', type: 'ghost', kind: 'homing', sig: 898, desc: 'Dispara una multitud de orbes fantasmales astrales que persiguen a los rivales.', cd: 0.9, dmg: 28, count: 4, speed: 380, homing: 6 },
+    { id: 'astral-barrage', name: 'Orbes Espectro', type: 'ghost', kind: 'homing', sig: 898, desc: 'Dispara una multitud de orbes fantasmales astrales que persiguen a los rivales.', cd: 0.9, dmg: 28, count: 4, speed: 380, homing: 6, size: 8, life: 1.4 },
     { id: 'ivy-cudgel', name: 'Garrote Liana', type: 'grass', kind: 'melee', sig: 1017, desc: 'Golpea con el garrote de lianas desatando una lluvia de espinas críticas.', cd: 0.75, dmg: 38, radius: 90, arc: 2.5, knock: 95 },
-    { id: 'tera-starstorm', name: 'Teraclúster', type: 'normal', kind: 'nova', sig: 1024, desc: 'Desata una tormenta cristalina de estrellas Teracristal en 360 grados.', cd: 1.4, dmg: 26, count: 18, speed: 310, pierce: 3, life: 1.4 },
+    { id: 'tera-starstorm', name: 'Teraclúster', type: 'normal', kind: 'nova', sig: 1024, desc: 'Desata una tormenta cristalina de estrellas Teracristal en 360 grados.', cd: 1.4, dmg: 26, count: 18, speed: 310, pierce: 3, life: 1.4, size: 8 },
     { id: 'electro-shot', name: 'Electrorrayo', type: 'electric', kind: 'charge', sig: 1018, desc: 'Acumula electricidad como un cañón de riel y dispara un rayo fulminante.', cd: 1.6, charge: 0.45, dmg: 60, radius: 350, width: 48 }
   ];
 
