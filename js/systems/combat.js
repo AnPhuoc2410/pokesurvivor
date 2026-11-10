@@ -1011,18 +1011,32 @@ G.Combat = (() => {
   }
 
   function runDarkVoid(pl, m) {
-    const col = '#110022', vis = G.VFX.forMove(m);
+    const col = m.evolved ? '#ff0055' : '#8b24d6';
+    const vis = G.VFX.forMove(m);
+    const tg = spotFor(pl, m);
     const ca = Math.cos(pl.aim), sa = Math.sin(pl.aim);
-    const vx = pl.x + ca * 90, vy = pl.y + sa * 90;
-    G.FX.ring(vx, vy, 15, 140, '#661188', 0.6, 5);
-    G.Camera.kick(0.22);
+    const vx = tg ? tg.x : pl.x + ca * 130;
+    const vy = tg ? tg.y : pl.y + sa * 130;
+    const r = m.radius || 150;
+    const dur = m.dur || 3.2;
+
+    G.Audio.sfx('legend');
+    G.Camera.kick(0.28);
+    G.FX.ring(vx, vy, 12, r, m.evolved ? '#f43f5e' : '#c026d3', 0.6, 5);
+    G.FX.ring(vx, vy, r * 0.8, 10, '#040008', 0.5, 4);
+    G.FX.burst(vx, vy - 6, m.evolved ? '#f43f5e' : '#9333ea', 18, 190);
+    G.FX.burst(vx, vy - 6, '#020005', 12, 120);
+
     fields.push({
-      kind: 'vortex', owner: pl, ghost, m, col: '#330055', vis,
-      x: vx, y: vy, t: 0, life: 2.2, r: 140, pull: 260,
-      dmg: m.dmg * 0.5 * pl.atkFor(m)
+      kind: 'vortex', owner: pl, ghost, m, col: m.evolved ? '#3b0416' : '#1e0538', vis,
+      x: vx, y: vy, t: 0, life: dur, r, pull: m.pull || 280,
+      dmg: m.dmg * 0.5 * pl.atkFor(m), isDarkVoid: true
     });
-    for (const e of G.EnemyMgr.queryCircle(vx, vy, 140)) {
-      if (e.applySleep && !e.arceus) e.applySleep(1.8);
+
+    for (const e of G.EnemyMgr.queryCircle(vx, vy, r * 1.15)) {
+      if (e.dead || e.remote || e.arceus) continue;
+      if (e.applySleep) e.applySleep(2.2);
+      if (e.applySlow) e.applySlow(0.8, 1.5);
     }
   }
 
@@ -1150,7 +1164,26 @@ G.Combat = (() => {
       }
       f.tick -= dt;
       if (f.tick <= 0) { f.tick = 0.4; blast(f, f.r); }
-      if (Math.random() < dt * 16 && G.Camera.sees(f.x, f.y, 40)) {
+      if (f.isDarkVoid || (f.m && f.m.id === 'dark-void')) {
+        // Continuous nightmare stasis & slow in the event horizon
+        for (const e of G.EnemyMgr.queryCircle(f.x, f.y, f.r * 1.15)) {
+          if (e.dead || e.remote || e.arceus) continue;
+          if (e.applySleep) e.applySleep(0.8);
+          if (e.applySlow) e.applySlow(0.8, 0.4);
+        }
+        // Inward spiraling dark matter particles
+        if (Math.random() < dt * 26 && G.Camera.sees(f.x, f.y, 40)) {
+          const a = Math.random() * 6.2832, rr = f.r * G.U.rand(0.65, 1.15);
+          const px = f.x + Math.cos(a) * rr, py = f.y + Math.sin(a) * rr * 0.65;
+          const toC = Math.atan2(f.y - py, f.x - px);
+          const spd = G.U.rand(160, 290);
+          const vx = Math.cos(toC + 0.5) * spd;
+          const vy = Math.sin(toC + 0.5) * spd * 0.65;
+          G.FX.sp(f.vis.proj || 'void', f.vis.pal || 'void', px, py - 4, {
+            vx, vy, life: G.U.rand(0.3, 0.5), spin: 8
+          });
+        }
+      } else if (Math.random() < dt * 16 && G.Camera.sees(f.x, f.y, 40)) {
         const a = Math.random() * 6.2832, rr = f.r * G.U.rand(0.5, 1);
         G.FX.sp(f.vis.proj, f.vis.pal, f.x + Math.cos(a) * rr, f.y + Math.sin(a) * rr * 0.6 - 4,
                 { vx: -Math.sin(a) * 110 - Math.cos(a) * 60, vy: Math.cos(a) * 66 - Math.sin(a) * 36, life: 0.45,
@@ -1264,14 +1297,103 @@ G.Combat = (() => {
       ctx.save();
       if (f.kind === 'vortex') {
         const a = Math.min(1, (f.life - f.t) * 2, f.t * 6);
-        ctx.globalAlpha = 0.22 * a;
-        ctx.fillStyle = f.col;
-        ctx.beginPath(); ctx.ellipse(f.x, f.y, f.r, f.r * 0.6, 0, 0, 6.2832); ctx.fill();
-        ctx.globalAlpha = 0.6 * a;
-        ctx.strokeStyle = f.col; ctx.lineWidth = 2;
-        for (let k = 0; k < 3; k++) {
-          const rr = f.r * (0.35 + k * 0.28), a0 = now * (3 - k * 0.6) + k * 2;
-          ctx.beginPath(); ctx.ellipse(f.x, f.y, rr, rr * 0.6, 0, a0, a0 + 3.4); ctx.stroke();
+        if (f.isDarkVoid || (f.m && f.m.id === 'dark-void')) {
+          const cx = f.x, cy = f.y, r = f.r, ry = r * 0.65;
+          const evolved = !!(f.m && f.m.evolved);
+
+          // 1. Ambient Dark Mist / Nightmare Vignette
+          const grad = ctx.createRadialGradient(cx, cy, r * 0.08, cx, cy, r * 1.15);
+          grad.addColorStop(0, `rgba(4, 1, 8, ${0.92 * a})`);
+          grad.addColorStop(0.32, evolved ? `rgba(76, 5, 25, ${0.78 * a})` : `rgba(45, 6, 80, ${0.78 * a})`);
+          grad.addColorStop(0.72, evolved ? `rgba(159, 18, 57, ${0.35 * a})` : `rgba(88, 28, 135, ${0.38 * a})`);
+          grad.addColorStop(1, 'rgba(15, 23, 42, 0)');
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.ellipse(cx, cy, r * 1.15, ry * 1.15, 0, 0, 6.2832);
+          ctx.fill();
+
+          // 2. Swirling Accretion Spiral Arms
+          const arms = evolved ? 5 : 4;
+          const spinSpeed = evolved ? 4.2 : 3.4;
+          const baseAngle = now * spinSpeed;
+          for (let i = 0; i < arms; i++) {
+            const armAngle = baseAngle + (i * 6.2832) / arms;
+            ctx.strokeStyle = evolved
+              ? (i % 2 === 0 ? '#f43f5e' : '#be123c')
+              : (i % 2 === 0 ? '#c026d3' : '#7c3aed');
+            ctx.lineWidth = i % 2 === 0 ? 3 : 2;
+            ctx.globalAlpha = (0.7 + 0.3 * Math.sin(now * 6 + i)) * a;
+            ctx.beginPath();
+            const steps = 18;
+            for (let s = 0; s <= steps; s++) {
+              const tFrac = s / steps;
+              const spiralR = r * (0.2 + 0.8 * tFrac);
+              const theta = armAngle + tFrac * 2.8;
+              const px = cx + Math.cos(theta) * spiralR;
+              const py = cy + Math.sin(theta) * spiralR * 0.65;
+              if (s === 0) ctx.moveTo(px, py);
+              else ctx.lineTo(px, py);
+            }
+            ctx.stroke();
+          }
+
+          // 3. Pulsing Event Horizon Distortion Rings
+          for (let k = 0; k < 3; k++) {
+            const ringR = r * (0.42 + k * 0.28);
+            const a0 = now * (2.8 - k * 0.7) + k * 2.1;
+            ctx.strokeStyle = evolved
+              ? (k === 0 ? '#fb7185' : '#e11d48')
+              : (k === 0 ? '#d946ef' : '#9333ea');
+            ctx.lineWidth = 1.6;
+            ctx.globalAlpha = 0.65 * a;
+            ctx.beginPath();
+            ctx.ellipse(cx, cy, ringR, ringR * 0.65, 0, a0, a0 + 2.7);
+            ctx.stroke();
+          }
+
+          // 4. Nightmare Dream Runes / Dust Orbiting Singularity
+          const orbCount = evolved ? 6 : 4;
+          for (let o = 0; o < orbCount; o++) {
+            const orbA = -now * 3.5 + (o * 6.2832) / orbCount;
+            const orbR = r * (0.34 + Math.sin(now * 5 + o) * 0.08);
+            const ox = cx + Math.cos(orbA) * orbR;
+            const oy = cy + Math.sin(orbA) * orbR * 0.65 - 3;
+            ctx.fillStyle = evolved ? (o % 2 === 0 ? '#fff1f2' : '#fb7185') : (o % 2 === 0 ? '#fae8ff' : '#e879f9');
+            ctx.globalAlpha = 0.9 * a;
+            ctx.beginPath();
+            ctx.arc(ox, oy, 2.5, 0, 6.2832);
+            ctx.fill();
+          }
+
+          // 5. Singularity Core (Pitch Black Hole Center with Luminous Photon Rim)
+          const coreR = r * (evolved ? 0.32 : 0.26) + Math.sin(now * 8) * 2;
+          ctx.save();
+          ctx.shadowColor = evolved ? '#f43f5e' : '#e879f9';
+          ctx.shadowBlur = 14;
+          ctx.strokeStyle = evolved ? '#fff1f2' : '#ffffff';
+          ctx.lineWidth = 2.4;
+          ctx.globalAlpha = 0.95 * a;
+          ctx.beginPath();
+          ctx.ellipse(cx, cy, coreR, coreR * 0.65, 0, 0, 6.2832);
+          ctx.stroke();
+          ctx.restore();
+
+          // Pitch Black Abyss (Pure darkness)
+          ctx.fillStyle = '#020005';
+          ctx.globalAlpha = 0.98 * a;
+          ctx.beginPath();
+          ctx.ellipse(cx, cy, coreR - 1, (coreR - 1) * 0.65, 0, 0, 6.2832);
+          ctx.fill();
+        } else {
+          ctx.globalAlpha = 0.22 * a;
+          ctx.fillStyle = f.col;
+          ctx.beginPath(); ctx.ellipse(f.x, f.y, f.r, f.r * 0.6, 0, 0, 6.2832); ctx.fill();
+          ctx.globalAlpha = 0.6 * a;
+          ctx.strokeStyle = f.col; ctx.lineWidth = 2;
+          for (let k = 0; k < 3; k++) {
+            const rr = f.r * (0.35 + k * 0.28), a0 = now * (3 - k * 0.6) + k * 2;
+            ctx.beginPath(); ctx.ellipse(f.x, f.y, rr, rr * 0.6, 0, a0, a0 + 3.4); ctx.stroke();
+          }
         }
       } else if (f.kind === 'stunzone') {
         const k = G.U.clamp(f.t / f.delay, 0, 1);

@@ -32,7 +32,9 @@ G.VFX = (() => {
     fairy:    ['#6a2050', '#b04a8a', '#ff8acb', '#ffc4e6', '#ffffff'],
     normal:   ['#3e3834', '#7a7068', '#c4bcb0', '#ece6dc', '#ffffff'],
     aura:     ['#0c2460', '#1c4cb0', '#3a7cff', '#90d2ff', '#ffffff'],
-    shuriken: ['#0a1a45', '#1f56c4', '#3d8bff', '#8ccaff', '#eaf7ff']
+    shuriken: ['#0a1a45', '#1f56c4', '#3d8bff', '#8ccaff', '#eaf7ff'],
+    void:     ['#020005', '#24043b', '#6b119e', '#c026d3', '#fdf4ff'],
+    void_crimson: ['#040006', '#3b0416', '#9f1239', '#f43f5e', '#fff1f2']
   };
   const IDX = { o: 0, d: 1, m: 2, l: 3, w: 4 };
   const H = (a, b, c) => G.U.hash(a, b, c);
@@ -272,6 +274,25 @@ G.VFX = (() => {
         }
       }
       P.outline();
+    } },
+    void: { w: 13, h: 13, spin: true, frames: 3, gen(P, f) {
+      const cx = 6, cy = 6;
+      P.fill((x, y) => {
+        const d = Math.hypot(x - cx, y - cy);
+        if (d < 1.7) return 'o';
+        if (d < 3.2) return 'w';
+        if (d < 4.8) return 'l';
+        return null;
+      });
+      for (let arm = 0; arm < 4; arm++) {
+        const baseA = arm * Math.PI / 2 + f * 0.45;
+        for (let step = 1; step <= 3; step++) {
+          const a = baseA + step * 0.45;
+          const r = 2.6 + step * 0.95;
+          P.set(cx + Math.cos(a) * r, cy + Math.sin(a) * r, step === 1 ? 'm' : 'd');
+        }
+      }
+      P.outline();
     } }
   };
 
@@ -472,7 +493,7 @@ G.VFX = (() => {
     'hydro-cannon': { proj: 'drop', pal: 'water' },
     'frenzy-plant': { proj: 'leaf', pal: 'grass' },
     'dragon-darts': { proj: 'fire', pal: 'dragon' },
-    'dark-void': { proj: 'crescent', pal: 'dark' },
+    'dark-void': { proj: 'void', pal: 'void', trail: 'wisp' },
     'psycho-boost': { proj: 'ring', pal: 'psychic' },
     'doom-desire': { proj: 'shard', pal: 'steel' },
     'v-create': { proj: 'fire', pal: 'fire' },
@@ -507,6 +528,7 @@ G.VFX = (() => {
     const v = MOVE[m.id] || {};
     let pal = v.pal || m.type;
     if (m && m.id === 'water-shuriken' && m.evolved) pal = 'fire';
+    if (m && m.id === 'dark-void') pal = m.evolved ? 'void_crimson' : 'void';
     return Object.assign({ pal: m.type, proj: TYPE_SHAPE[m.type] || 'ball' }, v, { pal });
   }
   function forType(type) { return { proj: TYPE_SHAPE[type] || 'ball', pal: PAL[type] ? type : 'normal' }; }

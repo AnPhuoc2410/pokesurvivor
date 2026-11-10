@@ -73,6 +73,11 @@ G.Icons = (() => {
     heart: { pal: { r: '#ff5f6d', s: '#c23a4b', w: '#ffd3d8' }, rows: [
       '............', '.kkk....kkk.', 'kwwrk..krrrk', 'kwrrrkkrrrsk', 'krrrrrrrrrsk', 'krrrrrrrrrsk',
       '.krrrrrrrsk.', '..krrrrrsk..', '...krrrsk...', '....krsk....', '.....kk.....', '............'] },
+    'move:dark-void': {
+      pal: { p: '#26043d', v: '#60119e', m: '#c026d3', w: '#fdf4ff', d: '#0a0014' },
+      rows: [
+        '....kkkk....', '..kkpmpmkk..', '.kpmvvpmpmk.', '.kmv..vmpmk.', 'kpv....vvmpk', 'kmm.ww.vmmdk',
+        'kmv.ww.vpddk', 'kpm....pmddk', '.kpmvvpmddk.', '.kpmpmddddk.', '..kkddddkk..', '....kkkk....'] },
     fist: { pal: { r: '#ff5f6d', s: '#c23a4b', w: '#ffd3d8', c: '#e8e8f0' }, rows: [
       '............', '..kkkkkk....', '.krrrrrrk...', 'krwwrrrrrkk.', 'krwrrrrrrrrk', 'krrrrrrrkrsk',
       'krrrrrrrkrsk', '.krrrrrrskk.', '..kssssssk..', '..kcccccck..', '..kkkkkkkk..', '............'] },
@@ -351,7 +356,9 @@ G.Icons = (() => {
   function canvas(name) {
     let cv = cache.get(name);
     if (cv) return cv;
-    if (name.startsWith('move:')) {
+    if (UI[name]) {
+      cv = fromRows(UI[name]);
+    } else if (name.startsWith('move:')) {
       const m = G.Moves.BY_ID[name.slice(5)];
       cv = emblem(m ? m.type : 'normal', m ? m.kind : null);
     } else if (name.startsWith('type:')) {
@@ -366,8 +373,8 @@ G.Icons = (() => {
   function url(name) {
     let u = urls.get(name);
     if (!u) {
-      // Los de interfaz, directamente de su dibujo; los emblemas (tipos, movimientos), del canvas.
-      const plain = !name.startsWith('move:') && !name.startsWith('type:');
+      // Direct UI icons use svgOfRows; emblems/types use canvas-derived SVG.
+      const plain = UI[name] || (!name.startsWith('move:') && !name.startsWith('type:'));
       u = plain ? svgOfRows(UI[name] || UI.star) : svgOf(canvas(name));
       urls.set(name, u);
     }

@@ -894,7 +894,17 @@
     { id: 'hydro-cannon', name: 'Hidrocañón', type: 'water', kind: 'beam', sig: 9, desc: 'Dispara dos cañones de agua a máxima presión que repelen violentamente a los rivales.', cd: 1.45, dmg: 55, radius: 330, width: 48, knock: 160 },
     { id: 'frenzy-plant', name: 'Planta Feroz', type: 'grass', kind: 'quake', sig: 3, desc: 'Enormes raíces ancestrales brotan del suelo aplastando a todos a su paso.', cd: 1.4, dmg: 58, count: 6, radius: 55, knock: 120 },
     { id: 'dragon-darts', name: 'Dracoflechas', type: 'dragon', kind: 'homing', sig: 887, desc: 'Lanza dos misiles dragón fantasmales que persiguen a blancos distintos.', cd: 0.7, dmg: 26, count: 2, speed: 420, homing: 7, size: 8, life: 1.4 },
-    { id: 'dark-void', name: 'Brecha Negra', type: 'dark', kind: 'vortex', sig: 491, desc: 'Abre una brecha de oscuridad de pesadilla que arrastra a los enemigos y los sume en el sueño.', cd: 2, dmg: 18, radius: 140, dur: 3, pull: 220 },
+    {
+      id: 'dark-void', name: 'Brecha Negra', type: 'dark', kind: 'vortex', sig: 491,
+      desc: 'Abre una brecha de oscuridad de pesadilla que arrastra a los enemigos y los sume en el sueño.',
+      cd: 1.8, dmg: 22, radius: 150, dur: 3.2, pull: 280,
+      ups: [
+        { t: '+25% radio y mayor succión', m: { radius: 1.25, pull: 1.35 } },
+        { t: '+40% daño y +1 s duración', m: { dmg: 1.40, dur: 1.32 } },
+        { t: '-25% recarga y +30% daño', m: { cd: 0.75, dmg: 1.30 } },
+        { t: 'Singularidad: +50% daño y mayor atracción', m: { dmg: 1.50, radius: 1.20, pull: 1.40 } }
+      ]
+    },
     { id: 'psycho-boost', name: 'Psicoataque', type: 'psychic', kind: 'beam', sig: 386, desc: 'Dispara un haz cósmico de energía psíquica a máxima potencia.', cd: 1.5, dmg: 65, radius: 340, width: 50 },
     { id: 'doom-desire', name: 'Deseo Oculto', type: 'steel', kind: 'meteor', sig: 385, desc: 'Concentra la luz de las estrellas que cae poco después en un rayo demoledor.', cd: 1.4, dmg: 60, radius: 120, knock: 100 },
     { id: 'v-create', name: 'V de Fuego', type: 'fire', kind: 'dash', sig: 494, desc: 'Enciende su frente en una V ardiente y embiste con una explosión cataclísmica.', cd: 1.3, dmg: 70, radius: 160, width: 55, knock: 140 },
@@ -1146,6 +1156,8 @@
     if (!needs || m.evolved || m.lvl < m.def.maxLvl || !EVO_MODS[m.kind]) return null;
     const text = m.id === 'water-shuriken'
       ? '×1,8 daño y Shuriken Gigante'
+      : m.id === 'dark-void'
+      ? '×1,8 daño y Brecha Eterna'
       : EVO_MODS[m.kind].t;
     return {
       name: evoName(m.def.name), needs, needName: NEED_NAME[needs], text,
@@ -1158,6 +1170,8 @@
     if (!EVO[m.id] || m.evolved) return false;
     const mods = m.id === 'water-shuriken'
       ? { dmg: 1.8, size: 1.3 }
+      : m.id === 'dark-void'
+      ? { dmg: 1.8, radius: 1.35, pull: 1.45, dur: 1.3 }
       : EVO_MODS[m.kind].m;
     applyMods(m, mods);
     m.baseName = m.name;
